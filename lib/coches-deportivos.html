@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coches Deportivos | Élite Performance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #1a1a1a;
+            --accent-color: #ff0000;
+            --text-light: #ffffff;
+            --text-gray: #b0b0b0;
+            --card-bg: #0f0f0f;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            background: rgba(0, 0, 0, 0.95);
+            padding: 2rem 0;
+            text-align: center;
+            border-bottom: 2px solid var(--accent-color);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--accent-color), #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-gray);
+            letter-spacing: 1px;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Grid de coches */
+        .cars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            margin-top: 2rem;
+        }
+
+        /* Card */
+        .car-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .car-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: var(--accent-color);
+            box-shadow: 0 20px 60px rgba(255, 0, 0, 0.3);
+        }
+
+        .car-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .car-card:hover .car-image {
+            transform: scale(1.1);
+        }
+
+        .car-content {
+            padding: 2rem;
+        }
+
+        .car-brand {
+            font-size: 0.9rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .car-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+        }
+
+        .car-description {
+            color: var(--text-gray);
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .car-specs {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .spec-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .spec-label {
+            font-size: 0.75rem;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .spec-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            header p {
+                font-size: 0.9rem;
+            }
+
+            .cars-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .container {
+                padding: 2rem 1rem;
+            }
+
+            .car-name {
+                font-size: 1.5rem;
+            }
+
+            .car-specs {
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 1.5rem 0;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .car-content {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .car-card {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .car-card:nth-child(1) { animation-delay: 0.1s; }
+        .car-card:nth-child(2) { animation-delay: 0.2s; }
+        .car-card:nth-child(3) { animation-delay: 0.3s; }
+        .car-card:nth-child(4) { animation-delay: 0.4s; }
+        .car-card:nth-child(5) { animation-delay: 0.5s; }
+        .car-card:nth-child(6) { animation-delay: 0.6s; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: rgba(0, 0, 0, 0.5);
+            margin-top: 4rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        footer p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>COCHES DEPORTIVOS</h1>
+        <p>La élite del rendimiento automotriz</p>
+    </header>
+
+    <div class="container">
+        <div class="cars-grid">
+            <!-- Porsche 911 Turbo S -->
+            <div class="car-card">
+                <img src="https://images.unsplash.com/photo-1614162692292-7ac56d7f8189?w=800&q=80" alt="Porsche 911 Turbo S" class="car-image">
+                <div class="car-content">
+                    <div class="car-brand">Porsche</div>
+                    <h2 class="car-name">911 Turbo S</h2>
+                    <p class="car-description">
+                        El icónico Porsche 911 Turbo S representa la cumbre de la ingeniería alemana. Su motor bóxer de 6 cilindros biturbo entrega una potencia brutal con una refinación sin igual. Cada detalle ha sido diseñado para ofrecer la máxima experiencia de conducción deportiva.
+                    </p>
+                    <div class="car-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Potencia</span>
+                            <span class="spec-value">650 CV</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">0-100 km/h</span>
+                            <span class="spec-value">2.7s</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">V. Máxima</span>
+                            <span class="spec-value">330 km/h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ferrari F8 Tributo -->
+            <div class="car-card">
+                <img src="https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=800&q=80" alt="Ferrari F8 Tributo" class="car-image">
+                <div class="car-content">
+                    <div class="car-brand">Ferrari</div>
+                    <h2 class="car-name">F8 Tributo</h2>
+                    <p class="car-description">
+                        El Ferrari F8 Tributo es un homenaje al motor V8 más potente de la historia de Ferrari. Con aerodinámica extrema y tecnología de Fórmula 1, este superdeportivo italiano combina pasión, rendimiento y diseño italiano inigualable en cada curva.
+                    </p>
+                    <div class="car-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Potencia</span>
+                            <span class="spec-value">720 CV</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">0-100 km/h</span>
+                            <span class="spec-value">2.9s</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">V. Máxima</span>
+                            <span class="spec-value">340 km/h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lamborghini Huracán -->
+            <div class="car-card">
+                <img src="https://images.unsplash.com/photo-1621135802920-133df287f89c?w=800&q=80" alt="Lamborghini Huracán" class="car-image">
+                <div class="car-content">
+                    <div class="car-brand">Lamborghini</div>
+                    <h2 class="car-name">Huracán EVO</h2>
+                    <p class="car-description">
+                        El Lamborghini Huracán EVO lleva la emoción al siguiente nivel. Su motor V10 atmosférico produce un rugido inolvidable mientras entrega una potencia devastadora. El diseño agresivo y la tecnología de punta lo convierten en una obra maestra del automovilismo.
+                    </p>
+                    <div class="car-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Potencia</span>
+                            <span class="spec-value">640 CV</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">0-100 km/h</span>
+                            <span class="spec-value">2.9s</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">V. Máxima</span>
+                            <span class="spec-value">325 km/h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- McLaren 720S -->
+            <div class="car-card">
+                <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&q=80" alt="McLaren 720S" class="car-image">
+                <div class="car-content">
+                    <div class="car-brand">McLaren</div>
+                    <h2 class="car-name">720S</h2>
+                    <p class="car-description">
+                        El McLaren 720S redefine los límites del rendimiento con su chasis de fibra de carbono y motor V8 biturbo. La tecnología aerodinámica activa y el peso ultraligero ofrecen una experiencia de conducción que desafía las leyes de la física.
+                    </p>
+                    <div class="car-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Potencia</span>
+                            <span class="spec-value">720 CV</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">0-100 km/h</span>
+                            <span class="spec-value">2.8s</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">V. Máxima</span>
+                            <span class="spec-value">341 km/h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aston Martin DBS Superleggera -->
+            <div class="car-card">
+                <img src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&q=80" alt="Aston Martin DBS" class="car-image">
+                <div class="car-content">
+                    <div class="car-brand">Aston Martin</div>
+                    <h2 class="car-name">DBS Superleggera</h2>
+                    <p class="car-description">
+                        El Aston Martin DBS Superleggera combina lujo británico con potencia brutal. Su motor V12 biturbo y su elegante diseño lo convierten en el gran turismo definitivo. Cada detalle respira exclusividad y artesanía de alto nivel.
+                    </p>
+                    <div class="car-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Potencia</span>
+                            <span class="spec-value">725 CV</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">0-100 km/h</span>
+                            <span class="spec-value">3.4s</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">V. Máxima</span>
+                            <span class="spec-value">340 km/h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chevrolet Corvette C8 -->
+            <div class="car-card">
+                <img src="https://images.unsplash.com/photo-1617531653520-bd466798df73?w=800&q=80" alt="Chevrolet Corvette C8" class="car-image">
+                <div class="car-content">
+                    <div class="car-brand">Chevrolet</div>
+                    <h2 class="car-name">Corvette C8 Z06</h2>
+                    <p class="car-description">
+                        El Corvette C8 Z06 marca un hito histórico con su motor central. El V8 atmosférico de aspiración natural alcanza 8,600 RPM, ofreciendo un rendimiento digno de superdeportivos europeos a un precio revolucionario. El muscle car americano ha evolucionado.
+                    </p>
+                    <div class="car-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Potencia</span>
+                            <span class="spec-value">670 CV</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">0-100 km/h</span>
+                            <span class="spec-value">2.6s</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">V. Máxima</span>
+                            <span class="spec-value">320 km/h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Coches Deportivos Élite. Diseño minimalista y profesional.</p>
+    </footer>
+</body>
+</html>

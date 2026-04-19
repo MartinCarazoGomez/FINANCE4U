@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comer cerca del Campus - ComillasLive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c1810, #4a2c17);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .back-button {
+            background: #FFB81C;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: #e6a519;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            margin-top: 70px;
+            padding: 40px 20px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-title {
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .page-subtitle {
+            font-size: 1.3rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #FFB81C;
+        }
+
+        .card-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .card-features {
+            list-style: none;
+        }
+
+        .card-features li {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            opacity: 0.8;
+        }
+
+        .card-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #FFB81C;
+            font-weight: bold;
+        }
+
+        .restaurant-list {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .restaurant-list h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #FFB81C;
+            text-align: center;
+        }
+
+        .restaurant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .restaurant-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #FFB81C;
+        }
+
+        .restaurant-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #FFB81C;
+            margin-bottom: 10px;
+        }
+
+        .restaurant-info {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .price-range {
+            color: #FFB81C;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2.5rem;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="ComillasLive.html" class="logo">ComillasLive</a>
+        <a href="ComillasLive.html" class="back-button">← Volver</a>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Comer cerca del Campus</h1>
+            <p class="page-subtitle">
+                Los mejores lugares para comer cerca del campus. Desde cafeterías universitarias 
+                hasta restaurantes locales con descuentos estudiantiles.
+            </p>
+        </div>
+
+        <div class="content-grid">
+            <div class="info-card">
+                <h3 class="card-title">Cafeterías Universitarias</h3>
+                <p class="card-description">
+                    Opciones dentro del campus con precios estudiantiles y horarios adaptados a tu rutina académica.
+                </p>
+                <ul class="card-features">
+                    <li>Cafetería principal ICAI</li>
+                    <li>Café de la biblioteca</li>
+                    <li>Máquinas expendedoras 24/7</li>
+                    <li>Menús del día económicos</li>
+                    <li>Opciones vegetarianas y veganas</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Restaurantes con Descuentos</h3>
+                <p class="card-description">
+                    Establecimientos cercanos que ofrecen descuentos especiales para estudiantes de Comillas.
+                </p>
+                <ul class="card-features">
+                    <li>Descuentos del 10-20% con carnet</li>
+                    <li>Menús estudiantiles especiales</li>
+                    <li>Promociones en horarios específicos</li>
+                    <li>Programa de fidelización estudiantil</li>
+                    <li>Eventos gastronómicos exclusivos</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Opciones Saludables</h3>
+                <p class="card-description">
+                    Lugares que ofrecen comida nutritiva y equilibrada para mantener tu energía durante el día.
+                </p>
+                <ul class="card-features">
+                    <li>Ensaladas frescas y personalizadas</li>
+                    <li>Bowl de açaí y smoothies</li>
+                    <li>Comida orgánica y local</li>
+                    <li>Opciones sin gluten y alérgenos</li>
+                    <li>Suplementos y vitaminas</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Comida Rápida y Delivery</h3>
+                <p class="card-description">
+                    Opciones rápidas para cuando tienes poco tiempo o prefieres comer en el campus.
+                </p>
+                <ul class="card-features">
+                    <li>Servicios de delivery al campus</li>
+                    <li>Comida rápida saludable</li>
+                    <li>Pedidos grupales con descuentos</li>
+                    <li>App de pedidos universitarios</li>
+                    <li>Zona de recogida en el campus</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Cafés y Teterías</h3>
+                <p class="card-description">
+                    Lugares perfectos para estudiar, reunirse con compañeros o simplemente relajarse.
+                </p>
+                <ul class="card-features">
+                    <li>Ambiente tranquilo para estudiar</li>
+                    <li>WiFi gratuito y enchufes</li>
+                    <li>Bebidas calientes y frías</li>
+                    <li>Postres y snacks ligeros</li>
+                    <li>Espacios para grupos de estudio</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Mercados y Supermercados</h3>
+                <p class="card-description">
+                    Opciones para comprar ingredientes y preparar tu propia comida en casa o en el campus.
+                </p>
+                <ul class="card-features">
+                    <li>Supermercados con descuentos estudiantiles</li>
+                    <li>Mercados locales y productos frescos</li>
+                    <li>Tiendas de productos internacionales</li>
+                    <li>Servicio de compra online</li>
+                    <li>Entrega a domicilio</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="restaurant-list">
+            <h3>Recomendaciones de la Comunidad</h3>
+            <div class="restaurant-grid">
+                <div class="restaurant-item">
+                    <div class="restaurant-name">Café Central ICAI</div>
+                    <div class="restaurant-info">
+                        📍 Dentro del campus<br>
+                        🕒 Lun-Vie: 8:00-18:00<br>
+                        <span class="price-range">€€ - Económico</span><br>
+                        ☕ Café, bocadillos, menú del día
+                    </div>
+                </div>
+
+                <div class="restaurant-item">
+                    <div class="restaurant-name">Restaurante El Rincón</div>
+                    <div class="restaurant-info">
+                        📍 5 min caminando<br>
+                        🕒 Lun-Dom: 12:00-23:00<br>
+                        <span class="price-range">€€€ - Medio</span><br>
+                        🍽️ Comida española, 15% descuento estudiantil
+                    </div>
+                </div>
+
+                <div class="restaurant-item">
+                    <div class="restaurant-name">Green Bowl</div>
+                    <div class="restaurant-info">
+                        📍 3 min caminando<br>
+                        🕒 Lun-Vie: 10:00-20:00<br>
+                        <span class="price-range">€€ - Económico</span><br>
+                        🥗 Ensaladas, bowls saludables, vegano
+                    </div>
+                </div>
+
+                <div class="restaurant-item">
+                    <div class="restaurant-name">Pizzería Da Mario</div>
+                    <div class="restaurant-info">
+                        📍 7 min caminando<br>
+                        🕒 Lun-Dom: 19:00-24:00<br>
+                        <span class="price-range">€€ - Medio</span><br>
+                        🍕 Pizza italiana, 20% descuento estudiantil
+                    </div>
+                </div>
+
+                <div class="restaurant-item">
+                    <div class="restaurant-name">Café Study</div>
+                    <div class="restaurant-info">
+                        📍 4 min caminando<br>
+                        🕒 Lun-Dom: 7:00-22:00<br>
+                        <span class="price-range">€ - Barato</span><br>
+                        ☕ Café, WiFi, ambiente de estudio
+                    </div>
+                </div>
+
+                <div class="restaurant-item">
+                    <div class="restaurant-name">Sushi Express</div>
+                    <div class="restaurant-info">
+                        📍 6 min caminando<br>
+                        🕒 Lun-Vie: 12:00-15:30, 20:00-23:00<br>
+                        <span class="price-range">€€€ - Medio</span><br>
+                        🍣 Sushi, poke bowls, 10% descuento
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

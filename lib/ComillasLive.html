@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComillasLive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Barra superior fija */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: white;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 250px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: color 0.3s ease;
+        }
+
+        .dropdown-menu a:hover {
+            color: #ccc;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        /* Contenido principal */
+        .main-content {
+            margin-top: 70px;
+        }
+
+        /* Primera sección con imagen ICADE */
+        .hero-section {
+            height: 100vh;
+            background-image: url('https://th.bing.com/th/id/R.281391a4768955c035e3a072add23390?rik=d1pEriaq2SYLFQ&riu=http%3a%2f%2fechangesinternationaux.hec.ca%2fwp-content%2fuploads%2f2016%2f05%2fICADE.jpg&ehk=GS5fcwV%2bscBZlgmgXGsfj4utBAoLRfeMTdjYYti4VWs%3d&risl=&pid=ImgRaw&r=0');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 300;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }
+
+        /* Flecha de scroll */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            animation: bounce 2s infinite;
+        }
+
+        .scroll-arrow {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .scroll-arrow:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        .scroll-arrow::after {
+            content: '↓';
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+
+        /* Barra negra divisoria */
+        .divider-bar {
+            height: 80px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .divider-text {
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            opacity: 0.7;
+        }
+
+        /* Segunda sección con imagen Universidad Comillas */
+        .campus-section {
+            height: 100vh;
+            background-image: url('https://madrideasy.com/blog/wp-content/uploads/2021/05/Universidad-Pontificia-Comillas-Madrid_2109999011_13495014_1366x1024.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .campus-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .campus-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            max-width: 800px;
+            padding: 0 20px;
+        }
+
+        .campus-title {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+        }
+
+        .campus-description {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .info-button {
+            background: #FFB81C;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 184, 28, 0.3);
+        }
+
+        .info-button:hover {
+            background: #e6a519;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 184, 28, 0.4);
+        }
+
+        .info-button:active {
+            transform: translateY(0);
+        }
+
+        /* Tercera sección con imagen biblioteca ICAI */
+        .library-section {
+            height: 100vh;
+            background-image: url('https://images.griddo.comillas.edu/c/cover/q/75/w/745/h/558.75/f/jpeg/biblioteca-icai');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .library-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .library-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            max-width: 800px;
+            padding: 0 20px;
+        }
+
+        .library-title {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+        }
+
+        .library-description {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        /* Secciones de opciones individuales */
+        .option-section {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .option-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 60px 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .option-title {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .option-description {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .option-features {
+            list-style: none;
+            text-align: left;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .option-features li {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            padding-left: 30px;
+            position: relative;
+            opacity: 0.9;
+        }
+
+        .option-features li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #ccc;
+            font-weight: bold;
+        }
+
+        /* Fondos para cada sección de opción */
+        .academic-bg {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+
+        .campus-bg {
+            background: linear-gradient(135deg, #0f3460, #16537e);
+        }
+
+        .eating-bg {
+            background: linear-gradient(135deg, #2c1810, #4a2c17);
+        }
+
+        .studying-bg {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+        }
+
+        .clubs-bg {
+            background: linear-gradient(135deg, #4a148c, #7b1fa2);
+        }
+
+        .events-bg {
+            background: linear-gradient(135deg, #b71c1c, #d32f2f);
+        }
+
+        /* Cuarta sección con imagen cafetería */
+        .cafeteria-section {
+            height: 100vh;
+            background-image: url('https://dondememeto.com/sites/default/files/field/image/canvas_04_cafeteria.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .cafeteria-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .cafeteria-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            max-width: 800px;
+            padding: 0 20px;
+        }
+
+        .cafeteria-title {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+        }
+
+        .cafeteria-description {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        /* Quinta sección con imagen foro interior */
+        .forum-section {
+            height: 100vh;
+            background-image: url('https://images.griddo.comillas.edu/c/cover/q/70/w/945/h/630/f/jpeg/forointerior');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .forum-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .forum-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            max-width: 800px;
+            padding: 0 20px;
+        }
+
+        .forum-title {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+        }
+
+        .forum-description {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        /* Footer */
+        .footer {
+            background: #000;
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                padding: 0 20px;
+            }
+
+            .logo {
+                font-size: 1.4rem;
+                letter-spacing: 2px;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+                letter-spacing: 4px;
+            }
+
+            .campus-title {
+                font-size: 2rem;
+                letter-spacing: 2px;
+            }
+
+            .navigation-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .nav-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra superior fija -->
+    <div class="top-bar">
+        <div class="logo">ComillasLive</div>
+        <div class="menu-container">
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="academic-help.html">Academic Help</a>
+                <a href="life-on-campus.html">Life on Campus</a>
+                <a href="eating-around-campus.html">Eating around Campus</a>
+                <a href="studying.html">Studying</a>
+                <a href="student-clubs.html">Student Clubs</a>
+                <a href="student-events.html">Student Events</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Primera sección con imagen ICADE -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">ComillasLive</h1>
+                <p class="hero-subtitle">Tu universidad, tu experiencia</p>
+            </div>
+            <div class="scroll-indicator">
+                <div class="scroll-arrow" onclick="scrollToNext()"></div>
+            </div>
+        </section>
+
+        <!-- Barra negra divisoria -->
+        <div class="divider-bar">
+            <p class="divider-text">Universidad Pontificia Comillas</p>
+        </div>
+
+        <!-- Segunda sección con imagen Universidad Comillas -->
+        <section class="campus-section">
+            <div class="campus-content">
+                <h2 class="campus-title">Vida en el Campus</h2>
+                <p class="campus-description">
+                    Descubre la vibrante vida estudiantil en Comillas. Desde los espacios verdes 
+                    donde los estudiantes se reúnen hasta las actividades sociales y culturales 
+                    que hacen de tu experiencia universitaria algo único e inolvidable.
+                </p>
+                <a href="life-on-campus.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                    Más información
+                </a>
+            </div>
+        </section>
+
+        <!-- Barra negra divisoria -->
+        <div class="divider-bar">
+            <p class="divider-text">Biblioteca ICAI</p>
+        </div>
+
+        <!-- Tercera sección con imagen biblioteca ICAI -->
+        <section class="library-section">
+            <div class="library-content">
+                <h2 class="library-title">Académico + Estudio</h2>
+                <p class="library-description">
+                    Recursos académicos completos para tu éxito estudiantil. Desde tutorías personalizadas 
+                    hasta herramientas de estudio avanzadas, encuentra todo el apoyo que necesitas 
+                    para alcanzar tus objetivos académicos en Comillas.
+                </p>
+                <a href="academic-help.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                    Más información
+                </a>
+            </div>
+        </section>
+
+        <!-- Barra negra divisoria -->
+        <div class="divider-bar">
+            <p class="divider-text">Cafetería</p>
+        </div>
+
+        <!-- Cuarta sección con imagen cafetería -->
+        <section class="cafeteria-section">
+            <div class="cafeteria-content">
+                <h2 class="cafeteria-title">Comer cerca del Campus</h2>
+                <p class="cafeteria-description">
+                    Descubre los mejores lugares para comer cerca del campus. Desde cafeterías universitarias 
+                    hasta restaurantes locales con descuentos estudiantiles, encuentra opciones deliciosas 
+                    y asequibles para todos los gustos y presupuestos.
+                </p>
+                <a href="eating-around-campus.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                    Más información
+                </a>
+            </div>
+        </section>
+
+        <!-- Barra negra divisoria -->
+        <div class="divider-bar">
+            <p class="divider-text">Foro Interior</p>
+        </div>
+
+        <!-- Quinta sección con imagen foro interior -->
+        <section class="forum-section">
+            <div class="forum-content">
+                <h2 class="forum-title">Clubes y Eventos Estudiantiles</h2>
+                <p class="forum-description">
+                    Únete a la vibrante vida estudiantil de Comillas. Más de 50 clubes y organizaciones 
+                    esperándote, junto con eventos culturales, deportivos y sociales que hacen de tu 
+                    experiencia universitaria algo único e inolvidable.
+                </p>
+                <a href="student-clubs.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                    Más información
+                </a>
+            </div>
+        </section>
+
+        <!-- Barra negra divisoria -->
+        <div class="divider-bar">
+            <p class="divider-text">Explora ComillasLive</p>
+        </div>
+
+        <!-- Sección Academic Help -->
+        <section class="option-section academic-bg">
+            <div class="option-content">
+                <h2 class="option-title">Ayuda Académica</h2>
+                <p class="option-description">
+                    Recursos académicos completos para tu éxito estudiantil. Desde tutorías personalizadas 
+                    hasta herramientas de estudio avanzadas.
+                </p>
+                <ul class="option-features">
+                    <li>Tutorías personalizadas por asignatura</li>
+                    <li>Centro de escritura académica</li>
+                    <li>Recursos de investigación y bibliografía</li>
+                    <li>Apoyo en metodología de estudio</li>
+                    <li>Programas de mentoría estudiantil</li>
+                </ul>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="academic-help.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                        Ver más detalles
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Life on Campus -->
+        <section class="option-section campus-bg">
+            <div class="option-content">
+                <h2 class="option-title">Vida en el Campus</h2>
+                <p class="option-description">
+                    Descubre todo lo que el campus de Comillas tiene para ofrecer. 
+                    Instalaciones modernas, espacios de convivencia y servicios estudiantiles.
+                </p>
+                <ul class="option-features">
+                    <li>Guía completa de instalaciones</li>
+                    <li>Servicios estudiantiles disponibles</li>
+                    <li>Espacios de convivencia y descanso</li>
+                    <li>Información sobre residencias</li>
+                    <li>Transporte y accesibilidad</li>
+                </ul>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="life-on-campus.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                        Ver más detalles
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Eating around Campus -->
+        <section class="option-section eating-bg">
+            <div class="option-content">
+                <h2 class="option-title">Comer cerca del Campus</h2>
+                <p class="option-description">
+                    Los mejores lugares para comer cerca del campus. Desde cafeterías universitarias 
+                    hasta restaurantes locales con descuentos estudiantiles.
+                </p>
+                <ul class="option-features">
+                    <li>Cafeterías y comedores universitarios</li>
+                    <li>Restaurantes con descuentos estudiantiles</li>
+                    <li>Opciones de comida saludable</li>
+                    <li>Horarios y precios actualizados</li>
+                    <li>Recomendaciones de la comunidad</li>
+                </ul>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="eating-around-campus.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                        Ver más detalles
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Studying -->
+        <section class="option-section studying-bg">
+            <div class="option-content">
+                <h2 class="option-title">Estudio</h2>
+                <p class="option-description">
+                    Optimiza tu experiencia de estudio con los mejores espacios, técnicas 
+                    y recursos disponibles en Comillas.
+                </p>
+                <ul class="option-features">
+                    <li>Espacios de estudio individual y grupal</li>
+                    <li>Técnicas de estudio efectivas</li>
+                    <li>Recursos digitales y bibliotecas</li>
+                    <li>Horarios de disponibilidad en tiempo real</li>
+                    <li>Programas de estudio colaborativo</li>
+                </ul>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="studying.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                        Ver más detalles
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Student Clubs -->
+        <section class="option-section clubs-bg">
+            <div class="option-content">
+                <h2 class="option-title">Clubes Estudiantiles</h2>
+                <p class="option-description">
+                    Únete a la vibrante vida estudiantil de Comillas. Más de 50 clubes y 
+                    organizaciones esperándote.
+                </p>
+                <ul class="option-features">
+                    <li>Clubes deportivos y de fitness</li>
+                    <li>Organizaciones culturales y artísticas</li>
+                    <li>Grupos de debate y oratoria</li>
+                    <li>Clubes de voluntariado y solidaridad</li>
+                    <li>Asociaciones profesionales y académicas</li>
+                </ul>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="student-clubs.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                        Ver más detalles
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Student Events -->
+        <section class="option-section events-bg">
+            <div class="option-content">
+                <h2 class="option-title">Eventos Estudiantiles</h2>
+                <p class="option-description">
+                    Mantente al día con todos los eventos, actividades y celebraciones 
+                    que organiza la universidad y los estudiantes.
+                </p>
+                <ul class="option-features">
+                    <li>Eventos culturales y conciertos</li>
+                    <li>Conferencias y charlas académicas</li>
+                    <li>Fiestas y celebraciones estudiantiles</li>
+                    <li>Actividades deportivas y torneos</li>
+                    <li>Ferias de empleo y networking</li>
+                </ul>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="student-events.html" class="info-button" style="text-decoration: none; display: inline-block;">
+                        Ver más detalles
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-text">© 2024 ComillasLive - Universidad Pontificia Comillas</p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('dropdownMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Cerrar menú al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('dropdownMenu');
+            const toggle = document.querySelector('.menu-toggle');
+            
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Función para hacer scroll a la siguiente sección
+        function scrollToNext() {
+            const heroSection = document.querySelector('.hero-section');
+            const nextSection = heroSection.nextElementSibling;
+            
+            if (nextSection) {
+                nextSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+        // Ocultar flecha de scroll cuando se hace scroll
+        window.addEventListener('scroll', function() {
+            const scrollIndicator = document.querySelector('.scroll-indicator');
+            const scrollY = window.scrollY;
+            
+            if (scrollY > 100) {
+                scrollIndicator.style.opacity = '0';
+                scrollIndicator.style.pointerEvents = 'none';
+            } else {
+                scrollIndicator.style.opacity = '1';
+                scrollIndicator.style.pointerEvents = 'auto';
+            }
+        });
+    </script>
+</body>
+</html>

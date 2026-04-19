@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudio - ComillasLive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .back-button {
+            background: #FFB81C;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: #e6a519;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            margin-top: 70px;
+            padding: 40px 20px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-title {
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .page-subtitle {
+            font-size: 1.3rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #FFB81C;
+        }
+
+        .card-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .card-features {
+            list-style: none;
+        }
+
+        .card-features li {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            opacity: 0.8;
+        }
+
+        .card-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #FFB81C;
+            font-weight: bold;
+        }
+
+        .study-tips {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .study-tips h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #FFB81C;
+            text-align: center;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .tip-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #FFB81C;
+        }
+
+        .tip-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #FFB81C;
+            margin-bottom: 10px;
+        }
+
+        .tip-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        /* Library Occupancy Section */
+        .library-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .library-section h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #FFB81C;
+            text-align: center;
+        }
+
+        .libraries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .library-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #FFB81C;
+        }
+
+        .library-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #FFB81C;
+            margin-bottom: 10px;
+        }
+
+        .library-status {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .status-open {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .status-busy {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .status-full {
+            background: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .occupancy-chart {
+            margin-top: 15px;
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: end;
+            height: 80px;
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, #FFB81C, #e6a519);
+            border-radius: 2px 2px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .chart-bar:hover {
+            background: linear-gradient(to top, #FFC107, #FFB81C);
+            transform: scaleY(1.1);
+        }
+
+        .chart-bar.current {
+            background: linear-gradient(to top, #4CAF50, #45a049);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .chart-bar.current:hover {
+            background: linear-gradient(to top, #66BB6A, #4CAF50);
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .current-time {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #FFB81C;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2.5rem;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .libraries-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="ComillasLive.html" class="logo">ComillasLive</a>
+        <a href="ComillasLive.html" class="back-button">← Volver</a>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Estudio</h1>
+            <p class="page-subtitle">
+                Optimiza tu experiencia de estudio con los mejores espacios, técnicas 
+                y recursos disponibles en Comillas.
+            </p>
+        </div>
+
+        <div class="content-grid">
+            <div class="info-card">
+                <h3 class="card-title">Espacios de Estudio Individual</h3>
+                <p class="card-description">
+                    Lugares tranquilos y cómodos para concentrarte en tus estudios personales.
+                </p>
+                <ul class="card-features">
+                    <li>Salas de estudio silenciosas</li>
+                    <li>Carrels individuales en biblioteca</li>
+                    <li>Espacios con luz natural</li>
+                    <li>Mesas amplias y sillas cómodas</li>
+                    <li>Acceso a enchufes y WiFi</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Salas de Estudio Grupal</h3>
+                <p class="card-description">
+                    Espacios diseñados para trabajar en equipo y realizar proyectos colaborativos.
+                </p>
+                <ul class="card-features">
+                    <li>Salas con pizarras y proyectores</li>
+                    <li>Mesas grandes para grupos</li>
+                    <li>Reserva online de espacios</li>
+                    <li>Equipos audiovisuales</li>
+                    <li>Ambiente propicio para discusiones</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Técnicas de Estudio Efectivas</h3>
+                <p class="card-description">
+                    Métodos probados para maximizar tu rendimiento académico y retención de información.
+                </p>
+                <ul class="card-features">
+                    <li>Técnica Pomodoro para concentración</li>
+                    <li>Mapas mentales y esquemas</li>
+                    <li>Repetición espaciada</li>
+                    <li>Estudio activo y práctica</li>
+                    <li>Gestión del tiempo y planificación</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Recursos Digitales</h3>
+                <p class="card-description">
+                    Herramientas tecnológicas y plataformas digitales para potenciar tu aprendizaje.
+                </p>
+                <ul class="card-features">
+                    <li>Plataforma de aprendizaje virtual</li>
+                    <li>Bases de datos académicas</li>
+                    <li>Software especializado por carrera</li>
+                    <li>Apps de productividad y estudio</li>
+                    <li>Recursos multimedia interactivos</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Disponibilidad en Tiempo Real</h3>
+                <p class="card-description">
+                Sistema inteligente para conocer la disponibilidad de espacios de estudio al instante.
+                </p>
+                <ul class="card-features">
+                    <li>App móvil con disponibilidad en vivo</li>
+                    <li>Notificaciones de espacios libres</li>
+                    <li>Reserva anticipada de espacios</li>
+                    <li>Historial de uso y preferencias</li>
+                    <li>Integración con calendario académico</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Programas de Estudio Colaborativo</h3>
+                <p class="card-description">
+                    Iniciativas para estudiar en grupo y aprovechar el aprendizaje entre pares.
+                </p>
+                <ul class="card-features">
+                    <li>Grupos de estudio por asignatura</li>
+                    <li>Sesiones de repaso colaborativo</li>
+                    <li>Programa de tutores pares</li>
+                    <li>Workshops de técnicas de estudio</li>
+                    <li>Eventos de estudio comunitario</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="library-section">
+            <h3>📚 Ocupación de Bibliotecas en Tiempo Real</h3>
+            <div class="current-time">🕕 Hora actual: 18:00 (6:00 PM)</div>
+            
+            <div class="libraries-grid">
+                <div class="library-card">
+                    <div class="library-name">Cantoblanco</div>
+                    <div class="library-status status-busy">🟡 Ocupación Alta (85%)</div>
+                    <div class="occupancy-chart">
+                        <div class="chart-container">
+                            <div class="chart-bar" style="height: 20%;"></div>
+                            <div class="chart-bar" style="height: 30%;"></div>
+                            <div class="chart-bar" style="height: 45%;"></div>
+                            <div class="chart-bar" style="height: 60%;"></div>
+                            <div class="chart-bar" style="height: 70%;"></div>
+                            <div class="chart-bar" style="height: 80%;"></div>
+                            <div class="chart-bar" style="height: 75%;"></div>
+                            <div class="chart-bar" style="height: 85%;"></div>
+                            <div class="chart-bar" style="height: 90%;"></div>
+                            <div class="chart-bar" style="height: 85%;"></div>
+                            <div class="chart-bar current" style="height: 85%;"></div>
+                            <div class="chart-bar" style="height: 80%;"></div>
+                            <div class="chart-bar" style="height: 75%;"></div>
+                            <div class="chart-bar" style="height: 70%;"></div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>8AM</span>
+                            <span>10AM</span>
+                            <span>12PM</span>
+                            <span>2PM</span>
+                            <span>4PM</span>
+                            <span>6PM</span>
+                            <span>8PM</span>
+                            <span>10PM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="library-card">
+                    <div class="library-name">Planta 5 ICAI</div>
+                    <div class="library-status status-full">🔴 Ocupación Completa (95%)</div>
+                    <div class="occupancy-chart">
+                        <div class="chart-container">
+                            <div class="chart-bar" style="height: 15%;"></div>
+                            <div class="chart-bar" style="height: 25%;"></div>
+                            <div class="chart-bar" style="height: 40%;"></div>
+                            <div class="chart-bar" style="height: 55%;"></div>
+                            <div class="chart-bar" style="height: 70%;"></div>
+                            <div class="chart-bar" style="height: 85%;"></div>
+                            <div class="chart-bar" style="height: 90%;"></div>
+                            <div class="chart-bar" style="height: 95%;"></div>
+                            <div class="chart-bar" style="height: 98%;"></div>
+                            <div class="chart-bar" style="height: 95%;"></div>
+                            <div class="chart-bar current" style="height: 95%;"></div>
+                            <div class="chart-bar" style="height: 90%;"></div>
+                            <div class="chart-bar" style="height: 85%;"></div>
+                            <div class="chart-bar" style="height: 80%;"></div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>8AM</span>
+                            <span>10AM</span>
+                            <span>12PM</span>
+                            <span>2PM</span>
+                            <span>4PM</span>
+                            <span>6PM</span>
+                            <span>8PM</span>
+                            <span>10PM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="library-card">
+                    <div class="library-name">Santa Cruz de Marcenado</div>
+                    <div class="library-status status-open">🟢 Ocupación Moderada (65%)</div>
+                    <div class="occupancy-chart">
+                        <div class="chart-container">
+                            <div class="chart-bar" style="height: 10%;"></div>
+                            <div class="chart-bar" style="height: 20%;"></div>
+                            <div class="chart-bar" style="height: 35%;"></div>
+                            <div class="chart-bar" style="height: 50%;"></div>
+                            <div class="chart-bar" style="height: 60%;"></div>
+                            <div class="chart-bar" style="height: 70%;"></div>
+                            <div class="chart-bar" style="height: 65%;"></div>
+                            <div class="chart-bar" style="height: 60%;"></div>
+                            <div class="chart-bar" style="height: 70%;"></div>
+                            <div class="chart-bar" style="height: 65%;"></div>
+                            <div class="chart-bar current" style="height: 65%;"></div>
+                            <div class="chart-bar" style="height: 60%;"></div>
+                            <div class="chart-bar" style="height: 55%;"></div>
+                            <div class="chart-bar" style="height: 50%;"></div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>8AM</span>
+                            <span>10AM</span>
+                            <span>12PM</span>
+                            <span>2PM</span>
+                            <span>4PM</span>
+                            <span>6PM</span>
+                            <span>8PM</span>
+                            <span>10PM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="library-card">
+                    <div class="library-name">Alberto Aguilera 32</div>
+                    <div class="library-status status-busy">🟡 Ocupación Alta (78%)</div>
+                    <div class="occupancy-chart">
+                        <div class="chart-container">
+                            <div class="chart-bar" style="height: 25%;"></div>
+                            <div class="chart-bar" style="height: 35%;"></div>
+                            <div class="chart-bar" style="height: 50%;"></div>
+                            <div class="chart-bar" style="height: 65%;"></div>
+                            <div class="chart-bar" style="height: 75%;"></div>
+                            <div class="chart-bar" style="height: 80%;"></div>
+                            <div class="chart-bar" style="height: 78%;"></div>
+                            <div class="chart-bar" style="height: 82%;"></div>
+                            <div class="chart-bar" style="height: 85%;"></div>
+                            <div class="chart-bar" style="height: 78%;"></div>
+                            <div class="chart-bar current" style="height: 78%;"></div>
+                            <div class="chart-bar" style="height: 75%;"></div>
+                            <div class="chart-bar" style="height: 70%;"></div>
+                            <div class="chart-bar" style="height: 65%;"></div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>8AM</span>
+                            <span>10AM</span>
+                            <span>12PM</span>
+                            <span>2PM</span>
+                            <span>4PM</span>
+                            <span>6PM</span>
+                            <span>8PM</span>
+                            <span>10PM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="study-tips">
+            <h3>Consejos para un Estudio Efectivo</h3>
+            <div class="tips-grid">
+                <div class="tip-item">
+                    <div class="tip-title">📅 Planifica tu Tiempo</div>
+                    <div class="tip-description">
+                        Crea un horario de estudio realista y cúmplelo. 
+                        Dedica bloques de tiempo específicos a cada asignatura.
+                    </div>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-title">🎯 Establece Objetivos</div>
+                    <div class="tip-description">
+                        Define metas claras para cada sesión de estudio. 
+                        Esto te ayudará a mantener el enfoque y medir el progreso.
+                    </div>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-title">🔄 Toma Descansos</div>
+                    <div class="tip-description">
+                        Descansa 5-10 minutos cada 45-60 minutos de estudio. 
+                        Tu cerebro necesita tiempo para procesar la información.
+                    </div>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-title">📝 Haz Resúmenes</div>
+                    <div class="tip-description">
+                        Resume los puntos clave en tus propias palabras. 
+                        Esto refuerza la comprensión y facilita el repaso.
+                    </div>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-title">👥 Estudia en Grupo</div>
+                    <div class="tip-description">
+                        Forma grupos de estudio con compañeros. 
+                        Explicar conceptos a otros refuerza tu propio aprendizaje.
+                    </div>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-title">🌙 Duerme Bien</div>
+                    <div class="tip-description">
+                        El sueño es crucial para la consolidación de la memoria. 
+                        Duerme 7-9 horas para optimizar tu rendimiento.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

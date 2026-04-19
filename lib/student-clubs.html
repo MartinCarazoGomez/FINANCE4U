@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clubes Estudiantiles - ComillasLive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4a148c, #7b1fa2);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .back-button {
+            background: #FFB81C;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: #e6a519;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            margin-top: 70px;
+            padding: 40px 20px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-title {
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .page-subtitle {
+            font-size: 1.3rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #FFB81C;
+        }
+
+        .card-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .card-features {
+            list-style: none;
+        }
+
+        .card-features li {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            opacity: 0.8;
+        }
+
+        .card-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #FFB81C;
+            font-weight: bold;
+        }
+
+        .clubs-showcase {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .clubs-showcase h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #FFB81C;
+            text-align: center;
+        }
+
+        .clubs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .club-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #FFB81C;
+            transition: all 0.3s ease;
+        }
+
+        .club-item:hover {
+            transform: translateY(-3px);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .club-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #FFB81C;
+            margin-bottom: 10px;
+        }
+
+        .club-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .club-info {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            color: #FFB81C;
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2.5rem;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="ComillasLive.html" class="logo">ComillasLive</a>
+        <a href="ComillasLive.html" class="back-button">← Volver</a>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Clubes Estudiantiles</h1>
+            <p class="page-subtitle">
+                Únete a la vibrante vida estudiantil de Comillas. Más de 50 clubes y 
+                organizaciones esperándote para enriquecer tu experiencia universitaria.
+            </p>
+        </div>
+
+        <div class="content-grid">
+            <div class="info-card">
+                <h3 class="card-title">Clubes Deportivos</h3>
+                <p class="card-description">
+                    Mantente activo y forma parte de equipos deportivos competitivos y recreativos.
+                </p>
+                <ul class="card-features">
+                    <li>Fútbol, baloncesto, voleibol</li>
+                    <li>Atletismo y running</li>
+                    <li>Natación y waterpolo</li>
+                    <li>Artes marciales y defensa personal</li>
+                    <li>Fitness y entrenamiento funcional</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Organizaciones Culturales</h3>
+                <p class="card-description">
+                    Explora tu creatividad y participa en actividades artísticas y culturales.
+                </p>
+                <ul class="card-features">
+                    <li>Teatro y artes escénicas</li>
+                    <li>Música y coro universitario</li>
+                    <li>Fotografía y cine</li>
+                    <li>Literatura y poesía</li>
+                    <li>Arte y diseño</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Grupos de Debate</h3>
+                <p class="card-description">
+                    Desarrolla tus habilidades de oratoria y pensamiento crítico.
+                </p>
+                <ul class="card-features">
+                    <li>Debate competitivo</li>
+                    <li>Modelo de Naciones Unidas</li>
+                    <li>Oratoria y presentaciones</li>
+                    <li>Pensamiento crítico</li>
+                    <li>Negociación y mediación</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Voluntariado y Solidaridad</h3>
+                <p class="card-description">
+                    Contribuye a la sociedad y desarrolla valores de servicio y compromiso social.
+                </p>
+                <ul class="card-features">
+                    <li>Voluntariado local e internacional</li>
+                    <li>Proyectos de desarrollo social</li>
+                    <li>Ayuda a colectivos vulnerables</li>
+                    <li>Educación y alfabetización</li>
+                    <li>Medio ambiente y sostenibilidad</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Asociaciones Profesionales</h3>
+                <p class="card-description">
+                    Conecta con tu futuro profesional y desarrolla competencias específicas de tu carrera.
+                </p>
+                <ul class="card-features">
+                    <li>Asociaciones por carrera</li>
+                    <li>Networking profesional</li>
+                    <li>Conferencias y charlas</li>
+                    <li>Proyectos empresariales</li>
+                    <li>Mentoría profesional</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 class="card-title">Tecnología e Innovación</h3>
+                <p class="card-description">
+                    Explora las últimas tendencias tecnológicas y participa en proyectos innovadores.
+                </p>
+                <ul class="card-features">
+                    <li>Programación y desarrollo</li>
+                    <li>Robótica e inteligencia artificial</li>
+                    <li>Emprendimiento tecnológico</li>
+                    <li>Hackathons y competencias</li>
+                    <li>Startups y proyectos innovadores</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="clubs-showcase">
+            <h3>Clubes Destacados</h3>
+            <div class="clubs-grid">
+                <div class="club-item">
+                    <div class="club-name">🏆 Club de Debate Comillas</div>
+                    <div class="club-description">
+                        Participa en debates competitivos y desarrolla tus habilidades de oratoria y argumentación.
+                    </div>
+                    <div class="club-info">📅 Reuniones: Martes 18:00 | 👥 45 miembros</div>
+                </div>
+
+                <div class="club-item">
+                    <div class="club-name">⚽ Club de Fútbol ICAI</div>
+                    <div class="club-description">
+                        Únete al equipo de fútbol y participa en ligas universitarias y torneos.
+                    </div>
+                    <div class="club-info">📅 Entrenamientos: Lun/Mié 19:00 | 👥 25 miembros</div>
+                </div>
+
+                <div class="club-item">
+                    <div class="club-name">🎭 Teatro Universitario</div>
+                    <div class="club-description">
+                        Explora las artes escénicas y participa en producciones teatrales estudiantiles.
+                    </div>
+                    <div class="club-info">📅 Ensayos: Jueves 17:00 | 👥 30 miembros</div>
+                </div>
+
+                <div class="club-item">
+                    <div class="club-name">🌱 Voluntariado Verde</div>
+                    <div class="club-description">
+                        Contribuye a la sostenibilidad y participa en proyectos medioambientales.
+                    </div>
+                    <div class="club-info">📅 Actividades: Sábados | 👥 60 miembros</div>
+                </div>
+
+                <div class="club-item">
+                    <div class="club-name">💻 Club de Programación</div>
+                    <div class="club-description">
+                        Aprende programación, participa en hackathons y desarrolla proyectos tecnológicos.
+                    </div>
+                    <div class="club-info">📅 Reuniones: Viernes 16:00 | 👥 40 miembros</div>
+                </div>
+
+                <div class="club-item">
+                    <div class="club-name">🎵 Coro Universitario</div>
+                    <div class="club-description">
+                        Forma parte del coro y participa en conciertos y eventos musicales.
+                    </div>
+                    <div class="club-info">📅 Ensayos: Miércoles 18:30 | 👥 35 miembros</div>
+                </div>
+
+                <div class="club-item">
+                    <div class="club-name">📸 Club de Fotografía</div>
+                    <div class="club-description">
+                        Desarrolla tu creatividad fotográfica y participa en exposiciones y concursos.
+                    </div>
+                    <div class="club-info">📅 Salidas: Domingos | 👥 25 miembros</div>
+                </div>
+
+                <div class="club-item">
+                    <div class="club-name">🚀 Emprendimiento Joven</div>
+                    <div class="club-description">
+                        Desarrolla ideas de negocio y participa en competencias de emprendimiento.
+                    </div>
+                    <div class="club-info">📅 Reuniones: Lunes 19:00 | 👥 50 miembros</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

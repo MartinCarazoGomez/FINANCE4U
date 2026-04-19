@@ -1,0 +1,166 @@
+POLÍTICA DE PRIVACIDAD - FINANCE4U
+
+Última actualización: 27 de junio de 2024
+Versión: 4.0.0
+
+1. INFORMACIÓN GENERAL
+
+FINANCE4U ("nosotros", "nuestra", "la aplicación") es una aplicación móvil educativa desarrollada para enseñar finanzas personales de forma interactiva y divertida. Esta Política de Privacidad describe cómo recopilamos, utilizamos y protegemos su información cuando utiliza nuestra aplicación.
+
+2. INFORMACIÓN QUE RECOPILAMOS
+
+2.1 Información que NO recopilamos:
+- Datos personales identificables (nombre, dirección, teléfono, email)
+- Información financiera personal (números de cuenta, tarjetas de crédito)
+- Datos de ubicación GPS
+- Información de contactos
+- Datos biométricos
+- Información de redes sociales
+
+2.2 Información que SÍ recopilamos:
+- Progreso educativo del usuario (lecciones completadas, puntuaciones en juegos)
+- Preferencias de la aplicación (configuraciones, temas)
+- Datos de uso anónimos para mejorar la experiencia
+- Mensajes del foro comunitario (almacenados localmente)
+
+3. CÓMO UTILIZAMOS LA INFORMACIÓN
+
+3.1 Propósitos principales:
+- Proporcionar contenido educativo personalizado
+- Rastrear el progreso del usuario en las lecciones
+- Mejorar la funcionalidad de la aplicación
+- Facilitar la experiencia de aprendizaje
+
+3.2 Propósitos secundarios:
+- Análisis de uso anónimo para mejorar la aplicación
+- Resolución de problemas técnicos
+- Desarrollo de nuevas características
+
+4. ALMACENAMIENTO DE DATOS
+
+4.1 Almacenamiento local:
+- Todos los datos del usuario se almacenan localmente en su dispositivo
+- No se transmiten datos a servidores externos
+- Los mensajes del foro se guardan únicamente en el dispositivo del usuario
+
+4.2 Seguridad:
+- Utilizamos encriptación local para proteger los datos
+- No compartimos información con terceros
+- Los datos se eliminan automáticamente al desinstalar la aplicación
+
+5. PERMISOS DE LA APLICACIÓN
+
+5.1 Permisos solicitados:
+- Almacenamiento: Para guardar progreso y configuraciones
+- Internet: Para actualizaciones de contenido (opcional)
+
+5.2 Permisos que NO solicitamos:
+- Acceso a contactos
+- Ubicación GPS
+- Cámara o micrófono
+- Información de llamadas
+- Acceso a archivos externos
+
+6. FORO COMUNITARIO
+
+6.1 Funcionalidad:
+- Los mensajes del foro se almacenan localmente
+- No se comparten con otros usuarios
+- No se transmiten a servidores externos
+- Los mensajes son privados y solo visibles para el usuario
+
+6.2 Responsabilidad del usuario:
+- El usuario es responsable del contenido que escribe
+- Se recomienda no incluir información personal en los mensajes
+- Los mensajes se eliminan al desinstalar la aplicación
+
+7. MENORES DE EDAD
+
+7.1 Protección:
+- La aplicación no recopila información personal de menores
+- No se requiere registro con datos personales
+- El contenido es educativo y apropiado para todas las edades
+- Se recomienda supervisión parental para menores de 13 años
+
+8. DERECHOS DEL USUARIO
+
+8.1 Usted tiene derecho a:
+- Acceder a sus datos almacenados localmente
+- Eliminar todos sus datos desinstalando la aplicación
+- No compartir información personal
+- Usar la aplicación sin proporcionar datos personales
+
+8.2 Control de datos:
+- Todos los datos se pueden eliminar desinstalando la aplicación
+- No hay necesidad de solicitar eliminación de datos externos
+- El usuario tiene control total sobre su información
+
+9. COOKIES Y TECNOLOGÍAS SIMILARES
+
+9.1 Uso limitado:
+- No utilizamos cookies de seguimiento
+- No implementamos tecnologías de rastreo
+- No utilizamos identificadores publicitarios
+
+10. TRANSFERENCIAS INTERNACIONALES
+
+10.1 Almacenamiento local:
+- Todos los datos permanecen en el dispositivo del usuario
+- No se realizan transferencias internacionales de datos
+- No se utilizan servidores externos
+
+11. SEGURIDAD DE DATOS
+
+11.1 Medidas implementadas:
+- Encriptación local de datos sensibles
+- Almacenamiento seguro en el dispositivo
+- No transmisión de datos a servidores externos
+- Protección contra acceso no autorizado
+
+12. RETENCIÓN DE DATOS
+
+12.1 Período de retención:
+- Los datos se mantienen mientras la aplicación esté instalada
+- Se eliminan automáticamente al desinstalar
+- No hay retención de datos en servidores externos
+
+13. CAMBIOS EN LA POLÍTICA DE PRIVACIDAD
+
+13.1 Notificaciones:
+- Los cambios se notificarán a través de actualizaciones de la aplicación
+- Se actualizará la fecha de "Última actualización"
+- Los usuarios serán informados de cambios significativos
+
+14. CONTACTO
+
+14.1 Información de contacto:
+- Para preguntas sobre esta política: finance4uonline@gmail.com
+- Para reportar problemas: finance4uonline@gmail.com
+- Para solicitudes de información: finance4uonline@gmail.com
+
+15. LEGISLACIÓN APLICABLE
+
+15.1 Marco legal:
+- Esta política cumple con el RGPD (Reglamento General de Protección de Datos)
+- Cumple con las leyes de protección de datos españolas
+- Respeta los derechos fundamentales de privacidad
+
+16. CONSENTIMIENTO
+
+16.1 Aceptación:
+- Al usar la aplicación, usted acepta esta Política de Privacidad
+- El uso continuado constituye aceptación de cualquier cambio
+- Puede retirar su consentimiento desinstalando la aplicación
+
+17. DISPOSICIONES FINALES
+
+17.1 Validez:
+- Esta política es efectiva desde la fecha de publicación
+- Se aplica a todas las versiones de la aplicación
+- Se actualiza regularmente para mantener la transparencia
+
+---
+
+FINANCE4U se compromete a proteger su privacidad y proporcionar una experiencia educativa segura y transparente. Su confianza es fundamental para nosotros.
+
+Para más información sobre cómo protegemos su privacidad, no dude en contactarnos. 
