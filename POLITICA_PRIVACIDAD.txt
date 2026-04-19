@@ -1,166 +1,102 @@
 POLÍTICA DE PRIVACIDAD - FINANCE4U
 
-Última actualización: 27 de junio de 2024
-Versión: 4.0.0
+Última actualización: 19 de abril de 2026
+Versión de la aplicación de referencia: 4.1.2
 
 1. INFORMACIÓN GENERAL
 
-FINANCE4U ("nosotros", "nuestra", "la aplicación") es una aplicación móvil educativa desarrollada para enseñar finanzas personales de forma interactiva y divertida. Esta Política de Privacidad describe cómo recopilamos, utilizamos y protegemos su información cuando utiliza nuestra aplicación.
+FINANCE4U ("nosotros", "nuestra", "la aplicación") es una aplicación móvil educativa para aprender finanzas personales de forma interactiva. Esta Política de Privacidad describe qué datos tratamos, con qué finalidad y cómo los protegemos cuando utiliza la aplicación.
 
-2. INFORMACIÓN QUE RECOPILAMOS
+El responsable del tratamiento de los datos personales asociados a la aplicación es el titular del proyecto FINANCE4U. Para ejercer sus derechos o resolver dudas puede contactarnos en: finance4uonline@gmail.com
 
-2.1 Información que NO recopilamos:
-- Datos personales identificables (nombre, dirección, teléfono, email)
-- Información financiera personal (números de cuenta, tarjetas de crédito)
-- Datos de ubicación GPS
-- Información de contactos
-- Datos biométricos
-- Información de redes sociales
+2. SERVICIOS Y PROVEEDORES (FIREBASE / GOOGLE)
 
-2.2 Información que SÍ recopilamos:
-- Progreso educativo del usuario (lecciones completadas, puntuaciones en juegos)
-- Preferencias de la aplicación (configuraciones, temas)
-- Datos de uso anónimos para mejorar la experiencia
-- Mensajes del foro comunitario (almacenados localmente)
+La aplicación utiliza la plataforma Google Firebase, que implica el tratamiento de datos en infraestructura de Google. Los servicios integrados incluyen, entre otros:
 
-3. CÓMO UTILIZAMOS LA INFORMACIÓN
+- Autenticación (Firebase Authentication): creación de cuenta e inicio de sesión, habitualmente con correo electrónico y contraseña.
+- Base de datos en la nube (Cloud Firestore): sincronización y almacenamiento de su perfil de usuario, progreso educativo, datos asociados a juegos y logros, según la funcionalidad disponible en cada versión.
+- Analítica (Firebase Analytics): datos agregados sobre el uso de la aplicación (por ejemplo, pantallas o eventos) para mejorar el producto.
+- Informes de errores (Firebase Crashlytics): información técnica relacionada con fallos de la aplicación (por ejemplo, tipo de error, dispositivo y versión de la app) para diagnosticar y correr errores.
 
-3.1 Propósitos principales:
-- Proporcionar contenido educativo personalizado
-- Rastrear el progreso del usuario en las lecciones
-- Mejorar la funcionalidad de la aplicación
-- Facilitar la experiencia de aprendizaje
+La información sobre cómo Google trata los datos en estos servicios está disponible en la documentación y políticas de privacidad de Google y Firebase. Le recomendamos consultarlas periódicamente.
 
-3.2 Propósitos secundarios:
-- Análisis de uso anónimo para mejorar la aplicación
-- Resolución de problemas técnicos
-- Desarrollo de nuevas características
+3. DATOS QUE TRATAMOS Y FINALIDADES
 
-4. ALMACENAMIENTO DE DATOS
+3.1 Datos de cuenta y perfil
+- Correo electrónico y contraseña (la contraseña se gestiona de forma segura a través de Firebase Authentication; nosotros no almacenamos su contraseña en texto plano).
+- Nombre de usuario o identificador de perfil que nos proporcione al registrarse o actualizar su cuenta.
+- Identificador de usuario único (UID) asignado por Firebase.
 
-4.1 Almacenamiento local:
-- Todos los datos del usuario se almacenan localmente en su dispositivo
-- No se transmiten datos a servidores externos
-- Los mensajes del foro se guardan únicamente en el dispositivo del usuario
+Finalidades: crear y mantener su cuenta, prestar el servicio educativo, sincronizar su progreso entre dispositivos cuando esa función esté activa, y comunicaciones relacionadas con la cuenta (por ejemplo, recuperación de contraseña si la solicita).
 
-4.2 Seguridad:
-- Utilizamos encriptación local para proteger los datos
-- No compartimos información con terceros
-- Los datos se eliminan automáticamente al desinstalar la aplicación
+3.2 Datos de uso educativo y de la aplicación
+- Progreso en lecciones, puntuaciones, rachas, juegos desbloqueados, logros y datos similares vinculados a su cuenta en Firestore, según la implementación vigente.
 
-5. PERMISOS DE LA APLICACIÓN
+Finalidades: personalizar la experiencia de aprendizaje, guardar su avance y mostrar estadísticas o recompensas dentro de la app.
 
-5.1 Permisos solicitados:
-- Almacenamiento: Para guardar progreso y configuraciones
-- Internet: Para actualizaciones de contenido (opcional)
+3.3 Datos técnicos y de diagnóstico
+- Mediante Firebase Analytics: datos de uso de la aplicación de forma agregada o estadística.
+- Mediante Crashlytics: datos técnicos para analizar cierres inesperados o errores.
 
-5.2 Permisos que NO solicitamos:
-- Acceso a contactos
-- Ubicación GPS
-- Cámara o micrófono
-- Información de llamadas
-- Acceso a archivos externos
+Finalidades: mejorar la estabilidad, el rendimiento y las funciones de la aplicación.
 
-6. FORO COMUNITARIO
+3.4 Datos que no solicitamos para prestar el servicio educativo
+No le pedimos números de cuentas bancarias, tarjetas de crédito o débito, ni credenciales de terceros. No utilizamos la ubicación precisa (GPS) ni la agenda de contactos como requisito para usar la app. No accedemos a su cámara o micrófono para las funciones descritas en esta política.
 
-6.1 Funcionalidad:
-- Los mensajes del foro se almacenan localmente
-- No se comparten con otros usuarios
-- No se transmiten a servidores externos
-- Los mensajes son privados y solo visibles para el usuario
+4. COMUNIDAD Y CONTENIDO GENERADO POR EL USUARIO
 
-6.2 Responsabilidad del usuario:
-- El usuario es responsable del contenido que escribe
-- Se recomienda no incluir información personal en los mensajes
-- Los mensajes se eliminan al desinstalar la aplicación
+La sección de comunidad puede incluir contenido de demostración. Si introduce publicaciones o comentarios en la interfaz, trate de no incluir datos personales sensibles. Según la versión de la aplicación, ese contenido puede almacenarse solo en el dispositivo o en memoria de la sesión, o integrarse en el futuro con servicios en la nube; cuando hubiera transmisión a nuestros sistemas, estará descrita en actualizaciones de esta política.
 
-7. MENORES DE EDAD
+5. BASE LEGAL (RGPD)
 
-7.1 Protección:
-- La aplicación no recopila información personal de menores
-- No se requiere registro con datos personales
-- El contenido es educativo y apropiado para todas las edades
-- Se recomienda supervisión parental para menores de 13 años
+Dependiendo del caso, el tratamiento se basa en:
+- La ejecución del servicio que solicita al crear cuenta o usar la aplicación.
+- Su consentimiento cuando sea necesario (por ejemplo, ajustes opcionales o funciones que lo requieran de forma explícita).
+- El interés legítimo en mejorar la seguridad y el funcionamiento de la aplicación (por ejemplo, informes de errores agregados), sin perjuicio de sus derechos.
 
-8. DERECHOS DEL USUARIO
+6. CONSERVACIÓN DE LOS DATOS
 
-8.1 Usted tiene derecho a:
-- Acceder a sus datos almacenados localmente
-- Eliminar todos sus datos desinstalando la aplicación
-- No compartir información personal
-- Usar la aplicación sin proporcionar datos personales
+Conservamos los datos asociados a su cuenta mientras esta permanezca activa y sea necesario para las finalidades indicadas. Tras eliminar su cuenta o tras un plazo razonable de inactividad, procederemos a suprimir o anonimizar los datos conforme a nuestras capacidades técnicas y a las obligaciones legales. Algunos datos pueden permanecer en copias de seguridad o registros técnicos durante un tiempo limitado.
 
-8.2 Control de datos:
-- Todos los datos se pueden eliminar desinstalando la aplicación
-- No hay necesidad de solicitar eliminación de datos externos
-- El usuario tiene control total sobre su información
+7. DESTINATARIOS Y TRANSFERENCIAS INTERNACIONALES
 
-9. COOKIES Y TECNOLOGÍAS SIMILARES
+Google LLC y empresas del grupo Google pueden tratar datos en países fuera del Espacio Económico Europeo. Google ofrece garantías adecuadas (por ejemplo, cláusulas contractuales tipo aprobadas por la Comisión Europea) según su documentación vigente.
 
-9.1 Uso limitado:
-- No utilizamos cookies de seguimiento
-- No implementamos tecnologías de rastreo
-- No utilizamos identificadores publicitarios
+No vendemos sus datos personales a terceros. Solo compartimos información con proveedores que nos ayudan a operar la aplicación (p. ej. Firebase/Google) en la medida necesaria.
 
-10. TRANSFERENCIAS INTERNACIONALES
+8. SUS DERECHOS
 
-10.1 Almacenamiento local:
-- Todos los datos permanecen en el dispositivo del usuario
-- No se realizan transferencias internacionales de datos
-- No se utilizan servidores externos
+Puede solicitar acceso, rectificación, supresión, limitación del tratamiento, oposición y, cuando proceda, portabilidad de sus datos personales, así como retirar el consentimiento cuando el tratamiento se base en él. También puede presentar reclamación ante la Agencia Española de Protección de Datos (www.aepd.es).
 
-11. SEGURIDAD DE DATOS
+Para ejercer sus derechos, escriba a finance4uonline@gmail.com indicando su solicitud y un medio para verificar su identidad cuando sea necesario. Si tiene cuenta, puede incluir el correo con el que se registró.
 
-11.1 Medidas implementadas:
-- Encriptación local de datos sensibles
-- Almacenamiento seguro en el dispositivo
-- No transmisión de datos a servidores externos
-- Protección contra acceso no autorizado
+La eliminación de la aplicación del dispositivo no sustituye por sí sola al borrado de la cuenta en nuestros sistemas; para eliminar sus datos en la nube, utilice las opciones de cuenta en la aplicación (si existen) o contáctenos.
 
-12. RETENCIÓN DE DATOS
+9. SEGURIDAD
 
-12.1 Período de retención:
-- Los datos se mantienen mientras la aplicación esté instalada
-- Se eliminan automáticamente al desinstalar
-- No hay retención de datos en servidores externos
+Aplicamos medidas técnicas y organizativas razonables, incluyendo el uso de conexiones cifradas (HTTPS/TLS) entre la aplicación y los servicios de Firebase, y las prácticas de seguridad que ofrece la plataforma. Ningún sistema es 100% seguro; le animamos a usar una contraseña robusta y no compartirla.
 
-13. CAMBIOS EN LA POLÍTICA DE PRIVACIDAD
+10. MENORES DE EDAD
 
-13.1 Notificaciones:
-- Los cambios se notificarán a través de actualizaciones de la aplicación
-- Se actualizará la fecha de "Última actualización"
-- Los usuarios serán informados de cambios significativos
+La aplicación está dirigida a un público general con fines educativos. Si el registro requiere correo electrónico, los menores de 16 años deberían contar con autorización de padres, madres o tutores legales según la legislación aplicable. Se recomienda supervisión parental en el uso de la aplicación y de Internet en general.
+
+11. PERMISOS DEL DISPOSITIVO
+
+La aplicación puede requerir acceso a Internet para sincronizar la cuenta, cargar contenido y utilizar los servicios de Firebase. Otros permisos (por ejemplo, notificaciones) solo se solicitarán si una función concreta los necesita y el sistema operativo se lo muestra al usuario.
+
+12. COOKIES Y TECNOLOGÍAS SIMILARES
+
+En la aplicación móvil no utilizamos cookies de navegador web como en un sitio clásico. Sí pueden emplearse identificadores y tecnologías similares a través de los SDK de Firebase/Analytics para fines descritos en esta política y en la documentación de Google.
+
+13. CAMBIOS EN ESTA POLÍTICA
+
+Podremos actualizar este texto cuando cambien la aplicación o la normativa. Publicaremos la nueva versión con una fecha de actualización revisada. El uso continuado de la aplicación tras cambios relevantes puede implicar que haya tomado conocimiento de los mismos; si el cambio lo exige legalmente, solicitaremos su consentimiento.
 
 14. CONTACTO
 
-14.1 Información de contacto:
-- Para preguntas sobre esta política: finance4uonline@gmail.com
-- Para reportar problemas: finance4uonline@gmail.com
-- Para solicitudes de información: finance4uonline@gmail.com
-
-15. LEGISLACIÓN APLICABLE
-
-15.1 Marco legal:
-- Esta política cumple con el RGPD (Reglamento General de Protección de Datos)
-- Cumple con las leyes de protección de datos españolas
-- Respeta los derechos fundamentales de privacidad
-
-16. CONSENTIMIENTO
-
-16.1 Aceptación:
-- Al usar la aplicación, usted acepta esta Política de Privacidad
-- El uso continuado constituye aceptación de cualquier cambio
-- Puede retirar su consentimiento desinstalando la aplicación
-
-17. DISPOSICIONES FINALES
-
-17.1 Validez:
-- Esta política es efectiva desde la fecha de publicación
-- Se aplica a todas las versiones de la aplicación
-- Se actualiza regularmente para mantener la transparencia
+- Política de privacidad y protección de datos: finance4uonline@gmail.com
+- Incidencias o soporte: finance4uonline@gmail.com
 
 ---
 
-FINANCE4U se compromete a proteger su privacidad y proporcionar una experiencia educativa segura y transparente. Su confianza es fundamental para nosotros.
-
-Para más información sobre cómo protegemos su privacidad, no dude en contactarnos. 
+FINANCE4U se compromete a tratar sus datos de forma lícita, leal y transparente. Gracias por confiar en nuestra aplicación educativa.
