@@ -9,7 +9,6 @@ import 'package:finance4u/firebase_options.dart';
 import 'screens/main_navigation.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/splash_screen.dart';
-import 'utils/progress_service.dart';
 import 'providers/app_provider.dart';
 import 'services/firebase_service.dart';
 
@@ -36,14 +35,17 @@ void main() async {
     debugPrint('Firebase initialization error: $e');
   }
   
+  // Activar edge-to-edge: el app ocupa toda la pantalla y Flutter
+  // reporta correctamente MediaQuery.padding (altura de la barra del sistema).
+  // Esto permite que el BottomNavigationBar coloque sus iconos ENCIMA de los
+  // botones del sistema y extienda su fondo detrás de ellos.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   // Configurar orientación de pantalla preferida
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
-  // Inicializar datos de demo para mostrar progreso
-  ProgressService().initDemoData();
   
   runApp(
     MultiProvider(
@@ -60,29 +62,23 @@ class Finance4UApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppProvider>(
-      builder: (context, appProvider, child) {
-        // Configurar barra de estado según el tema
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: appProvider.isDarkMode ? Brightness.light : Brightness.dark,
-          systemNavigationBarColor: appProvider.isDarkMode ? Colors.black : Colors.white,
-          systemNavigationBarIconBrightness: appProvider.isDarkMode ? Brightness.light : Brightness.dark,
-        ));
-        
-        return MaterialApp(
-          title: 'FINANCE4U - Educación Financiera',
-          theme: _buildLightTheme(),
-          darkTheme: _buildDarkTheme(),
-          themeMode: appProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          debugShowCheckedModeBanner: false,
-          home: const SplashScreen(),
-          routes: {
-            '/main': (context) => const MainNavigation(),
-            '/welcome': (context) => const WelcomeScreen(),
-            '/splash': (context) => const SplashScreen(),
-          },
-        );
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+
+    return MaterialApp(
+      title: 'FINANCE4U - Educación Financiera',
+      theme: _buildLightTheme(),
+      debugShowCheckedModeBanner: false,
+      home: const SplashScreen(),
+      routes: {
+        '/main': (context) => const MainNavigation(),
+        '/welcome': (context) => const WelcomeScreen(),
+        '/splash': (context) => const SplashScreen(),
       },
     );
   }
@@ -133,49 +129,4 @@ class Finance4UApp extends StatelessWidget {
     );
   }
   
-  ThemeData _buildDarkTheme() {
-    return ThemeData(
-      primarySwatch: Colors.green,
-      primaryColor: const Color(0xFF4CAF50),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF4CAF50),
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
-      fontFamily: 'Roboto',
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF4CAF50),
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF66BB6A),
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: Colors.white,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: const Color(0xFF4CAF50),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          elevation: 2,
-        ),
-      ),
-      cardTheme: const CardThemeData(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-        ),
-      ),
-    );
-  }
 }

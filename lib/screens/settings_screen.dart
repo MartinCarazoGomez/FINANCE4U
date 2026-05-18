@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../utils/tutorial_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -22,25 +23,6 @@ class SettingsScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Sección de Apariencia
-              _buildSectionHeader('Apariencia'),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.brightness_6, color: Color(0xFF2E7D32)),
-                  title: const Text('Modo Oscuro'),
-                  subtitle: const Text('Cambiar entre tema claro y oscuro'),
-                  trailing: Switch(
-                    value: Theme.of(context).brightness == Brightness.dark,
-                    onChanged: (value) {
-                      appProvider.toggleTheme();
-                    },
-                    activeColor: const Color(0xFF2E7D32),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
               // Sección de Perfil
               _buildSectionHeader('Perfil'),
               Card(
@@ -141,7 +123,30 @@ class SettingsScreen extends StatelessWidget {
               ),
               
               const SizedBox(height: 24),
-              
+
+              // Sección de Tutorial
+              _buildSectionHeader('Tutorial'),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.school_outlined,
+                      color: Color(0xFF2E7D32)),
+                  title: const Text('Ver tutorial de nuevo'),
+                  subtitle: const Text('Repasa el recorrido por la app'),
+                  trailing: const Icon(Icons.play_circle_outline,
+                      color: Color(0xFF2E7D32)),
+                  onTap: () {
+                    TutorialService.resetTutorial().then((_) {
+                      if (context.mounted) {
+                        Navigator.of(context)
+                            .pushNamedAndRemoveUntil('/main', (_) => false);
+                      }
+                    });
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               // Sección de Acerca de
               _buildSectionHeader('Acerca de'),
               Card(

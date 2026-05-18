@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:finance4u/firebase_options.dart';
 
-/// Singleton service for Firebase initialization and core functionality
+/// Singleton service for Firebase initialization and core functionality.
+/// Firebase.initializeApp() must be called once in main() before this service
+/// is used — this service only wires up the singleton instances.
 class FirebaseService {
   static FirebaseService? _instance;
   static FirebaseService get instance {
@@ -25,32 +25,27 @@ class FirebaseService {
 
   bool _initialized = false;
 
-  /// Initialize Firebase services
+  /// Wire up Firebase service references.
+  /// Assumes Firebase.initializeApp() has already been called.
   Future<void> initialize() async {
     if (_initialized) return;
 
     try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-
       _auth = FirebaseAuth.instance;
       _firestore = FirebaseFirestore.instance;
       _storage = FirebaseStorage.instance;
       _analytics = FirebaseAnalytics.instance;
       _crashlytics = FirebaseCrashlytics.instance;
 
-      // Enable Crashlytics in debug mode for testing
       await _crashlytics?.setCrashlyticsCollectionEnabled(true);
 
-      // Pass all uncaught errors to Crashlytics
       FlutterError.onError = (errorDetails) {
         _crashlytics?.recordFlutterFatalError(errorDetails);
       };
 
       _initialized = true;
     } catch (e) {
-      throw Exception('Failed to initialize Firebase: $e');
+      throw Exception('Failed to initialize Firebase services: $e');
     }
   }
 

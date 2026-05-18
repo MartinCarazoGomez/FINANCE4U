@@ -155,5 +155,34 @@ class FirestoreHelper {
         .where('userId', isEqualTo: userId)
         .snapshots();
   }
+
+  // ── Community posts ──────────────────────────────────────────────────────
+
+  static CollectionReference<Map<String, dynamic>> _communityPostsCollection() {
+    return _db.collection('community_posts');
+  }
+
+  static Stream<QuerySnapshot<Map<String, dynamic>>> communityPostsStream({int limit = 50}) {
+    return _communityPostsCollection()
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots();
+  }
+
+  static Future<DocumentReference<Map<String, dynamic>>> createCommunityPost({
+    required String userId,
+    required String username,
+    required String content,
+  }) async {
+    return _communityPostsCollection().add({
+      'userId': userId,
+      'username': username,
+      'content': content,
+      'createdAt': FieldValue.serverTimestamp(),
+      'likeCount': 0,
+      'likedBy': <String>[],
+      'commentCount': 0,
+    });
+  }
 }
 

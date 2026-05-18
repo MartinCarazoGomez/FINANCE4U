@@ -5,7 +5,6 @@ class ThemeService {
   factory ThemeService() => _instance;
   ThemeService._internal();
 
-  bool _isDarkMode = false;
   String _currentThemeColor = 'green';
 
   // Colores disponibles para el tema
@@ -20,17 +19,8 @@ class ThemeService {
     'pink': const Color(0xFFE91E63),
   };
 
-  bool get isDarkMode => _isDarkMode;
   String get currentThemeColor => _currentThemeColor;
   Color get primaryColor => _themeColors[_currentThemeColor]!;
-
-  void toggleDarkMode() {
-    _isDarkMode = !_isDarkMode;
-  }
-
-  void setDarkMode(bool isDark) {
-    _isDarkMode = isDark;
-  }
 
   void setThemeColor(String colorKey) {
     if (_themeColors.containsKey(colorKey)) {
@@ -166,141 +156,6 @@ class ThemeService {
         ),
       ),
     );
-  }
-
-  // Tema oscuro
-  ThemeData get darkTheme {
-    final primaryColor = _themeColors[_currentThemeColor]!;
-    
-    return ThemeData(
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        primary: primaryColor,
-        secondary: const Color(0xFF7ED957),
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
-      useMaterial3: true,
-      appBarTheme: AppBarTheme(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        titleTextStyle: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: const Color(0xFF1E1E1E),
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        shadowColor: Colors.black.withOpacity(0.3),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 3,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.grey),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryColor, width: 2),
-        ),
-        filled: true,
-        fillColor: const Color(0xFF2A2A2A),
-      ),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: primaryColor,
-        linearTrackColor: Colors.grey[800],
-      ),
-      switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
-            return primaryColor;
-          }
-          return Colors.grey[600];
-        }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
-            return primaryColor.withOpacity(0.5);
-          }
-          return Colors.grey[700];
-        }),
-      ),
-      sliderTheme: SliderThemeData(
-        activeTrackColor: primaryColor,
-        inactiveTrackColor: Colors.grey[700],
-        thumbColor: primaryColor,
-        overlayColor: primaryColor.withOpacity(0.2),
-      ),
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        headlineSmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: Colors.white,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: Colors.white70,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: Colors.white70,
-        ),
-        labelLarge: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.white70,
-        ),
-      ),
-    );
-  }
-
-  // Obtiene el tema actual
-  ThemeData getCurrentTheme() {
-    return _isDarkMode ? darkTheme : lightTheme;
   }
 
   // Lista de colores disponibles para la UI

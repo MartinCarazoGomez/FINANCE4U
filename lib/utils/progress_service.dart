@@ -26,7 +26,7 @@ class ProgressService {
   int _totalStudyTimeMinutes = 0;
   
   // Racha de días consecutivos
-  int _currentStreak = 3; // Empezamos con 3 días para mostrar progreso
+  int _currentStreak = 0;
   
   // Nivel general del usuario
   int _userLevel = 1;
@@ -51,26 +51,31 @@ class ProgressService {
     _gameScores[gameId] = score;
     _addExperience(50); // 50 XP por completar un juego
     _addStudyTime(2); // 2 minutos estimados por juego
-    
-    // Marcar como activo en streak service
+
     _streakService.markTodayAsActive();
-    
-    // Verificar logros
+
     final newAchievements = _achievementsService.checkAchievements(
       gamesCompleted: completedGamesCount,
       totalXP: _userExperience,
       currentStreak: _streakService.currentStreak,
       lessonsCompleted: completedLessonsCount,
+      isPerfectScore: score >= 100,
+      currentLevel: _userLevel,
+      studyTimeMinutes: _totalStudyTimeMinutes,
+      allowTimeAchievements: true,
     );
-    
-    // Feedback háptico para logros
+
+    // Aplicar bonus XP de los logros desbloqueados
+    for (final a in newAchievements) {
+      _addExperience(a.xpReward);
+    }
+
     if (newAchievements.isNotEmpty) {
       _hapticService.achievementUnlocked();
     } else {
       _hapticService.lessonCompleted();
     }
-    
-    print('🎮 Juego completado: $gameId - Puntuación: $score');
+
     _saveProgress();
   }
 
@@ -79,25 +84,30 @@ class ProgressService {
     _completedLessons.add(lessonId);
     _addExperience(100); // 100 XP por completar una lección
     _addStudyTime(5); // 5 minutos estimados por lección
-    
-    // Marcar como activo en streak service
+
     _streakService.markTodayAsActive();
-    
-    // Verificar logros
+
     final newAchievements = _achievementsService.checkAchievements(
       lessonsCompleted: completedLessonsCount,
       totalXP: _userExperience,
       currentStreak: _streakService.currentStreak,
+      gamesCompleted: completedGamesCount,
+      currentLevel: _userLevel,
+      studyTimeMinutes: _totalStudyTimeMinutes,
+      allowTimeAchievements: true,
     );
-    
-    // Feedback háptico para logros
+
+    // Aplicar bonus XP de los logros desbloqueados
+    for (final a in newAchievements) {
+      _addExperience(a.xpReward);
+    }
+
     if (newAchievements.isNotEmpty) {
       _hapticService.achievementUnlocked();
     } else {
       _hapticService.lessonCompleted();
     }
-    
-    print('📚 Lección completada: $lessonId');
+
     _saveProgress();
   }
 

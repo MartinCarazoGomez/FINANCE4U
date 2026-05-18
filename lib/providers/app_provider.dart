@@ -3,7 +3,6 @@ import '../utils/progress_service.dart';
 
 class AppProvider extends ChangeNotifier {
   String _selectedLanguage = 'es';
-  bool _isDarkMode = false;
   bool _soundEnabled = true;
   bool _notificationsEnabled = true;
   double _fontSize = 16.0;
@@ -14,6 +13,7 @@ class AppProvider extends ChangeNotifier {
   int _userLevel = 1;
   int _totalXP = 0;
   int _streakDays = 0;
+  DateTime? _lastCompletionDate;
   Set<String> _completedLessons = {};
   List<String> _unlockedGames = [
     'budget_master',
@@ -37,7 +37,6 @@ class AppProvider extends ChangeNotifier {
   
   // Getters
   String get selectedLanguage => _selectedLanguage;
-  bool get isDarkMode => _isDarkMode;
   bool get soundEnabled => _soundEnabled;
   bool get notificationsEnabled => _notificationsEnabled;
   double get fontSize => _fontSize;
@@ -54,11 +53,6 @@ class AppProvider extends ChangeNotifier {
   // Methods
   void setLanguage(String language) {
     _selectedLanguage = language;
-    notifyListeners();
-  }
-  
-  void toggleDarkMode(bool value) {
-    _isDarkMode = value;
     notifyListeners();
   }
   
@@ -84,9 +78,36 @@ class AppProvider extends ChangeNotifier {
   }
   
   void completeLesson(String lessonId) {
+    if (_completedLessons.contains(lessonId)) return;
     _completedLessons.add(lessonId);
     addXP(10);
+    _updateStreak();
+    // Sync with ProgressService so achievement counters and XP rewards work
+    ProgressService().completeLesson(lessonId);
     notifyListeners();
+  }
+
+  void _updateStreak() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (_lastCompletionDate == null) {
+      _streakDays = 1;
+    } else {
+      final last = DateTime(
+        _lastCompletionDate!.year,
+        _lastCompletionDate!.month,
+        _lastCompletionDate!.day,
+      );
+      final diff = today.difference(last).inDays;
+      if (diff == 0) {
+        // same day — streak unchanged
+      } else if (diff == 1) {
+        _streakDays++;
+      } else {
+        _streakDays = 1;
+      }
+    }
+    _lastCompletionDate = now;
   }
   
   void unlockGame(String gameId) {
@@ -276,21 +297,17 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  void toggleTheme() {
-    _isDarkMode = !_isDarkMode;
-    notifyListeners();
-  }
-  
   void resetData() {
     _username = 'Usuario Finance4U';
     _email = 'usuario@finance4u.com';
     _userLevel = 1;
     _totalXP = 0;
     _streakDays = 0;
+    _lastCompletionDate = null;
+    _completedLessons = {};
     _notificationsEnabled = true;
     _reminderTime = '09:00';
     _currency = 'MXN';
-    _isDarkMode = false;
     _unlockedGames = [
       'budget_master',
       'credit_score', 
