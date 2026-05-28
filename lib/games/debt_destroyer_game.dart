@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 import 'package:provider/provider.dart';
 // import 'package:shared_preferences/shared_preferences.dart'; // Comentado temporalmente para Windows
 
@@ -67,6 +68,8 @@ class DebtEvent {
 }
 
 class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProviderStateMixin {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   // Datos del jugador
   double _monthlyIncome = 2200.0; // Salario medio neto español más realista
   double _monthlyExpenses = 1600.0; // Gastos típicos españoles
@@ -254,7 +257,7 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
             const SizedBox(height: 16),
             if (event.incomeChange != 0) 
               Text(
-                'Cambio en ingresos: ${event.incomeChange > 0 ? '+' : ''}€${event.incomeChange.toInt()}/mes',
+                'Cambio en ingresos: ${event.incomeChange > 0 ? '+' : ''}${_money(event.incomeChange, compact: true)}/mes',
                 style: TextStyle(
                   color: event.incomeChange > 0 ? Colors.green : Colors.red,
                   fontWeight: FontWeight.bold,
@@ -262,7 +265,7 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
               ),
             if (event.extraPayment > 0)
               Text(
-                'Pago extra disponible: +€${event.extraPayment.toInt()}',
+                'Pago extra disponible: +${_money(event.extraPayment, compact: true)}',
                 style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
               ),
           ],
@@ -394,8 +397,8 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
           children: [
             Text('¡Felicitaciones! Has eliminado tu ${debt.name.toLowerCase()}'),
             const SizedBox(height: 8),
-            Text('Total pagado: €${debt.totalPaid.toInt()}'),
-            Text('Interés pagado: €${(debt.totalPaid - (_debtHistory[debt.name]?.first ?? 0)).toInt()}'),
+            Text('Total pagado: ${_money(debt.totalPaid, compact: true)}'),
+            Text('Interés pagado: ${_money(debt.totalPaid - (_debtHistory[debt.name]?.first ?? 0), compact: true)}'),
           ],
         ),
         actions: [
@@ -449,7 +452,7 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
     
     if (_totalDebtPaid >= 10000 && !_achievements.contains('Destructor de 10K')) {
       _achievements.add('Destructor de 10K');
-      _showAchievement('🏆 ¡Has pagado más de €10,000 en deudas!');
+      _showAchievement('🏆 ¡Has pagado más de ${_money(10000, compact: true)} en deudas!');
     }
     
     if (_debtsEliminated >= 2 && !_achievements.contains('Liberación Doble')) {
@@ -459,7 +462,7 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
     
     if (_extraPaymentBudget >= 1000 && !_achievements.contains('Presupuesto Master')) {
       _achievements.add('Presupuesto Master');
-      _showAchievement('💰 ¡Más de €1,000 extra para deudas!');
+      _showAchievement('💰 ¡Más de ${_money(1000, compact: true)} extra para deudas!');
     }
   }
 
@@ -490,9 +493,9 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
           children: [
             const Text('¡Has eliminado TODAS tus deudas!'),
             const SizedBox(height: 16),
-            Text('Total pagado: €${_totalDebtPaid.toInt()}'),
+            Text('Total pagado: ${_money(_totalDebtPaid, compact: true)}'),
             Text('Tiempo: ${_currentMonth + (_currentYear - 2024) * 12} meses'),
-            Text('Interés ahorrado: €${totalInterestSaved.toInt()}'),
+            Text('Interés ahorrado: ${_money(totalInterestSaved, compact: true)}'),
           ],
         ),
         actions: [
@@ -600,7 +603,8 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('⚡ Debt Destroyer', style: TextStyle(color: Colors.white)),
@@ -630,6 +634,7 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -649,9 +654,9 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfoCard('💸 Deuda Total', '€${totalDebt.toInt()}', Colors.red),
+              _buildInfoCard('💸 Deuda Total', _money(totalDebt, compact: true), Colors.red),
               _buildInfoCard('📅 ${_currentMonth}/$_currentYear', 'Mes actual', Colors.blue),
-              _buildInfoCard('💰 Extra', '€${_extraPaymentBudget.toInt()}', Colors.green),
+              _buildInfoCard('💰 Extra', _money(_extraPaymentBudget, compact: true), Colors.green),
             ],
           ),
           const SizedBox(height: 12),
@@ -667,9 +672,9 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
                   ),
                   child: Column(
                     children: [
-                      Text('Ingresos: €${_monthlyIncome.toInt()}', style: const TextStyle(color: Colors.orange)),
-                      Text('Gastos: €${_monthlyExpenses.toInt()}', style: const TextStyle(color: Colors.orange)),
-                      Text('Pagos mín: €${totalMinPayments.toInt()}', style: const TextStyle(color: Colors.orange)),
+                      Text('Ingresos: ${_money(_monthlyIncome, compact: true)}', style: const TextStyle(color: Colors.orange)),
+                      Text('Gastos: ${_money(_monthlyExpenses, compact: true)}', style: const TextStyle(color: Colors.orange)),
+                      Text('Pagos mín: ${_money(totalMinPayments, compact: true)}', style: const TextStyle(color: Colors.orange)),
                     ],
                   ),
                 ),
@@ -908,7 +913,7 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Balance: €${debt.balance.toInt()}', style: const TextStyle(color: Colors.white)),
+                Text('Balance: ${_money(debt.balance, compact: true)}', style: const TextStyle(color: Colors.white)),
                 Text('${debt.interestRate.toStringAsFixed(1)}% APR', 
                      style: const TextStyle(color: Colors.orange)),
               ],
@@ -917,9 +922,9 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Pago mín: €${debt.minimumPayment.toInt()}', 
+                Text('Pago mín: ${_money(debt.minimumPayment, compact: true)}', 
                      style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                Text('Pagado: €${debt.totalPaid.toInt()}', 
+                Text('Pagado: ${_money(debt.totalPaid, compact: true)}', 
                      style: const TextStyle(color: Colors.green, fontSize: 12)),
               ],
             ),
@@ -955,7 +960,7 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('¡ELIMINADA!', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                        Text('Total pagado: €${debt.totalPaid.toInt()}', 
+                        Text('Total pagado: ${_money(debt.totalPaid, compact: true)}', 
                              style: const TextStyle(color: Colors.green, fontSize: 12)),
                       ],
                     ),
@@ -998,9 +1003,9 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
               Text('${progressPercentage.toStringAsFixed(1)}% Completado', 
                    style: const TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Deuda original: €${totalOriginalDebt.toInt()}', 
+              Text('Deuda original: ${_money(totalOriginalDebt, compact: true)}', 
                    style: const TextStyle(color: Colors.grey)),
-              Text('Deuda restante: €${totalCurrentDebt.toInt()}', 
+              Text('Deuda restante: ${_money(totalCurrentDebt, compact: true)}', 
                    style: const TextStyle(color: Colors.white)),
             ],
           ),
@@ -1020,9 +1025,9 @@ class _DebtDestroyerGameState extends State<DebtDestroyerGame> with TickerProvid
                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               _buildStatCard('Deudas Eliminadas', '$_debtsEliminated/${_debts.length}', Colors.green),
-              _buildStatCard('Total Pagado', '€${_totalDebtPaid.toInt()}', Colors.blue),
+              _buildStatCard('Total Pagado', _money(_totalDebtPaid, compact: true), Colors.blue),
               _buildStatCard('Tiempo Transcurrido', '${_currentMonth + (_currentYear - 2024) * 12} meses', Colors.purple),
-              _buildStatCard('Pago Extra Mensual', '€${_extraPaymentBudget.toInt()}', Colors.orange),
+              _buildStatCard('Pago Extra Mensual', _money(_extraPaymentBudget, compact: true), Colors.orange),
             ],
           ),
         ),

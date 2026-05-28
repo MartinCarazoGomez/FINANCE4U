@@ -1,6 +1,33 @@
 import 'package:flutter/material.dart';
 
 // ──────────────────────────────────────────────
+// Public API
+// ──────────────────────────────────────────────
+
+/// Shows the onboarding tutorial in an isolated full-screen route so taps are
+/// not affected by the scaffold or Provider rebuilds underneath.
+Future<void> showAppTutorial(
+  BuildContext context, {
+  required ValueChanged<int> onTabChange,
+}) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent,
+    transitionDuration: Duration.zero,
+    pageBuilder: (dialogContext, _, __) {
+      return PopScope(
+        canPop: false,
+        child: AppTutorial(
+          onComplete: () => Navigator.of(dialogContext).pop(),
+          onTabChange: onTabChange,
+        ),
+      );
+    },
+  );
+}
+
+// ──────────────────────────────────────────────
 // Data
 // ──────────────────────────────────────────────
 
@@ -8,14 +35,8 @@ class _StepData {
   final String emoji;
   final String title;
   final String description;
-
-  /// If not null, switches to this bottom-nav tab when the step is shown.
   final int? navTabIndex;
-
-  /// If not null, draws a spotlight on that bottom-nav item (0–4).
   final int? spotlightNavTab;
-
-  /// If true, draws a spotlight on the top-right menu (⋮) area.
   final bool spotlightMenu;
 
   const _StepData({
@@ -122,44 +143,20 @@ class AppTutorial extends StatefulWidget {
   State<AppTutorial> createState() => _AppTutorialState();
 }
 
-class _AppTutorialState extends State<AppTutorial>
-    with SingleTickerProviderStateMixin {
+class _AppTutorialState extends State<AppTutorial> {
   int _currentStep = 0;
-  late final AnimationController _fadeCtrl;
-  late final Animation<double> _fadeAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _fadeCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 280),
-    );
-    _fadeAnim =
-        CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeInOut);
-    _fadeCtrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _fadeCtrl.dispose();
-    super.dispose();
-  }
 
   void _next() {
     if (_currentStep >= _steps.length - 1) {
       widget.onComplete();
       return;
     }
-    _fadeCtrl.reverse().then((_) {
-      if (!mounted) return;
-      setState(() {
-        _currentStep++;
-        final tab = _steps[_currentStep].navTabIndex;
-        if (tab != null) widget.onTabChange(tab);
-      });
-      _fadeCtrl.forward();
-    });
+
+    final nextStep = _currentStep + 1;
+    final tab = _steps[nextStep].navTabIndex;
+    if (tab != null) widget.onTabChange(tab);
+
+    setState(() => _currentStep = nextStep);
   }
 
   void _skip() => widget.onComplete();
@@ -188,69 +185,62 @@ class _AppTutorialState extends State<AppTutorial>
     return Rect.zero;
   }
 
-  double _cardTop(BuildContext context, _StepData step) {
-    final pad = MediaQuery.of(context).padding;
-    final size = MediaQuery.of(context).size;
-
-    if (step.spotlightNavTab != null) {
-      return pad.top + 36;
-    }
-    if (step.spotlightMenu) {
-      return pad.top + kToolbarHeight + 16;
-    }
-    return size.height * 0.22;
-  }
-
   @override
   Widget build(BuildContext context) {
     final step = _steps[_currentStep];
     final spotlight = _spotlightRect(context, step);
-    final cardTop = _cardTop(context, step);
     final isLast = _currentStep == _steps.length - 1;
 
-    return FadeTransition(
-      opacity: _fadeAnim,
+    return Material(
+      type: MaterialType.transparency,
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Background touch absorber
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {},
-            child: const SizedBox.expand(),
-          ),
-
-          // Dimmed overlay with spotlight cutout
-          IgnorePointer(
-            child: CustomPaint(
-              painter: _OverlayPainter(spotlight),
-              child: const SizedBox.expand(),
+          // Full-screen tap blocker + dim overlay (visual hole only).
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {},
+              child: CustomPaint(
+                painter: _OverlayPainter(spotlight),
+                child: const SizedBox.expand(),
+              ),
             ),
           ),
 
-          // Pulsing border around spotlight
           if (spotlight != Rect.zero)
-            IgnorePointer(
-              child: Positioned(
-                left: spotlight.left - 3,
-                top: spotlight.top - 3,
-                width: spotlight.width + 6,
-                height: spotlight.height + 6,
+            Positioned(
+              left: spotlight.left - 3,
+              top: spotlight.top - 3,
+              width: spotlight.width + 6,
+              height: spotlight.height + 6,
+              child: IgnorePointer(
                 child: const _PulsingBorder(),
               ),
             ),
 
-          // Tutorial card
-          Positioned(
-            left: 20,
-            right: 20,
-            top: cardTop,
-            child: _TutorialCard(
-              step: step,
-              current: _currentStep,
-              total: _steps.length,
-              isLast: isLast,
-              onNext: _next,
-              onSkip: isLast ? null : _skip,
+          SafeArea(
+            child: Align(
+              alignment: step.spotlightNavTab != null || step.spotlightMenu
+                  ? Alignment.topCenter
+                  : const Alignment(0, -0.35),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  step.spotlightNavTab != null || step.spotlightMenu ? 12 : 0,
+                  20,
+                  20,
+                ),
+                child: _TutorialCard(
+                  key: ValueKey(_currentStep),
+                  step: step,
+                  current: _currentStep,
+                  total: _steps.length,
+                  isLast: isLast,
+                  onNext: _next,
+                  onSkip: isLast ? null : _skip,
+                ),
+              ),
             ),
           ),
         ],
@@ -269,21 +259,26 @@ class _OverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.saveLayer(Offset.zero & size, Paint());
+    final dimPaint = Paint()..color = Colors.black.withValues(alpha: 0.76);
+    final fullRect = Offset.zero & size;
 
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = Colors.black.withValues(alpha: 0.76),
-    );
-
-    if (spotlight != Rect.zero) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(spotlight.inflate(2), const Radius.circular(10)),
-        Paint()..blendMode = BlendMode.clear,
-      );
+    if (spotlight == Rect.zero) {
+      canvas.drawRect(fullRect, dimPaint);
+      return;
     }
 
-    canvas.restore();
+    final overlay = Path()..addRect(fullRect);
+    final hole = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          spotlight.inflate(2),
+          const Radius.circular(10),
+        ),
+      );
+    canvas.drawPath(
+      Path.combine(PathOperation.difference, overlay, hole),
+      dimPaint,
+    );
   }
 
   @override
@@ -330,7 +325,8 @@ class _PulsingBorderState extends State<_PulsingBorder>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF66BB6A).withValues(alpha: 0.4 + 0.6 * _anim.value),
+            color: const Color(0xFF66BB6A)
+                .withValues(alpha: 0.4 + 0.6 * _anim.value),
             width: 3,
           ),
         ),
@@ -352,6 +348,7 @@ class _TutorialCard extends StatelessWidget {
   final VoidCallback? onSkip;
 
   const _TutorialCard({
+    super.key,
     required this.step,
     required this.current,
     required this.total,
@@ -363,25 +360,16 @@ class _TutorialCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      elevation: 16,
+      shadowColor: Colors.black54,
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.28),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Progress dots
             Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -402,14 +390,9 @@ class _TutorialCard extends StatelessWidget {
                 }),
               ),
             ),
-
             const SizedBox(height: 18),
-
-            // Emoji
             Text(step.emoji, style: const TextStyle(fontSize: 38)),
             const SizedBox(height: 6),
-
-            // Title
             Text(
               step.title,
               style: const TextStyle(
@@ -419,10 +402,7 @@ class _TutorialCard extends StatelessWidget {
                 height: 1.2,
               ),
             ),
-
             const SizedBox(height: 10),
-
-            // Description
             Text(
               step.description,
               style: const TextStyle(
@@ -431,10 +411,7 @@ class _TutorialCard extends StatelessWidget {
                 height: 1.55,
               ),
             ),
-
             const SizedBox(height: 22),
-
-            // Buttons
             Row(
               children: [
                 if (onSkip != null)
@@ -442,8 +419,11 @@ class _TutorialCard extends StatelessWidget {
                     onPressed: onSkip,
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF9E9E9E),
+                      minimumSize: const Size(64, 48),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                     child: const Text(
                       'Saltar',
@@ -451,17 +431,19 @@ class _TutorialCard extends StatelessWidget {
                     ),
                   ),
                 const Spacer(),
-                ElevatedButton(
+                FilledButton(
                   onPressed: onNext,
-                  style: ElevatedButton.styleFrom(
+                  style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
+                    minimumSize: const Size(120, 48),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 28, vertical: 13),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(13),
                     ),
-                    elevation: 2,
                   ),
                   child: Text(
                     isLast ? '¡Empezar! 🚀' : 'Siguiente →',

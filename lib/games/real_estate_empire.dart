@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class RealEstateEmpire extends StatefulWidget {
   final VoidCallback? onCompleted;
@@ -41,6 +44,8 @@ class Property {
 }
 
 class _RealEstateEmpireState extends State<RealEstateEmpire> {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   double _cash = 80000.0; // Capital inicial más realista en euros para España
   double _monthlyIncome = 0.0;
   double _monthlyExpenses = 0.0;
@@ -234,7 +239,7 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
     
     if (_monthlyIncome >= 5000 && !_achievements.contains('Ingreso Pasivo')) {
       _achievements.add('Ingreso Pasivo');
-      _showAchievement('💰 ¡€5000+ en ingresos pasivos!');
+      _showAchievement('💰 ¡${_money(5000, compact: true)}+ en ingresos pasivos!');
     }
     
     if (_portfolioValue >= 500000 && !_achievements.contains('Medio Millón')) {
@@ -264,8 +269,8 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
         title: const Text('🏆 ¡Real Estate Mogul! 🏆'),
         content: Text(
           '¡Felicitaciones!\n'
-          'Portfolio: \$${_portfolioValue.toInt()}\n'
-          'Ingresos mensuales: \$${_monthlyIncome.toInt()}\n'
+          'Portfolio: ${_money(_portfolioValue, compact: true)}\n'
+          'Ingresos mensuales: ${_money(_monthlyIncome, compact: true)}\n'
           'Propiedades: ${_ownedProperties.length}\n'
           '¡Eres un magnate inmobiliario!'
         ),
@@ -310,7 +315,8 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('🏠 Real Estate Empire'),
@@ -323,6 +329,7 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
           Expanded(child: _buildPropertyView()),
         ],
       ),
+    ),
     );
   }
   
@@ -345,7 +352,7 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('\$${_cash.toInt()}', 
+                  Text(_money(_cash, compact: true), 
                        style: const TextStyle(color: Colors.green, fontSize: 20, fontWeight: FontWeight.bold)),
                   const Text('Efectivo', style: TextStyle(color: Colors.green)),
                 ],
@@ -356,8 +363,8 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStatCard('📊 Portfolio', '\$${_portfolioValue.toInt()}', Colors.purple),
-              _buildStatCard('📈 Ingresos', '\$${_monthlyIncome.toInt()}/mes', Colors.green),
+              _buildStatCard('📊 Portfolio', _money(_portfolioValue, compact: true), Colors.purple),
+              _buildStatCard('📈 Ingresos', '${_money(_monthlyIncome, compact: true)}/mes', Colors.green),
               _buildStatCard('🏠 Propiedades', '${_ownedProperties.length}', Colors.blue),
             ],
           ),
@@ -452,7 +459,7 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Valor: \$${property.currentValue.toInt()}', style: const TextStyle(color: Colors.blue)),
+                Text('Valor: ${_money(property.currentValue, compact: true)}', style: const TextStyle(color: Colors.blue)),
                 Text('ROI: ${property.roi.toStringAsFixed(1)}%', 
                      style: TextStyle(color: property.roi > 8 ? Colors.green : Colors.orange)),
               ],
@@ -460,8 +467,8 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Renta: \$${property.monthlyRent.toInt()}/mes', style: const TextStyle(color: Colors.green)),
-                Text('Gastos: \$${property.monthlyExpenses.toInt()}/mes', style: const TextStyle(color: Colors.red)),
+                Text('Renta: ${_money(property.monthlyRent, compact: true)}/mes', style: const TextStyle(color: Colors.green)),
+                Text('Gastos: ${_money(property.monthlyExpenses, compact: true)}/mes', style: const TextStyle(color: Colors.red)),
               ],
             ),
             const SizedBox(height: 12),
@@ -472,7 +479,7 @@ class _RealEstateEmpireState extends State<RealEstateEmpire> {
                   backgroundColor: Colors.green,
                   minimumSize: const Size(double.infinity, 40),
                 ),
-                child: Text('Comprar - \$${property.currentValue.toInt()}', 
+                child: Text('Comprar - ${_money(property.currentValue, compact: true)}', 
                            style: const TextStyle(color: Colors.white)),
               ),
             ] else ...[

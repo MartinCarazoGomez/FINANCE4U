@@ -1,63 +1,142 @@
-# Quick Start - Firebase Setup
+# Quick Start — Firebase para FINANCE4U
 
-## 🚀 3-Step Setup
+Guía rápida actualizada. **No necesitas Firebase Storage ni plan Blaze** para las fotos de perfil (van en Firestore como base64).
 
-### 1. Install FlutterFire CLI
+---
+
+## Requisitos
+
+- Cuenta en [Firebase Console](https://console.firebase.google.com/)
+- Flutter instalado (`flutter doctor`)
+- Plan **Spark (gratis)** — suficiente para esta app
+
+---
+
+## Paso 1 — Dependencias y CLI
+
 ```bash
+cd c:\Users\marti\duolingo_finanzas
+flutter pub get
 dart pub global activate flutterfire_cli
 ```
 
-### 2. Configure Firebase
+**Si `flutterfire` no se reconoce en CMD**, usa la ruta completa:
+
+```cmd
+C:\Users\marti\AppData\Local\Pub\Cache\bin\flutterfire.bat configure
+```
+
+O añade `C:\Users\marti\AppData\Local\Pub\Cache\bin` al PATH de Windows.
+
+---
+
+## Paso 2 — Vincular el proyecto
+
 ```bash
 firebase login
 flutterfire configure
 ```
 
-### 3. Install Dependencies
+Selecciona tu proyecto Firebase y las plataformas (Android como mínimo).
+
+Genera:
+- `lib/firebase_options.dart`
+- `android/app/google-services.json`
+
+> Android Gradle ya está configurado en este repo. No hace falta tocar `build.gradle.kts`.
+
+---
+
+## Paso 3 — Authentication
+
+Firebase Console → **Build → Authentication → Sign-in method**
+
+| Método | Obligatorio |
+|--------|-------------|
+| **Google** | ✅ Sí |
+| **Anónimo** | ✅ Sí (modo invitado) |
+| Email/Password | Opcional |
+
+**Android + Google:** Project settings → app Android (`com.finance4u.education`) → añade SHA-1 y SHA-256:
+
+```cmd
+cd android
+gradlew signingReport
+```
+
+---
+
+## Paso 4 — Firestore (base de datos)
+
+Firebase Console → **Build → Firestore Database → Create database**
+
+Modo **Production** (o Test solo para pruebas). Pega las reglas de `FIREBASE_SETUP_GUIDE.md` (sección Firestore).
+
+### Colecciones que usa la app
+
+| Colección | Uso |
+|-----------|-----|
+| `users` | Perfil, nombre, `photoBase64`, grupo |
+| `user_progress` | XP, nivel, lecciones |
+| `game_data` | Saves de juegos |
+| `achievements` | Logros |
+| `community_posts` | Foro |
+| `groups` | Códigos de clase |
+
+### Clase de prueba (opcional)
+
+Colección `groups` → documento nuevo:
+
+```json
+{
+  "code": "FIN2024",
+  "name": "Clase 5A",
+  "memberIds": []
+}
+```
+
+---
+
+## Paso 5 — Storage
+
+**⏭️ NO ACTIVAR.** La app no usa Firebase Storage.
+
+- Fotos subidas → `photoBase64` en Firestore (`users/{uid}`)
+- Fotos de Google → `photoUrl` (URL de Google, gratis)
+
+---
+
+## Paso 6 — Probar la app
+
 ```bash
+flutter clean
 flutter pub get
+flutter run
 ```
 
-## ✅ Done!
+### Checklist
 
-Your app is now ready to use Firebase. See `FIREBASE_SETUP_GUIDE.md` for detailed instructions.
+- [ ] Sin error `Firebase initialization error` en consola
+- [ ] Welcome → **Google** o **Invitado** funciona
+- [ ] Onboarding → nombre + código de clase opcional
+- [ ] Perfil → cambiar nombre y subir foto
+- [ ] Firestore → aparece documento en `users/{uid}` con `photoBase64` si subiste foto
+- [ ] Comunidad → crear un post
 
-## 📝 Quick Usage Examples
+---
 
-### Authentication
-```dart
-import 'package:finance4u/services/auth_service.dart';
+## Flujo de la app
 
-// Sign up
-await AuthService.instance.createUserWithEmailAndPassword(
-  email: 'user@example.com',
-  password: 'password123',
-  username: 'John Doe',
-);
-
-// Sign in
-await AuthService.instance.signInWithEmailAndPassword(
-  email: 'user@example.com',
-  password: 'password123',
-);
+```
+Splash → ¿sesión? → Welcome (primera vez)
+                    → Onboarding (nombre, foto, código clase)
+                    → App principal
 ```
 
-### Firestore
-```dart
-import 'package:finance4u/services/firestore_helper.dart';
+Perfil completo: **Ajustes → Mi perfil**
 
-// Save progress
-await FirestoreHelper.saveProgress(
-  userId: 'user123',
-  level: 5,
-  totalXP: 450,
-  streakDays: 7,
-  completedLessons: ['lesson1'],
-  unlockedGames: ['budget_master'],
-);
-```
+---
 
-## 📚 Full Documentation
-- `FIREBASE_SETUP_GUIDE.md` - Complete setup guide
-- `FIREBASE_INTEGRATION_SUMMARY.md` - Architecture overview
+## Documentación completa
 
+Ver `FIREBASE_SETUP_GUIDE.md` para reglas de seguridad, troubleshooting y detalles técnicos.

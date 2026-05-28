@@ -3,19 +3,23 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // --- NUEVAS IMPORTACIONES DE FIREBASE ---
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:finance4u/firebase_options.dart'; 
 
 import 'screens/main_navigation.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/profile_screen.dart';
 import 'providers/app_provider.dart';
+import 'providers/auth_provider.dart';
 import 'services/firebase_service.dart';
 
 // Variable global para controlar el desbloqueo de juegos
 // 0: todos los juegos habilitados
 // 1: desbloqueo progresivo
-int unlockGames = 0;
+int unlockGames = 1;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +54,12 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => AppProvider()),
+        ChangeNotifierProvider(create: (_) => AppProvider()),
+        ChangeNotifierProxyProvider<AppProvider, AuthProvider>(
+          create: (_) => AuthProvider(),
+          update: (_, appProvider, auth) =>
+              auth!..attachAppProvider(appProvider),
+        ),
       ],
       child: const Finance4UApp(),
     ),
@@ -79,6 +88,8 @@ class Finance4UApp extends StatelessWidget {
         '/main': (context) => const MainNavigation(),
         '/welcome': (context) => const WelcomeScreen(),
         '/splash': (context) => const SplashScreen(),
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }

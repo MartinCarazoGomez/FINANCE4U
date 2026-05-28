@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class EmergencyFundBuilder extends StatefulWidget {
   final VoidCallback? onCompleted;
@@ -44,6 +47,8 @@ class Emergency {
 }
 
 class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   double _monthlyIncome = 2000.0; // Salario medio neto español más realista
   double _monthlyExpenses = 1400.0; // Gastos típicos españoles
   double _emergencyGoal = 4200.0; // 3 meses de gastos
@@ -217,7 +222,7 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
           children: [
             Text(emergency.description),
             const SizedBox(height: 16),
-            Text('Costo: €${emergency.cost.toInt()}', 
+            Text('Costo: ${_money(emergency.cost, compact: true)}', 
                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             Text('Urgencia: ${emergency.urgency} días', 
                  style: const TextStyle(color: Colors.orange)),
@@ -252,7 +257,7 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
                   } 
                 : null,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: Text('Usar Fondo de Emergencia (€${_getTotalAvailableFunds().toInt()} disponible)'),
+              child: Text('Usar Fondo de Emergencia (${_money(_getTotalAvailableFunds(), compact: true)} disponible)'),
             ),
             const SizedBox(height: 8),
             ElevatedButton(
@@ -356,15 +361,15 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
     });
     
     _experience += amount / 10; // XP por ahorrar
-    _showMessage('💰 €${amount.toInt()} agregado a ${vehicleName}', Colors.green);
+    _showMessage('💰 ${_money(amount, compact: true)} agregado a $vehicleName', Colors.green);
   }
   
   void _checkAchievements() {
     double totalEmergencyFund = _getTotalAvailableFunds();
     
-    if (totalEmergencyFund >= 1000 && !_achievements.contains('Primer \$1K')) {
-      _achievements.add('Primer \$1K');
-      _showAchievement('🎯 ¡Primer \$1,000 en tu fondo de emergencia!');
+    if (totalEmergencyFund >= 1000 && !_achievements.contains('Primer 1K')) {
+      _achievements.add('Primer 1K');
+      _showAchievement('🎯 ¡Primer ${_money(1000, compact: true)} en tu fondo de emergencia!');
     }
     
     if (totalEmergencyFund >= _monthlyExpenses && !_achievements.contains('Un Mes Seguro')) {
@@ -402,7 +407,7 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
         title: const Text('🛡️ ¡Emergency Fund Master! 🛡️'),
         content: Text(
           '¡Felicitaciones!\n'
-          'Fondo de emergencia: \$${_getTotalAvailableFunds().toInt()}\n'
+          'Fondo de emergencia: ${_money(_getTotalAvailableFunds(), compact: true)}\n'
           'Emergencias manejadas: $_emergenciesHandled\n'
           '¡Estás preparado para cualquier imprevisto!'
         ),
@@ -450,7 +455,8 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
     double totalFund = _getTotalAvailableFunds();
     double progress = totalFund / _emergencyGoal;
     
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('🛡️ Emergency Fund Builder'),
@@ -463,6 +469,7 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
           if (_pendingEmergencies.isNotEmpty) _buildEmergencyAlert(),
         ],
       ),
+    ),
     );
   }
   
@@ -485,9 +492,9 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('\$${totalFund.toInt()}', 
+                  Text(_money(totalFund, compact: true), 
                        style: const TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text('de \$${_emergencyGoal.toInt()}', style: const TextStyle(color: Colors.grey)),
+                  Text('de ${_money(_emergencyGoal, compact: true)}', style: const TextStyle(color: Colors.grey)),
                 ],
               ),
             ],
@@ -508,7 +515,7 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Disponible para ahorrar: \$${(_monthlyIncome - _monthlyExpenses).toInt()}/mes',
+            'Disponible para ahorrar: ${_money(_monthlyIncome - _monthlyExpenses, compact: true)}/mes',
             style: const TextStyle(color: Colors.blue, fontSize: 12),
           ),
         ],
@@ -553,7 +560,7 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Balance: \$${currentAmount.toInt()}', style: const TextStyle(color: Colors.white)),
+                Text('Balance: ${_money(currentAmount, compact: true)}', style: const TextStyle(color: Colors.white)),
                 Text('${vehicle.interestRate}% anual', style: const TextStyle(color: Colors.green)),
               ],
             ),
@@ -564,21 +571,21 @@ class _EmergencyFundBuilderState extends State<EmergencyFundBuilder> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: availableToSave >= 100 ? () => _addToSavings(vehicle.name, 100) : null,
-                    child: const Text('\$100'),
+                    child: Text(_money(100, compact: true)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: availableToSave >= 250 ? () => _addToSavings(vehicle.name, 250) : null,
-                    child: const Text('\$250'),
+                    child: Text(_money(250, compact: true)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: availableToSave >= 500 ? () => _addToSavings(vehicle.name, 500) : null,
-                    child: const Text('\$500'),
+                    child: Text(_money(500, compact: true)),
                   ),
                 ),
               ],

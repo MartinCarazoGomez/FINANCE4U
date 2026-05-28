@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 import 'package:provider/provider.dart';
 // import 'package:shared_preferences/shared_preferences.dart'; // Comentado temporalmente para Windows
 
@@ -62,6 +63,8 @@ class BudgetEvent {
 }
 
 class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProviderStateMixin {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   // Datos del juego
   double _monthlyIncome = 1800.0; // Salario medio neto español más realista
   int _currentMonth = 1;
@@ -339,7 +342,7 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
                       backgroundColor: cost == 0 ? Colors.green : Colors.orange,
                     ),
                     child: Text(
-                      '$choice ${cost > 0 ? "(-€${cost.toInt()})" : ""}',
+                      '$choice ${cost > 0 ? "(-${_money(cost, compact: true)})" : ""}',
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -374,14 +377,14 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
 
   void _setBudget() {
     if (_totalAllocated != _monthlyIncome) {
-      _showMessage('El presupuesto debe sumar exactamente €${_monthlyIncome.toInt()}', Colors.red);
+      _showMessage('El presupuesto debe sumar exactamente ${_money(_monthlyIncome, compact: true)}', Colors.red);
       return;
     }
     
     // Verificar que las categorías esenciales tengan el mínimo
     for (var category in _categories) {
       if (category.isEssential && !category.meetsMinimum) {
-        _showMessage('${category.name} necesita al menos €${category.minRequired.toInt()}', Colors.orange);
+        _showMessage('${category.name} necesita al menos ${_money(category.minRequired, compact: true)}', Colors.orange);
         return;
       }
     }
@@ -500,9 +503,9 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Ingresos: €${_monthlyIncome.toInt()}'),
-            Text('Gastos: €${(_monthlyIncome - savings).toInt()}'),
-            Text('Ahorrado: €${savings.toInt()}'),
+            Text('Ingresos: ${_money(_monthlyIncome, compact: true)}'),
+            Text('Gastos: ${_money(_monthlyIncome - savings, compact: true)}'),
+            Text('Ahorrado: ${_money(savings, compact: true)}'),
             Text('Tasa de Ahorro: ${savingsRate.toStringAsFixed(1)}%'),
             const SizedBox(height: 8),
             Text(
@@ -620,7 +623,8 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('💰 Budget Master', style: TextStyle(color: Colors.white)),
@@ -652,6 +656,7 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
           if (_budgetSet) _buildFinishMonthButton(),
         ],
       ),
+    ),
     );
   }
 
@@ -668,9 +673,9 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfoCard('💵 Ingresos', '€${_monthlyIncome.toInt()}', Colors.blue),
+              _buildInfoCard('💵 Ingresos', _money(_monthlyIncome, compact: true), Colors.blue),
               _buildInfoCard('📅 ${_currentMonth}/$_currentYear', 'Mes actual', Colors.purple),
-              _buildInfoCard('💰 Ahorros', '€${_totalSavings.toInt()}', Colors.green),
+              _buildInfoCard('💰 Ahorros', _money(_totalSavings, compact: true), Colors.green),
             ],
           ),
           const SizedBox(height: 12),
@@ -687,7 +692,7 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Meta de ahorro: €${_savingsGoal.toInt()}',
+                    'Meta de ahorro: ${_money(_savingsGoal, compact: true)}',
                     style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -791,12 +796,12 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Distribuye tus €${_monthlyIncome.toInt()} entre las categorías',
+                  'Distribuye tus ${_money(_monthlyIncome, compact: true)} entre las categorías',
                   style: const TextStyle(color: Colors.blue),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Asignado: €${_totalAllocated.toInt()} / €${_monthlyIncome.toInt()}',
+                  'Asignado: ${_money(_totalAllocated, compact: true)} / ${_money(_monthlyIncome, compact: true)}',
                   style: TextStyle(
                     color: _totalAllocated == _monthlyIncome ? Colors.green : Colors.orange,
                     fontWeight: FontWeight.bold,
@@ -881,7 +886,7 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
           if (!_budgetSet) ...[
             // Slider para asignar presupuesto
             Text(
-              'Asignado: €${category.allocated.toInt()} ${category.isEssential ? "(Min: €${category.minRequired.toInt()})" : ""}',
+              'Asignado: ${_money(category.allocated, compact: true)} ${category.isEssential ? "(Min: ${_money(category.minRequired, compact: true)})" : ""}',
               style: TextStyle(
                 color: category.meetsMinimum || !category.isEssential ? Colors.white : Colors.orange,
               ),
@@ -904,8 +909,8 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Presupuesto: €${category.allocated.toInt()}', style: const TextStyle(color: Colors.white)),
-                Text('Gastado: €${category.spent.toInt()}', 
+                Text('Presupuesto: ${_money(category.allocated, compact: true)}', style: const TextStyle(color: Colors.white)),
+                Text('Gastado: ${_money(category.spent, compact: true)}', 
                      style: TextStyle(color: category.isOverBudget ? Colors.red : Colors.green)),
               ],
             ),
@@ -924,7 +929,7 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
               children: [
                 Text('${category.usagePercentage.toStringAsFixed(1)}% usado', 
                      style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                Text('Restante: €${category.remaining.toInt()}', 
+                Text('Restante: ${_money(category.remaining, compact: true)}', 
                      style: TextStyle(
                        color: category.remaining >= 0 ? Colors.green : Colors.red,
                        fontSize: 12,
@@ -954,7 +959,7 @@ class _BudgetMasterGameState extends State<BudgetMasterGame> with TickerProvider
               const SizedBox(height: 16),
               _buildStatCard('Meses Completados', _monthsCompleted.toString(), Colors.blue),
               _buildStatCard('Mejor Tasa de Ahorro', '${_bestSavingsRate.toStringAsFixed(1)}%', Colors.green),
-              _buildStatCard('Total Ahorrado', '€${_totalSavings.toInt()}', Colors.purple),
+              _buildStatCard('Total Ahorrado', _money(_totalSavings, compact: true), Colors.purple),
               _buildStatCard('Eventos Manejados', _eventsHandled.toString(), Colors.orange),
             ],
           ),

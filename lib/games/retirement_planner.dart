@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class RetirementPlanner extends StatefulWidget {
   final VoidCallback? onCompleted;
@@ -12,6 +15,8 @@ class RetirementPlanner extends StatefulWidget {
 }
 
 class _RetirementPlannerState extends State<RetirementPlanner> {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   int _currentAge = 25;
   int _retirementAge = 67;
   double _salary = 28000.0;
@@ -62,7 +67,7 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
   void _checkMilestones() {
     if (_retirementSavings >= 100000 && !_achievements.contains('Primer 100K')) {
       _achievements.add('Primer 100K');
-      _showAchievement('💰 ¡Primer €100,000 ahorrados!');
+      _showAchievement('💰 ¡Primer ${_money(100000, compact: true)} ahorrados!');
     }
     
     if (_retirementSavings >= 500000 && !_achievements.contains('Medio Millón')) {
@@ -101,8 +106,8 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
         title: const Text('🏖️ ¡Jubilación! 🏖️'),
         content: Text(
           'Edad de jubilación: $_currentAge\n'
-          'Ahorros totales: €${_retirementSavings.toInt()}\n'
-          'Ingreso mensual: €${monthlyIncome.toInt()}\n'
+          'Ahorros totales: ${_money(_retirementSavings, compact: true)}\n'
+          'Ingreso mensual: ${_money(monthlyIncome, compact: true)}\n'
           'Reemplazo de salario: ${salaryReplacement.toStringAsFixed(1)}%\n'
           'Calidad de jubilación: $retirementQuality'
         ),
@@ -183,7 +188,8 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
     double yearsToRetirement = _retirementAge - _currentAge.toDouble();
     double projectedSavings = _calculateProjectedSavings();
     
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('🏖️ Retirement Planner'),
@@ -196,6 +202,7 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
           _buildControls(),
         ],
       ),
+    ),
     );
   }
   
@@ -212,13 +219,13 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Edad: $_currentAge años', style: const TextStyle(color: Colors.white, fontSize: 18)),
-                  Text('Salario: \$${_salary.toInt()}', style: const TextStyle(color: Colors.green)),
+                  Text('Salario: ${_money(_salary, compact: true)}', style: const TextStyle(color: Colors.green)),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('\$${_retirementSavings.toInt()}', 
+                  Text(_money(_retirementSavings, compact: true), 
                        style: const TextStyle(color: Colors.blue, fontSize: 24, fontWeight: FontWeight.bold)),
                   const Text('Ahorros', style: TextStyle(color: Colors.blue)),
                 ],
@@ -258,11 +265,11 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
                 const Text('📊 Proyección de Jubilación', 
                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                Text('Ahorros proyectados: \$${projectedSavings.toInt()}', 
+                Text('Ahorros proyectados: ${_money(projectedSavings, compact: true)}', 
                      style: const TextStyle(color: Colors.green)),
-                Text('Ingreso mensual estimado: \$${monthlyIncome.toInt()}', 
+                Text('Ingreso mensual estimado: ${_money(monthlyIncome, compact: true)}', 
                      style: const TextStyle(color: Colors.blue)),
-                Text('Contribución actual: \$${_monthlyContribution.toInt()}/mes', 
+                Text('Contribución actual: ${_money(_monthlyContribution, compact: true)}/mes', 
                      style: const TextStyle(color: Colors.purple)),
               ],
             ),
@@ -321,7 +328,7 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
             child: ElevatedButton(
               onPressed: _decreaseContribution,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('- \$100/mes', style: TextStyle(color: Colors.white)),
+              child: Text('- ${_money(100, compact: true)}/mes', style: const TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(width: 12),
@@ -333,7 +340,7 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '\$${_monthlyContribution.toInt()}/mes',
+                '${_money(_monthlyContribution, compact: true)}/mes',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -344,7 +351,7 @@ class _RetirementPlannerState extends State<RetirementPlanner> {
             child: ElevatedButton(
               onPressed: _increaseContribution,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: const Text('+ \$100/mes', style: TextStyle(color: Colors.white)),
+              child: Text('+ ${_money(100, compact: true)}/mes', style: const TextStyle(color: Colors.white)),
             ),
           ),
         ],

@@ -1,306 +1,312 @@
-# Firebase Setup Guide for FINANCE4U
+# Guía de configuración Firebase — FINANCE4U
 
-This guide will help you set up Firebase for your Flutter app following best practices.
+Guía completa para vincular la app con Firebase **sin Firebase Storage** (plan Spark gratuito).
 
-## Prerequisites
+---
 
-1. **FlutterFire CLI** - Install globally:
-   ```bash
-   dart pub global activate flutterfire_cli
-   ```
+## Qué usa la app de Firebase
 
-2. **Firebase Account** - Create a project at [Firebase Console](https://console.firebase.google.com/)
+| Servicio | ¿Necesario? | Plan |
+|----------|-------------|------|
+| **Authentication** (Google + Anónimo) | ✅ Sí | Spark gratis |
+| **Firestore** (perfiles, progreso, clases, foro) | ✅ Sí | Spark gratis |
+| **Storage** (archivos/fotos) | ❌ No | — |
+| Analytics / Crashlytics | Opcional | Spark / Blaze |
 
-## Step 1: Install Dependencies
+### Fotos de perfil (sin Storage)
 
-Dependencies are already added to `pubspec.yaml`. Run:
+| Origen | Campo en Firestore |
+|--------|-------------------|
+| Usuario sube foto (cámara/galería) | `photoBase64` (imagen comprimida en base64) |
+| Login con Google | `photoUrl` (URL de la cuenta Google) |
+
+No hace falta activar Storage ni el plan Blaze.
+
+---
+
+## Paso 1 — Dependencias
 
 ```bash
+cd c:\Users\marti\duolingo_finanzas
 flutter pub get
 ```
 
-## Step 2: Configure Firebase
+Paquetes Firebase en `pubspec.yaml`:
+- `firebase_core`, `firebase_auth`, `cloud_firestore`
+- `google_sign_in`, `image_picker`
+- **No** incluye `firebase_storage`
 
-1. **Login to Firebase**:
-   ```bash
-   firebase login
-   ```
+---
 
-2. **Configure FlutterFire** (this will generate `firebase_options.dart`):
-   ```bash
-   flutterfire configure
-   ```
-   
-   This command will:
-   - Detect your Firebase projects
-   - Let you select which platforms to configure (Android, iOS, Web)
-   - Generate `lib/firebase_options.dart` with your Firebase config
-   - Automatically add configuration files to your project
+## Paso 2 — FlutterFire CLI
 
-3. **For Android**: The `google-services.json` will be automatically placed in `android/app/`
+```bash
+dart pub global activate flutterfire_cli
+firebase login
+flutterfire configure
+```
 
-4. **For iOS**: The `GoogleService-Info.plist` will be automatically placed in `ios/Runner/`
+### Si CMD dice «flutterfire no es un comando»
 
-5. **For Web**: Configuration will be added to `web/index.html`
+Opción A — ruta completa (Windows):
 
-## Step 3: Android Configuration
+```cmd
+C:\Users\marti\AppData\Local\Pub\Cache\bin\flutterfire.bat configure
+```
 
-1. **Update `android/build.gradle.kts`** (project-level):
-   ```kotlin
-   buildscript {
-       dependencies {
-           classpath("com.google.gms:google-services:4.4.0")
-       }
-   }
-   ```
+Opción B — añadir al PATH de usuario:
 
-2. **Update `android/app/build.gradle.kts`** (app-level):
-   ```kotlin
-   plugins {
-       id("com.android.application")
-       id("kotlin-android")
-       id("dev.flutter.flutter-gradle-plugin")
-       id("com.google.gms.google-services") // Add this
-   }
-   ```
+```
+C:\Users\marti\AppData\Local\Pub\Cache\bin
+```
 
-## Step 4: iOS Configuration
+Opción C:
 
-1. **Update `ios/Podfile`** (if needed):
-   ```ruby
-   platform :ios, '12.0'
-   ```
+```cmd
+dart pub global run flutterfire_cli:flutterfire configure
+```
 
-2. **Run**:
-   ```bash
-   cd ios
-   pod install
-   cd ..
-   ```
+### Archivos generados
 
-## Step 5: Environment Variables (Optional but Recommended)
+| Archivo | Ubicación |
+|---------|-----------|
+| `firebase_options.dart` | `lib/` |
+| `google-services.json` | `android/app/` |
+| `GoogleService-Info.plist` | `ios/Runner/` (si configuras iOS) |
 
-For production, use environment variables instead of hardcoding API keys:
+Están en `.gitignore`: cada desarrollador ejecuta `flutterfire configure` en su máquina.
 
-1. Create `.env` file in project root:
-   ```
-   FIREBASE_API_KEY=your_api_key_here
-   FIREBASE_PROJECT_ID=your_project_id
-   ```
+---
 
-2. Add `flutter_dotenv` to `pubspec.yaml`:
-   ```yaml
-   dependencies:
-     flutter_dotenv: ^5.1.0
-   ```
+## Paso 3 — Android (ya configurado en el repo)
 
-3. Load in `main.dart`:
-   ```dart
-   import 'package:flutter_dotenv/flutter_dotenv.dart';
-   
-   void main() async {
-     await dotenv.load(fileName: ".env");
-     // ... rest of initialization
-   }
-   ```
+- `applicationId`: `com.finance4u.education`
+- Plugins Google Services y Crashlytics en Gradle
+- Permisos cámara en `AndroidManifest.xml` (fotos de perfil)
 
-## Step 6: Firebase Services Setup
+Solo falta el `google-services.json` del paso 2.
 
-### Authentication
+### Huellas SHA para Google Sign-In
 
-Enable Authentication in Firebase Console:
-1. Go to Firebase Console > Authentication
-2. Enable **Email/Password** sign-in method
-3. Optionally enable other methods (Google, Apple, etc.)
+```cmd
+cd android
+gradlew signingReport
+```
 
-### Firestore Database
+Copia SHA-1 y SHA-256 (debug) en Firebase Console → Project settings → Android app.
 
-1. Go to Firebase Console > Firestore Database
-2. Create database (start in test mode for development)
-3. Set up security rules:
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       // Users can only read/write their own data
-       match /users/{userId} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-       
-       match /user_progress/{userId} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-       
-       match /game_data/{document=**} {
-         allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-       }
-       
-       match /achievements/{document=**} {
-         allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-       }
-     }
-   }
-   ```
+---
 
-### Storage
+## Paso 4 — Authentication
 
-1. Go to Firebase Console > Storage
-2. Create storage bucket
-3. Set up security rules:
-   ```javascript
-   rules_version = '2';
-   service firebase.storage {
-     match /b/{bucket}/o {
-       match /users/{userId}/{allPaths=**} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-     }
-   }
-   ```
+Firebase Console → **Authentication → Sign-in method**
 
-### Analytics
+1. **Google** → Activar → email de soporte del proyecto
+2. **Anónimo** → Activar (modo invitado)
+3. **Email/Password** → Opcional (código legacy en `AuthService`)
 
-Analytics is automatically enabled when you initialize Firebase.
+---
 
-### Crashlytics
+## Paso 5 — Firestore Database
 
-1. Go to Firebase Console > Crashlytics
-2. Follow the setup instructions for your platforms
+Firebase Console → **Firestore Database → Create database**
 
-## Step 7: Verify Setup
+- Región cercana a tus usuarios
+- Modo Production recomendado (con reglas abajo)
 
-Run the app and check:
-- Firebase initializes without errors
-- Authentication works
-- Firestore connections work
-- No console errors
+### Reglas de seguridad
 
-## Architecture Overview
+Firestore → **Rules**:
 
-The Firebase integration follows these principles:
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
 
-1. **Singleton Pattern**: `FirebaseService` and `AuthService` use singleton pattern (similar to React Context)
-2. **Typed Helpers**: `FirestoreHelper` provides typed collection references
-3. **No Hardcoded Keys**: Configuration comes from `firebase_options.dart` (generated by CLI)
-4. **Modular Approach**: Each service is separated and focused on one responsibility
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
 
-## File Structure
+    match /user_progress/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /game_data/{docId} {
+      allow read, write: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /achievements/{docId} {
+      allow read, write: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /community_posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /groups/{groupId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+    }
+
+    match /lessons/{lessonId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
+```
+
+### Documento de usuario (`users/{uid}`)
+
+```json
+{
+  "username": "María",
+  "email": "maria@gmail.com",
+  "photoUrl": "https://lh3.googleusercontent.com/...",
+  "photoBase64": "/9j/4AAQSkZJRg...",
+  "groupId": "abc123",
+  "groupCode": "FIN2024",
+  "groupName": "Clase 5A",
+  "isGuest": false,
+  "authProvider": "google",
+  "onboardingCompleted": true,
+  "createdAt": "...",
+  "updatedAt": "..."
+}
+```
+
+> `photoBase64` puede ocupar ~50–150 KB. Firestore limita ~1 MB por documento; la app comprime a 512×512 antes de guardar.
+
+### Crear una clase de prueba
+
+Colección `groups` → nuevo documento:
+
+```json
+{
+  "code": "FIN2024",
+  "name": "Clase 5A",
+  "memberIds": []
+}
+```
+
+Los alumnos usan el código en onboarding o en **Ajustes → Mi perfil**.
+
+---
+
+## Paso 6 — Storage
+
+**No activar.** Esta app no usa Firebase Storage.
+
+Si activas Storage por error, no afecta al código actual, pero no es necesario ni recomendado en plan Spark para este proyecto.
+
+---
+
+## Paso 7 — Verificar
+
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
+
+### Checklist funcional
+
+| Prueba | Resultado esperado |
+|--------|-------------------|
+| Arranque | Sin `Firebase initialization error` |
+| Welcome | Botones Google e Invitado |
+| Google login | Entra a onboarding o main |
+| Invitado | Entra a onboarding |
+| Onboarding | Guarda nombre en `users` |
+| Foto de perfil | Campo `photoBase64` en Firestore |
+| Google sin foto propia | `photoUrl` de Google |
+| Código clase `FIN2024` | `groupId` en perfil |
+| Comunidad | Post en `community_posts` |
+| Cerrar sesión | Vuelve a Welcome |
+
+---
+
+## Arquitectura en el código
 
 ```
 lib/
+  main.dart                    # Firebase.initializeApp + providers
+  providers/
+    auth_provider.dart         # Sesión, perfil, onboarding, grupos
+    app_provider.dart          # Progreso local (pendiente sync Firestore)
   services/
-    firebase_service.dart      # Core Firebase initialization
-    auth_service.dart          # Authentication service (Singleton)
-    firestore_helper.dart     # Typed Firestore helpers
-  firebase_options.dart       # Generated by FlutterFire CLI
+    firebase_service.dart      # Auth, Firestore, Analytics, Crashlytics
+    auth_service.dart          # Google, invitado, perfil
+    firestore_helper.dart      # CRUD tipado
+    group_service.dart         # Códigos de clase
+  models/
+    user_profile.dart          # photoUrl + photoBase64
+  screens/
+    welcome_screen.dart        # Login Google / invitado
+    onboarding_screen.dart     # Nombre, foto, código clase
+    profile_screen.dart        # Perfil completo
+  utils/
+    profile_photo_helper.dart  # Compresión → base64
+  widgets/
+    profile_avatar.dart        # Muestra foto base64 / URL / icono
 ```
 
-## Usage Examples
-
-### Authentication
-
-```dart
-import 'package:finance4u/services/auth_service.dart';
-
-// Sign up
-await AuthService.instance.createUserWithEmailAndPassword(
-  email: 'user@example.com',
-  password: 'password123',
-  username: 'John Doe',
-);
-
-// Sign in
-await AuthService.instance.signInWithEmailAndPassword(
-  email: 'user@example.com',
-  password: 'password123',
-);
-
-// Sign out
-await AuthService.instance.signOut();
-
-// Listen to auth state
-AuthService.instance.authStateChanges.listen((User? user) {
-  if (user != null) {
-    print('User signed in: ${user.uid}');
-  } else {
-    print('User signed out');
-  }
-});
-```
-
-### Firestore
-
-```dart
-import 'package:finance4u/services/firestore_helper.dart';
-
-// Save user progress
-await FirestoreHelper.saveProgress(
-  userId: 'user123',
-  level: 5,
-  totalXP: 450,
-  streakDays: 7,
-  completedLessons: ['lesson1', 'lesson2'],
-  unlockedGames: ['budget_master', 'credit_score'],
-);
-
-// Get user progress
-final progress = await FirestoreHelper.getProgress('user123');
-
-// Save game data
-await FirestoreHelper.saveGameData(
-  userId: 'user123',
-  gameId: 'budget_master',
-  data: {
-    'level': 3,
-    'score': 1000,
-    'completed': true,
-  },
-);
-
-// Listen to real-time updates
-FirestoreHelper.userProgressStream('user123').listen((snapshot) {
-  final data = snapshot.data();
-  print('Progress updated: $data');
-});
-```
+---
 
 ## Troubleshooting
 
-### Firebase not initializing
-- Check that `firebase_options.dart` exists and is properly generated
-- Verify Firebase project is correctly configured
-- Check console for specific error messages
+### `flutterfire` no reconocido
+Ver Paso 2 — usar ruta completa o añadir Pub al PATH.
 
-### Authentication errors
-- Ensure Email/Password is enabled in Firebase Console
-- Check that security rules allow the operation
-- Verify user credentials
+### `firebase_options.dart` no existe
+Ejecutar `flutterfire configure` en la raíz del proyecto.
 
-### Firestore permission errors
-- Review security rules in Firebase Console
-- Ensure user is authenticated before accessing data
-- Check that rules match your data structure
+### Google Sign-In falla (Android)
+- SHA-1/SHA-256 en Firebase Console
+- Package name: `com.finance4u.education`
+- Google activado en Authentication
 
-## Next Steps
+### `PERMISSION_DENIED` en Firestore
+- Usuario autenticado (Google o anónimo)
+- Reglas publicadas correctamente
+- UID del documento = UID del usuario
 
-1. Integrate Firebase services into your existing `AppProvider`
-2. Replace local storage with Firestore for persistence
-3. Add real-time synchronization for user progress
-4. Implement push notifications using Firebase Cloud Messaging
-5. Set up analytics events for user behavior tracking
+### Foto no se guarda
+- Firestore activo (no Storage)
+- Imagen no demasiado grande (máx. ~700 KB antes de base64)
+- Reglas de `users/{userId}` correctas
 
-## Security Best Practices
+### Error LNK1127 (Windows, Firebase libs)
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
 
-1. **Never commit** `firebase_options.dart` if it contains sensitive data (it's in `.gitignore`)
-2. Use environment variables for production API keys
-3. Always validate data on the server side (Firestore security rules)
-4. Use Firebase App Check to prevent abuse
-5. Regularly review and update security rules
+---
 
-## Support
+## Próximos pasos (opcional)
 
-For issues or questions:
-- [FlutterFire Documentation](https://firebase.flutter.dev/)
-- [Firebase Documentation](https://firebase.google.com/docs)
-- [FlutterFire GitHub](https://github.com/firebase/flutterfire)
+1. Sincronizar `AppProvider` con `user_progress` en Firestore al completar lecciones
+2. Ranking real en pestaña **Clase** usando `groups` + miembros
+3. Analytics y Crashlytics en producción
+4. Firebase App Check anti-abuso
 
+---
+
+## Enlaces
+
+- [FlutterFire](https://firebase.flutter.dev/)
+- [Firebase Console](https://console.firebase.google.com/)
+- [Precios Firebase (Spark)](https://firebase.google.com/pricing)

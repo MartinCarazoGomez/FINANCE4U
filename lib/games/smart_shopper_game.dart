@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class SmartShopperGame extends StatefulWidget {
   final VoidCallback? onCompleted;
@@ -30,6 +33,8 @@ class ShoppingChoice {
 }
 
 class _SmartShopperGameState extends State<SmartShopperGame> {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   double _budget = 500.0; // Presupuesto más realista en euros
   double _savings = 0.0;
   int _smartChoices = 0;
@@ -122,7 +127,7 @@ class _SmartShopperGameState extends State<SmartShopperGame> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Presupuesto: €${_budget.toInt()}'),
+            Text('Presupuesto: ${_money(_budget, compact: true)}'),
             const SizedBox(height: 16),
             ...choice.options.asMap().entries.map((entry) {
               final index = entry.key;
@@ -137,7 +142,7 @@ class _SmartShopperGameState extends State<SmartShopperGame> {
                     Navigator.pop(context);
                     _makeChoice(index, choice);
                   } : null,
-                  child: Text('$option - €${price.toInt()} (Calidad: $quality/100)'),
+                  child: Text('$option - ${_money(price, compact: true)} (Calidad: $quality/100)'),
                 ),
               );
             }),
@@ -194,7 +199,7 @@ class _SmartShopperGameState extends State<SmartShopperGame> {
         title: const Text('🛍️ ¡Smart Shopper! 🛍️'),
         content: Text(
           'Decisiones inteligentes: $_smartChoices/$_totalChoices\n'
-          'Dinero ahorrado: €${_savings.toInt()}\n'
+          'Dinero ahorrado: ${_money(_savings, compact: true)}\n'
           'Eficiencia: ${efficiency.toStringAsFixed(1)}%\n'
           '${efficiency >= 80 ? "¡Eres un comprador experto!" : "¡Sigue practicando!"}'
         ),
@@ -240,7 +245,8 @@ class _SmartShopperGameState extends State<SmartShopperGame> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('🛍️ Smart Shopper'),
@@ -266,11 +272,11 @@ class _SmartShopperGameState extends State<SmartShopperGame> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Presupuesto: €${_budget.toInt()}',
+                    'Presupuesto: ${_money(_budget, compact: true)}',
                     style: const TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    'Ahorrado: €${_savings.toInt()}',
+                    'Ahorrado: ${_money(_savings, compact: true)}',
                     style: const TextStyle(color: Colors.blue, fontSize: 18),
                   ),
                   Text(
@@ -289,6 +295,7 @@ class _SmartShopperGameState extends State<SmartShopperGame> {
           ],
         ),
       ),
+    ),
     );
   }
   

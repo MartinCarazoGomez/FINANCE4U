@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class InsuranceGuardian extends StatefulWidget {
   final VoidCallback? onCompleted;
@@ -46,6 +49,8 @@ class RiskEvent {
 }
 
 class _InsuranceGuardianState extends State<InsuranceGuardian> {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   double _monthlyIncome = 2200.0; // Salario medio neto español
   double _savings = 3000.0; // Ahorros iniciales más realistas
   int _currentMonth = 1;
@@ -194,12 +199,12 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
           children: [
             Text(event.description),
             const SizedBox(height: 16),
-            Text('Costo total: €${event.cost.toInt()}', 
+            Text('Costo total: ${_money(event.cost, compact: true)}', 
                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             if (relevantInsurance != null) ...[
-              Text('Cubierto por seguro: €${(event.cost - outOfPocketCost).toInt()}', 
+              Text('Cubierto por seguro: ${_money(event.cost - outOfPocketCost, compact: true)}', 
                    style: const TextStyle(color: Colors.green)),
-              Text('Tu parte: €${outOfPocketCost.toInt()}', 
+              Text('Tu parte: ${_money(outOfPocketCost, compact: true)}', 
                    style: const TextStyle(color: Colors.orange)),
             ] else ...[
               const Text('Sin seguro - Pagas todo', style: TextStyle(color: Colors.red)),
@@ -229,7 +234,7 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
     } else if (cost == 0) {
       _showMessage('✅ ¡Tu seguro cubrió todo!', Colors.green);
     } else {
-      _showMessage('💰 Pagaste €${cost.toInt()} de tu bolsillo', Colors.orange);
+      _showMessage('💰 Pagaste ${_money(cost, compact: true)} de tu bolsillo', Colors.orange);
     }
     
     _checkGameEnd();
@@ -304,9 +309,9 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
         title: const Text('🛡️ ¡Insurance Guardian! 🛡️'),
         content: Text(
           'Meses transcurridos: $_currentMonth\n'
-          'Dinero final: €${netWorth.toInt()}\n'
-          'Primas pagadas: €${_totalPremiumsPaid.toInt()}\n'
-          'Reclamos recibidos: €${_totalClaimsPaid.toInt()}\n'
+          'Dinero final: ${_money(netWorth, compact: true)}\n'
+          'Primas pagadas: ${_money(_totalPremiumsPaid, compact: true)}\n'
+          'Reclamos recibidos: ${_money(_totalClaimsPaid, compact: true)}\n'
           'Evaluación: $performance'
         ),
         actions: [
@@ -369,7 +374,8 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         title: const Text('🛡️ Insurance Guardian'),
@@ -382,6 +388,7 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
           _buildSummary(),
         ],
       ),
+    ),
     );
   }
   
@@ -398,14 +405,14 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Mes $_currentMonth', style: const TextStyle(color: Colors.white)),
-                  Text('Ahorros: €${_savings.toInt()}', 
+                  Text('Ahorros: ${_money(_savings, compact: true)}', 
                        style: TextStyle(color: _savings >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('Seguros: €${_totalInsuranceCost.toInt()}/mes', style: const TextStyle(color: Colors.blue)),
+                  Text('Seguros: ${_money(_totalInsuranceCost, compact: true)}/mes', style: const TextStyle(color: Colors.blue)),
                   Text('${_insuranceOptions.where((i) => i.isActive).length}/5 activos', 
                        style: const TextStyle(color: Colors.purple)),
                 ],
@@ -456,8 +463,8 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Prima: €${insurance.monthlyCost.toInt()}/mes', style: const TextStyle(color: Colors.orange)),
-                Text('Cobertura: €${insurance.coverage.toInt()}', style: const TextStyle(color: Colors.blue)),
+                Text('Prima: ${_money(insurance.monthlyCost, compact: true)}/mes', style: const TextStyle(color: Colors.orange)),
+                Text('Cobertura: ${_money(insurance.coverage, compact: true)}', style: const TextStyle(color: Colors.blue)),
               ],
             ),
           ],
@@ -477,13 +484,13 @@ class _InsuranceGuardianState extends State<InsuranceGuardian> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Primas pagadas: €${_totalPremiumsPaid.toInt()}', style: const TextStyle(color: Colors.red)),
-              Text('Reclamos: €${_totalClaimsPaid.toInt()}', style: const TextStyle(color: Colors.green)),
+              Text('Primas pagadas: ${_money(_totalPremiumsPaid, compact: true)}', style: const TextStyle(color: Colors.red)),
+              Text('Reclamos: ${_money(_totalClaimsPaid, compact: true)}', style: const TextStyle(color: Colors.green)),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            'Balance: ${_totalClaimsPaid > _totalPremiumsPaid ? "Ganancia" : "Inversión"} de €${(_totalClaimsPaid - _totalPremiumsPaid).abs().toInt()}',
+            'Balance: ${_totalClaimsPaid > _totalPremiumsPaid ? "Ganancia" : "Inversión"} de ${_money((_totalClaimsPaid - _totalPremiumsPaid).abs(), compact: true)}',
             style: TextStyle(
               color: _totalClaimsPaid > _totalPremiumsPaid ? Colors.green : Colors.blue,
               fontWeight: FontWeight.bold,

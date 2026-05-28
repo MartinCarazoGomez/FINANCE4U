@@ -36,10 +36,24 @@ class FirestoreHelper {
     required String userId,
     required String email,
     required String username,
+    String? photoUrl,
+    bool isGuest = false,
+    String authProvider = 'email',
+    bool onboardingCompleted = false,
+    String? groupId,
+    String? groupCode,
+    String? groupName,
   }) async {
     await userDoc(userId).set({
       'email': email,
       'username': username,
+      if (photoUrl != null) 'photoUrl': photoUrl,
+      'isGuest': isGuest,
+      'authProvider': authProvider,
+      'onboardingCompleted': onboardingCompleted,
+      if (groupId != null) 'groupId': groupId,
+      if (groupCode != null) 'groupCode': groupCode,
+      if (groupName != null) 'groupName': groupName,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -51,10 +65,10 @@ class FirestoreHelper {
   }
 
   static Future<void> updateUser(String userId, Map<String, dynamic> data) async {
-    await userDoc(userId).update({
+    await userDoc(userId).set({
       ...data,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
 
   // Progress document helpers
@@ -69,14 +83,20 @@ class FirestoreHelper {
     required int streakDays,
     required List<String> completedLessons,
     required List<String> unlockedGames,
+    int classPoints = 0,
+    List<String> completedTopics = const [],
+    int? lastStreakDay,
   }) async {
     await progressDoc(userId).set({
       'userId': userId,
       'level': level,
       'totalXP': totalXP,
       'streakDays': streakDays,
+      if (lastStreakDay != null) 'lastStreakDay': lastStreakDay,
       'completedLessons': completedLessons,
       'unlockedGames': unlockedGames,
+      'classPoints': classPoints,
+      'completedTopics': completedTopics,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'streak_day_helper.dart';
 
 class StreakService {
   static final StreakService _instance = StreakService._internal();
@@ -9,69 +10,58 @@ class StreakService {
   // Estado del streak
   int _currentStreak = 0;
   int _maxStreak = 0;
-  DateTime? _lastActiveDate;
+  int? _lastStreakDay;
   bool _todayActive = false;
-  List<DateTime> _activeDays = [];
+  List<int> _activeStreakDays = [];
   
   // Getters
   int get currentStreak => _currentStreak;
   int get maxStreak => _maxStreak;
   bool get todayActive => _todayActive;
-  DateTime? get lastActiveDate => _lastActiveDate;
-  List<DateTime> get activeDays => List.from(_activeDays);
+  int? get lastStreakDay => _lastStreakDay;
+  List<DateTime> get activeDays => _activeStreakDays
+      .map((d) => DateTime.fromMillisecondsSinceEpoch(
+            d * Duration.millisecondsPerDay,
+          ))
+      .toList();
   
   // Verificar si el usuario ha estado activo hoy
   bool get hasCompletedToday {
-    if (_lastActiveDate == null) return false;
-    final today = DateTime.now();
-    final lastActive = _lastActiveDate!;
-    return lastActive.year == today.year &&
-           lastActive.month == today.month &&
-           lastActive.day == today.day;
+    if (_lastStreakDay == null) return false;
+    return _lastStreakDay == StreakDayHelper.currentStreakDay();
   }
   
   // Verificar si la racha está en peligro (ayer no estuvo activo)
   bool get streakAtRisk {
-    if (_lastActiveDate == null) return false;
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    final lastActive = _lastActiveDate!;
-    return !(lastActive.year == yesterday.year &&
-             lastActive.month == yesterday.month &&
-             lastActive.day == yesterday.day) && !hasCompletedToday;
+    if (_lastStreakDay == null || _currentStreak == 0) return false;
+    return StreakDayHelper.daysSince(_lastStreakDay) == 1 &&
+        !hasCompletedToday;
   }
   
-  // Días consecutivos desde el último activo
+  // Días de racha desde el último activo
   int get daysSinceLastActive {
-    if (_lastActiveDate == null) return 999;
-    final now = DateTime.now();
-    final difference = now.difference(_lastActiveDate!);
-    return difference.inDays;
+    return StreakDayHelper.daysSince(_lastStreakDay);
   }
   
   // Registrar actividad para hoy
   void markTodayAsActive() {
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
+    final today = StreakDayHelper.currentStreakDay();
     
     // Si ya está marcado como activo hoy, no hacer nada
     if (hasCompletedToday) return;
     
     // Verificar si mantiene la racha
-    if (_lastActiveDate != null) {
-      final daysSince = daysSinceLastActive;
+    if (_lastStreakDay != null) {
+      final gap = today - _lastStreakDay!;
       
-      if (daysSince == 1) {
-        // Mantiene la racha (ayer estuvo activo)
+      if (gap == 1) {
         _currentStreak++;
-      } else if (daysSince == 0) {
-        // Ya está activo hoy
+      } else if (gap == 0) {
         return;
       } else {
-        // Perdió la racha
         _currentStreak = 1;
       }
     } else {
-      // Primera vez que se registra actividad
       _currentStreak = 1;
     }
     
@@ -80,65 +70,56 @@ class StreakService {
       _maxStreak = _currentStreak;
     }
     
-    // Actualizar datos
-    _lastActiveDate = todayDate;
+    _lastStreakDay = today;
     _todayActive = true;
     
-    // Agregar a la lista de días activos
-    if (!_activeDays.any((date) => 
-        date.year == todayDate.year &&
-        date.month == todayDate.month &&
-        date.day == todayDate.day)) {
-      _activeDays.add(todayDate);
+    if (!_activeStreakDays.contains(today)) {
+      _activeStreakDays.add(today);
     }
     
-    // Mantener solo los últimos 365 días
-    final cutoffDate = DateTime.now().subtract(const Duration(days: 365));
-    _activeDays.removeWhere((date) => date.isBefore(cutoffDate));
+    final cutoffDay =
+        StreakDayHelper.currentStreakDay() - 365;
+    _activeStreakDays.removeWhere((day) => day < cutoffDay);
     
     _saveData();
   }
   
   // Verificar y actualizar el estado del streak
   void checkStreakStatus() {
-    if (_lastActiveDate == null) return;
+    if (_lastStreakDay == null) return;
     
-    final daysSince = daysSinceLastActive;
-    
-    // Si han pasado más de 1 día sin actividad, pierde la racha
-    if (daysSince > 1) {
+    if (StreakDayHelper.isStreakBroken(_lastStreakDay)) {
       _currentStreak = 0;
       _todayActive = false;
       _saveData();
-    } else if (daysSince == 0) {
-      // Está activo hoy
+    } else if (hasCompletedToday) {
       _todayActive = true;
     } else {
-      // Ayer estuvo activo, hoy no
       _todayActive = false;
     }
   }
   
   // Obtener el número de días activos en la semana actual
   int getActiveThisWeek() {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+    final today = StreakDayHelper.currentStreakDay();
+    final startOfWeekDay = today - (DateTime.now().weekday - 1);
     
-    return _activeDays.where((date) => 
-        date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
-        date.isBefore(endOfWeek.add(const Duration(days: 1)))).length;
+    return _activeStreakDays
+        .where((day) => day >= startOfWeekDay && day <= startOfWeekDay + 6)
+        .length;
   }
   
   // Obtener el número de días activos en el mes actual
   int getActiveThisMonth() {
-    final now = DateTime.now();
+    final now = StreakDayHelper.toMadrid(DateTime.now());
     final startOfMonth = DateTime(now.year, now.month, 1);
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
+    final startDay = StreakDayHelper.streakDayIndex(startOfMonth);
+    final endDay = StreakDayHelper.streakDayIndex(endOfMonth);
     
-    return _activeDays.where((date) => 
-        date.isAfter(startOfMonth.subtract(const Duration(days: 1))) &&
-        date.isBefore(endOfMonth.add(const Duration(days: 1)))).length;
+    return _activeStreakDays
+        .where((day) => day >= startDay && day <= endDay)
+        .length;
   }
   
   // Obtener mensaje motivacional basado en el streak
@@ -198,28 +179,19 @@ class StreakService {
   
   // Obtener progreso de la semana (array de 7 elementos para cada día)
   List<bool> getWeekProgress() {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final today = StreakDayHelper.currentStreakDay();
+    final startOfWeekDay = today - (DateTime.now().weekday - 1);
     
-    List<bool> progress = [];
-    for (int i = 0; i < 7; i++) {
-      final day = startOfWeek.add(Duration(days: i));
-      final dayDate = DateTime(day.year, day.month, day.day);
-      final isActive = _activeDays.any((date) => 
-          date.year == dayDate.year &&
-          date.month == dayDate.month &&
-          date.day == dayDate.day);
-      progress.add(isActive);
-    }
-    
-    return progress;
+    return List.generate(7, (i) {
+      return _activeStreakDays.contains(startOfWeekDay + i);
+    });
   }
   
   // Resetear el streak (para testing o casos especiales)
   void resetStreak() {
     _currentStreak = 0;
     _todayActive = false;
-    _lastActiveDate = null;
+    _lastStreakDay = null;
     _saveData();
   }
   
@@ -228,24 +200,22 @@ class StreakService {
     _currentStreak = 0;
     _maxStreak = 0;
     _todayActive = false;
-    _lastActiveDate = null;
-    _activeDays.clear();
+    _lastStreakDay = null;
+    _activeStreakDays.clear();
     _saveData();
   }
   
   // Simular datos de demo
   void initDemoData() {
-    final now = DateTime.now();
+    final today = StreakDayHelper.currentStreakDay();
     
-    // Simular actividad de los últimos días
     for (int i = 1; i <= 5; i++) {
-      final date = now.subtract(Duration(days: i));
-      _activeDays.add(DateTime(date.year, date.month, date.day));
+      _activeStreakDays.add(today - i);
     }
     
     _currentStreak = 5;
     _maxStreak = 12;
-    _lastActiveDate = DateTime(now.year, now.month, now.day - 1);
+    _lastStreakDay = today - 1;
     
     _saveData();
   }
@@ -268,10 +238,10 @@ class StreakService {
       'currentStreak': _currentStreak,
       'maxStreak': _maxStreak,
       'todayActive': _todayActive,
-      'lastActiveDate': _lastActiveDate?.toIso8601String(),
+      'lastStreakDay': _lastStreakDay,
       'activeThisWeek': getActiveThisWeek(),
       'activeThisMonth': getActiveThisMonth(),
-      'totalActiveDays': _activeDays.length,
+      'totalActiveDays': _activeStreakDays.length,
       'streakAtRisk': streakAtRisk,
       'daysSinceLastActive': daysSinceLastActive,
     };

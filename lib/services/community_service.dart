@@ -13,6 +13,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///     likeCount   : int
 ///     likedBy     : List<String>   (uids of users who liked)
 ///     commentCount: int
+///
+///   community_posts/{postId}/comments/{commentId}
+///     userId      : String
+///     username    : String
+///     content     : String
+///     createdAt   : Timestamp
 class CommunityService {
   static const _kDisplayNameKey = 'community_display_name';
 
@@ -107,6 +113,71 @@ class CommunityService {
     if (doc.data()?['userId'] == userId) {
       await _posts.doc(postId).delete();
     }
+  }
+
+  // ── Comments / replies ───────────────────────────────────────────────────
+
+  static CollectionReference<Map<String, dynamic>> _comments(String postId) =>
+      _posts.doc(postId).collection('comments');
+
+  /// Real-time stream of replies for a post (oldest first).
+  static Stream<QuerySnapshot<Map<String, dynamic>>> commentsStream(
+    String postId, {
+    int limit = 50,
+  }) {
+    return _comments(postId)
+        .orderBy('createdAt', descending: false)
+        .limit(limit)
+        .snapshots();
+  }
+
+  /// Reply to a post. Increments [commentCount] on the parent.
+  static Future<void> createComment({
+    required String postId,
+    required String username,
+    required String content,
+  }) async {
+    final userId = await ensureUser();
+    await saveDisplayName(username);
+
+    final postRef = _posts.doc(postId);
+    final commentRef = _comments(postId).doc();
+
+    await _db.runTransaction((tx) async {
+      final postSnap = await tx.get(postRef);
+      if (!postSnap.exists) {
+        throw Exception('La publicación ya no existe');
+      }
+
+      tx.set(commentRef, {
+        'userId': userId,
+        'username': username.trim(),
+        'content': content.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      tx.update(postRef, {'commentCount': FieldValue.increment(1)});
+    });
+  }
+
+  /// Delete own reply and decrement comment count.
+  static Future<void> deleteComment({
+    required String postId,
+    required String commentId,
+  }) async {
+    final userId = currentUserId;
+    if (userId == null) return;
+
+    final commentRef = _comments(postId).doc(commentId);
+    final postRef = _posts.doc(postId);
+
+    await _db.runTransaction((tx) async {
+      final commentSnap = await tx.get(commentRef);
+      if (!commentSnap.exists) return;
+      if (commentSnap.data()?['userId'] != userId) return;
+
+      tx.delete(commentRef);
+      tx.update(postRef, {'commentCount': FieldValue.increment(-1)});
+    });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────

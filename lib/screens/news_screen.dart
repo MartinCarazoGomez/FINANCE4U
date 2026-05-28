@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class NewsScreen extends StatelessWidget {
   const NewsScreen({super.key});
@@ -312,12 +316,14 @@ class _NewsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                article.summary,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                  height: 1.4,
+              Consumer<AppProvider>(
+                builder: (context, app, _) => Text(
+                  context.localizeMoneyText(article.summary),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -422,12 +428,14 @@ class ArticleDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              article.content,
-              style: const TextStyle(
-                fontSize: 16,
-                height: 1.6,
-                color: Colors.black87,
+            Consumer<AppProvider>(
+              builder: (context, app, _) => Text(
+                CurrencyHelper.localizeLessonText(article.content, app.currency),
+                style: const TextStyle(
+                  fontSize: 16,
+                  height: 1.6,
+                  color: Colors.black87,
+                ),
               ),
             ),
             const SizedBox(height: 32),

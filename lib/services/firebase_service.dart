@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
@@ -19,7 +18,6 @@ class FirebaseService {
 
   FirebaseAuth? _auth;
   FirebaseFirestore? _firestore;
-  FirebaseStorage? _storage;
   FirebaseAnalytics? _analytics;
   FirebaseCrashlytics? _crashlytics;
 
@@ -30,26 +28,23 @@ class FirebaseService {
   Future<void> initialize() async {
     if (_initialized) return;
 
+    _auth = FirebaseAuth.instance;
+    _firestore = FirebaseFirestore.instance;
+    _analytics = FirebaseAnalytics.instance;
+
     try {
-      _auth = FirebaseAuth.instance;
-      _firestore = FirebaseFirestore.instance;
-      _storage = FirebaseStorage.instance;
-      _analytics = FirebaseAnalytics.instance;
       _crashlytics = FirebaseCrashlytics.instance;
-
       await _crashlytics?.setCrashlyticsCollectionEnabled(true);
-
       FlutterError.onError = (errorDetails) {
         _crashlytics?.recordFlutterFatalError(errorDetails);
       };
-
-      _initialized = true;
     } catch (e) {
-      throw Exception('Failed to initialize Firebase services: $e');
+      debugPrint('Crashlytics init skipped: $e');
     }
+
+    _initialized = true;
   }
 
-  /// Get Firebase Auth instance
   FirebaseAuth get auth {
     if (!_initialized || _auth == null) {
       throw Exception('Firebase not initialized. Call initialize() first.');
@@ -57,7 +52,6 @@ class FirebaseService {
     return _auth!;
   }
 
-  /// Get Firestore instance
   FirebaseFirestore get firestore {
     if (!_initialized || _firestore == null) {
       throw Exception('Firebase not initialized. Call initialize() first.');
@@ -65,15 +59,6 @@ class FirebaseService {
     return _firestore!;
   }
 
-  /// Get Storage instance
-  FirebaseStorage get storage {
-    if (!_initialized || _storage == null) {
-      throw Exception('Firebase not initialized. Call initialize() first.');
-    }
-    return _storage!;
-  }
-
-  /// Get Analytics instance
   FirebaseAnalytics get analytics {
     if (!_initialized || _analytics == null) {
       throw Exception('Firebase not initialized. Call initialize() first.');
@@ -81,7 +66,6 @@ class FirebaseService {
     return _analytics!;
   }
 
-  /// Get Crashlytics instance
   FirebaseCrashlytics get crashlytics {
     if (!_initialized || _crashlytics == null) {
       throw Exception('Firebase not initialized. Call initialize() first.');
@@ -89,7 +73,5 @@ class FirebaseService {
     return _crashlytics!;
   }
 
-  /// Check if Firebase is initialized
   bool get isInitialized => _initialized;
 }
-

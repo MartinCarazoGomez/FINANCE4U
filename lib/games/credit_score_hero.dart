@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class CreditScoreHero extends StatefulWidget {
   final VoidCallback onCompleted;
@@ -13,6 +16,8 @@ class CreditScoreHero extends StatefulWidget {
 
 class _CreditScoreHeroState extends State<CreditScoreHero>
     with TickerProviderStateMixin {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   // Game state
   int creditScore = 650;
   double balance = 1000.0;
@@ -323,12 +328,12 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
     // Net worth milestones
     if (netWorth >= 10000 && !financialMilestones.contains('Net Worth 10K')) {
       financialMilestones.add('Net Worth 10K');
-      _addAchievement('Patrimonio Neto: €10,000');
+      _addAchievement('Patrimonio Neto: ${_money(10000, compact: true)}');
     }
     
     if (netWorth >= 50000 && !financialMilestones.contains('Net Worth 50K')) {
       financialMilestones.add('Net Worth 50K');
-      _addAchievement('Patrimonio Neto: €50,000');
+      _addAchievement('Patrimonio Neto: ${_money(50000, compact: true)}');
     }
     
     // Credit score milestones
@@ -403,7 +408,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'credit_offer',
         title: '💳 Nueva Oferta de Tarjeta',
-        description: 'Un banco te ofrece una nueva tarjeta de crédito con límite de \$2,500 y 0% de interés por 12 meses.',
+        description: 'Un banco te ofrece una nueva tarjeta de crédito con límite de ${_money(2500, compact: true)} y 0% de interés por 12 meses.',
         choices: [
           EventChoice(
             text: 'Aceptar la tarjeta',
@@ -424,15 +429,15 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'payment_reminder',
         title: '📅 Recordatorio de Pago',
-        description: 'Tu tarjeta de crédito tiene un saldo de \$${creditCards.isNotEmpty ? creditCards.first.balance.toStringAsFixed(0) : "200"}. ¿Cómo quieres pagar?',
+        description: 'Tu tarjeta de crédito tiene un saldo de ${_money(creditCards.isNotEmpty ? creditCards.first.balance : 200, compact: true)}. ¿Cómo quieres pagar?',
         choices: [
                      EventChoice(
-             text: 'Pagar el total (\$${creditCards.isNotEmpty ? creditCards.first.balance.toStringAsFixed(0) : "200"})',
+             text: 'Pagar el total (${_money(creditCards.isNotEmpty ? creditCards.first.balance : 200, compact: true)})',
              impact: EventImpact(scoreChange: 25, balanceChange: -(creditCards.isNotEmpty ? creditCards.first.balance.toDouble() : 200.0), explanation: 'Pagar el total mejora mucho tu score'),
              action: () => _payCard(creditCards.isNotEmpty ? creditCards.first : null, PaymentType.full),
            ),
            EventChoice(
-             text: 'Pagar el mínimo (\$${creditCards.isNotEmpty ? (creditCards.first.balance * 0.05).toStringAsFixed(0) : "10"})',
+             text: 'Pagar el mínimo (${_money(creditCards.isNotEmpty ? creditCards.first.balance * 0.05 : 10, compact: true)})',
              impact: EventImpact(scoreChange: 5, balanceChange: -(creditCards.isNotEmpty ? (creditCards.first.balance * 0.05).toDouble() : 10.0), explanation: 'Pago mínimo mantiene tu historial pero acumula intereses'),
              action: () => _payCard(creditCards.isNotEmpty ? creditCards.first : null, PaymentType.minimum),
            ),
@@ -447,7 +452,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'emergency_expense',
         title: '🚨 Gasto de Emergencia',
-        description: 'Tu auto se averió y necesitas \$800 para repararlo. ¿Cómo vas a pagarlo?',
+        description: 'Tu auto se averió y necesitas ${_money(800, compact: true)} para repararlo. ¿Cómo vas a pagarlo?',
         choices: [
           EventChoice(
             text: 'Usar tarjeta de crédito',
@@ -468,7 +473,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'salary_increase',
         title: '📈 Aumento de Salario',
-        description: '¡Felicidades! Te aumentaron el salario. Tu ingreso mensual ahora es \$${(monthlyIncome * 1.2).toStringAsFixed(0)}.',
+        description: '¡Felicidades! Te aumentaron el salario. Tu ingreso mensual ahora es ${_money(monthlyIncome * 1.2, compact: true)}.',
         choices: [
           EventChoice(
             text: 'Aumentar gastos proporcionalmente',
@@ -491,7 +496,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'investment_opportunity',
         title: '💰 Oportunidad de Inversión',
-        description: 'Un amigo te ofrece invertir \$1,000 en su negocio con promesa de 50% de retorno en 6 meses.',
+        description: 'Un amigo te ofrece invertir ${_money(1000, compact: true)} en su negocio con promesa de 50% de retorno en 6 meses.',
         choices: [
           EventChoice(
             text: 'Invertir con tarjeta de crédito',
@@ -511,7 +516,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'credit_limit_increase',
         title: '📊 Aumento de Límite',
-        description: 'Tu banco te ofrece aumentar el límite de tu tarjeta de \$${creditCards.isNotEmpty ? creditCards.first.limit.toStringAsFixed(0) : "1000"} a \$${creditCards.isNotEmpty ? (creditCards.first.limit * 1.5).toStringAsFixed(0) : "1500"}.',
+        description: 'Tu banco te ofrece aumentar el límite de tu tarjeta de ${_money(creditCards.isNotEmpty ? creditCards.first.limit : 1000, compact: true)} a ${_money(creditCards.isNotEmpty ? creditCards.first.limit * 1.5 : 1500, compact: true)}.',
         choices: [
           EventChoice(
             text: 'Aceptar el aumento',
@@ -528,7 +533,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'financial_education',
          title: '📚 Curso de Finanzas Personales',
-         description: 'Te ofrecen un curso online de finanzas personales por \$299. Promete enseñarte estrategias avanzadas de manejo de crédito.',
+         description: 'Te ofrecen un curso online de finanzas personales por ${_money(299, compact: true)}. Promete enseñarte estrategias avanzadas de manejo de crédito.',
          choices: [
            EventChoice(
              text: 'Inscribirme inmediatamente - la educación es clave',
@@ -549,7 +554,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'store_credit_card',
          title: '🛍️ Tarjeta de Tienda Departamental',
-         description: 'En el centro comercial te ofrecen una tarjeta de la tienda con 20% de descuento en tu compra de hoy (\$150). La tarjeta tiene 26% de interés anual.',
+         description: 'En el centro comercial te ofrecen una tarjeta de la tienda con 20% de descuento en tu compra de hoy (${_money(150, compact: true)}). La tarjeta tiene 26% de interés anual.',
          choices: [
            EventChoice(
              text: 'Aceptar - el descuento vale la pena',
@@ -612,7 +617,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'budget_creation',
          title: '📊 Crear Presupuesto Personal',
-         description: 'Un asesor financiero te ofrece ayuda para crear un presupuesto detallado. Cuesta \$200 pero puede ahorrarte miles.',
+         description: 'Un asesor financiero te ofrece ayuda para crear un presupuesto detallado. Cuesta ${_money(200, compact: true)} pero puede ahorrarte miles.',
          choices: [
            EventChoice(
              text: 'Contratar al asesor y crear presupuesto completo',
@@ -634,7 +639,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'emergency_fund_challenge',
          title: '🛡️ Desafío Fondo de Emergencia',
-         description: 'Te propones ahorrar \$1,000 en 3 meses para emergencias. ¿Cómo lo lograrás?',
+         description: 'Te propones ahorrar ${_money(1000, compact: true)} en 3 meses para emergencias. ¿Cómo lo lograrás?',
          choices: [
            EventChoice(
              text: 'Reducir gastos en entretenimiento y comida',
@@ -657,7 +662,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'investment_education',
          title: '📈 Curso de Inversiones',
-         description: 'Te ofrecen un curso completo de inversiones por \$500. Incluye acceso a plataforma de trading y mentorías.',
+         description: 'Te ofrecen un curso completo de inversiones por ${_money(500, compact: true)}. Incluye acceso a plataforma de trading y mentorías.',
          choices: [
            EventChoice(
              text: 'Tomar el curso completo - la educación es inversión',
@@ -679,7 +684,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'cashback_optimization',
          title: '💰 Optimización de Cashback',
-         description: 'Descubres que puedes optimizar tus tarjetas para máximo cashback. Requiere planificación pero puede generar \$500+ anuales.',
+         description: 'Descubres que puedes optimizar tus tarjetas para máximo cashback. Requiere planificación pero puede generar ${_money(500, compact: true)}+ anuales.',
          choices: [
            EventChoice(
              text: 'Investigar y optimizar todas mis tarjetas',
@@ -700,7 +705,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'ai_financial_advisor',
          title: '🤖 Asesor Financiero IA',
-         description: 'Una IA analiza tus finanzas y te ofrece consejos personalizados por \$99/mes. Promete optimizar tu situación financiera.',
+         description: 'Una IA analiza tus finanzas y te ofrece consejos personalizados por ${_money(99, compact: true)}/mes. Promete optimizar tu situación financiera.',
          choices: [
            EventChoice(
              text: 'Contratar asesor IA - la tecnología es el futuro',
@@ -744,7 +749,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'cryptocurrency_fomo',
          title: '₿ FOMO Criptomonedas',
-         description: 'Bitcoin subió 200% este mes. Todos hablan de criptos. Tu amigo ganó \$10,000. ¿Entras al mercado crypto?',
+         description: 'Bitcoin subió 200% este mes. Todos hablan de criptos. Tu amigo ganó ${_money(10000, compact: true)}. ¿Entras al mercado crypto?',
          choices: [
            EventChoice(
              text: 'Invertir 20% de mi portfolio en crypto',
@@ -766,7 +771,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'side_hustle_opportunity',
          title: '💼 Oportunidad de Negocio Paralelo',
-         description: 'Descubres una oportunidad de negocio online que puede generar \$1,000+ mensuales, pero requiere \$2,000 iniciales y 20 horas semanales.',
+         description: 'Descubres una oportunidad de negocio online que puede generar ${_money(1000, compact: true)}+ mensuales, pero requiere ${_money(2000, compact: true)} iniciales y 20 horas semanales.',
          choices: [
            EventChoice(
              text: 'Invertir tiempo y dinero - crear múltiples fuentes de ingreso',
@@ -774,7 +779,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
              action: () => _startSideHustle(),
            ),
            EventChoice(
-             text: 'Empezar pequeño con \$500 para probar el concepto',
+             text: 'Empezar pequeño con ${_money(500, compact: true)} para probar el concepto',
              impact: EventImpact(scoreChange: 20, balanceChange: -500, explanation: 'Validar antes de invertir fuerte es inteligente'),
              action: () => _testSideHustle(),
            ),
@@ -788,7 +793,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'real_estate_investment',
          title: '🏠 Inversión Inmobiliaria',
-         description: 'Te ofrecen participar en un REIT (fondo inmobiliario) que promete 8% anual. Mínimo \$5,000.',
+         description: 'Te ofrecen participar en un REIT (fondo inmobiliario) que promete 8% anual. Mínimo ${_money(5000, compact: true)}.',
          choices: [
            EventChoice(
              text: 'Invertir el mínimo - diversificar en bienes raíces',
@@ -815,7 +820,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'credit_repair',
         title: '🔧 Reparación de Crédito',
-        description: 'Una empresa promete "reparar" tu crédito eliminando reportes negativos por \$500.',
+        description: 'Una empresa promete "reparar" tu crédito eliminando reportes negativos por ${_money(500, compact: true)}.',
         choices: [
           EventChoice(
             text: 'Contratar la empresa',
@@ -835,10 +840,10 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
              GameEvent(
          id: 'secured_card',
          title: '💳 Tarjeta Asegurada',
-         description: 'Te ofrecen una tarjeta de crédito asegurada con depósito de \$200 para reconstruir tu crédito. Requiere verificación de ingresos.',
+         description: 'Te ofrecen una tarjeta de crédito asegurada con depósito de ${_money(200, compact: true)} para reconstruir tu crédito. Requiere verificación de ingresos.',
          choices: [
-           EventChoice(
-             text: 'Depositar \$200 y obtener la tarjeta',
+             EventChoice(
+             text: 'Depositar ${_money(200, compact: true)} y obtener la tarjeta',
              impact: EventImpact(scoreChange: 25, balanceChange: -200, explanation: 'Las tarjetas aseguradas son excelentes para reconstruir crédito'),
              action: () => _addCreditCard(CardType.secured),
            ),
@@ -856,7 +861,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'payday_loan_temptation',
          title: '💸 Préstamo de Día de Pago',
-         description: 'Necesitas \$300 urgentemente. Una casa de préstamos te ofrece \$300 hoy, devuelves \$350 en 2 semanas.',
+         description: 'Necesitas ${_money(300, compact: true)} urgentemente. Una casa de préstamos te ofrece ${_money(300, compact: true)} hoy, devuelves ${_money(350, compact: true)} en 2 semanas.',
          choices: [
            EventChoice(
              text: 'Tomar el préstamo - necesito el dinero ya',
@@ -901,7 +906,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       GameEvent(
         id: 'premium_rewards',
         title: '💎 Tarjeta Premium Rewards',
-        description: 'Te pre-aprueban para una tarjeta premium con 2% cashback, límite de \$10,000 y cuota anual de \$99.',
+        description: 'Te pre-aprueban para una tarjeta premium con 2% cashback, límite de ${_money(10000, compact: true)} y cuota anual de ${_money(99, compact: true)}.',
         choices: [
           EventChoice(
             text: 'Aceptar la tarjeta premium',
@@ -943,7 +948,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'business_credit_line',
          title: '💼 Línea de Crédito Comercial',
-         description: 'Te aprueban una línea de crédito comercial de \$50,000 al 6% para iniciar tu propio negocio. Requiere garantía personal.',
+         description: 'Te aprueban una línea de crédito comercial de ${_money(50000, compact: true)} al 6% para iniciar tu propio negocio. Requiere garantía personal.',
          choices: [
            EventChoice(
              text: 'Aceptar y lanzar mi negocio inmediatamente',
@@ -964,7 +969,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
        GameEvent(
          id: 'investment_opportunity_premium',
          title: '📈 Oportunidad de Inversión Premium',
-         description: 'Tu banco privado te invita a invertir en un fondo exclusivo con rendimiento histórico del 12% anual. Mínimo \$10,000.',
+         description: 'Tu banco privado te invita a invertir en un fondo exclusivo con rendimiento histórico del 12% anual. Mínimo ${_money(10000, compact: true)}.',
          choices: [
            EventChoice(
              text: 'Invertir el mínimo requerido',
@@ -1771,8 +1776,8 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
       List<Quest> possibleQuests = [
         Quest(
           id: 'emergency_fund_1000',
-          title: 'Fondo de Emergencia \$1000',
-          description: 'Acumula \$1000 en tu fondo de emergencia',
+          title: 'Fondo de Emergencia ${_money(1000, compact: true)}',
+          description: 'Acumula ${_money(1000, compact: true)} en tu fondo de emergencia',
           reward: 75,
           isCompleted: false,
           category: 'savings',
@@ -1919,7 +1924,8 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF16213E),
@@ -1953,6 +1959,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -2162,7 +2169,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
         Row(
           children: [
             Expanded(
-              child: _buildStatCard('Balance', '\$${balance.toStringAsFixed(0)}', Icons.account_balance_wallet, Colors.blue),
+              child: _buildStatCard('Balance', _money(balance, compact: true), Icons.account_balance_wallet, Colors.blue),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -2196,11 +2203,11 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
         Row(
           children: [
             Expanded(
-              child: _buildStatCard('Patrimonio', '\$${netWorth.toStringAsFixed(0)}', Icons.account_balance, Colors.purple),
+              child: _buildStatCard('Patrimonio', _money(netWorth, compact: true), Icons.account_balance, Colors.purple),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildStatCard('Emergencia', '\$${emergencyFund.toStringAsFixed(0)}', Icons.security, Colors.blue),
+              child: _buildStatCard('Emergencia', _money(emergencyFund, compact: true), Icons.security, Colors.blue),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -2336,12 +2343,12 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Límite: \$${card.limit.toStringAsFixed(0)}', 
+                      'Límite: ${_money(card.limit, compact: true)}', 
                       style: const TextStyle(color: Colors.white70, fontSize: 11),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Saldo: \$${card.balance.toStringAsFixed(0)}', 
+                      'Saldo: ${_money(card.balance, compact: true)}', 
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                     const SizedBox(height: 6),
@@ -2632,7 +2639,7 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '\$${investment.currentValue.toStringAsFixed(0)}',
+                    _money(investment.currentValue, compact: true),
                     style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   Text(

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/tutorial_service.dart';
+import '../utils/currency_helper.dart';
+import 'profile_screen.dart';
+import '../widgets/profile_avatar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -18,12 +22,41 @@ class SettingsScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Consumer<AppProvider>(
-        builder: (context, appProvider, child) {
+      body: Consumer2<AppProvider, AuthProvider>(
+        builder: (context, appProvider, auth, child) {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Sección de Perfil
+              // Perfil completo
+              _buildSectionHeader('Cuenta'),
+              Card(
+                child: ListTile(
+                  leading: ProfileAvatar(
+                    radius: 22,
+                    photoUrl: auth.photoUrl,
+                    photoBase64: auth.photoBase64,
+                  ),
+                  title: Text(auth.profile?.username ?? appProvider.username),
+                  subtitle: Text(
+                    auth.isGuest
+                        ? 'Invitado · Toca para editar perfil'
+                        : 'Google · Toca para editar perfil',
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Sección de Perfil rápido
               _buildSectionHeader('Perfil'),
               Card(
                 child: Column(
@@ -90,14 +123,55 @@ class SettingsScreen extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(Icons.attach_money, color: Color(0xFF2E7D32)),
                   title: const Text('Moneda Local'),
-                  subtitle: Text(appProvider.currency),
+                  subtitle: Text(
+                    '${appProvider.currency} · ${appProvider.formatCurrency(1600)}',
+                  ),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () => _showCurrencyPicker(context, appProvider),
                 ),
               ),
               
               const SizedBox(height: 24),
-              
+
+              // Sección Desarrollador
+              _buildSectionHeader('Desarrollador'),
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.developer_mode,
+                          color: Color(0xFF2E7D32)),
+                      title: const Text('Modo desarrollador'),
+                      subtitle: Text(
+                        appProvider.developerMode
+                            ? 'Contenido experimental activado'
+                            : 'Desactivado · módulos en vista estándar',
+                      ),
+                      trailing: Switch(
+                        value: appProvider.developerMode,
+                        onChanged: (_) => appProvider.toggleDeveloperMode(),
+                        activeColor: const Color(0xFF2E7D32),
+                      ),
+                    ),
+                    if (appProvider.developerMode) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.science_outlined,
+                            color: Color(0xFF558B2F)),
+                        title: const Text('Contenido experimental'),
+                        subtitle: const Text(
+                          'Ahorros: mapa interactivo en lugar de la lista de píldoras',
+                        ),
+                        trailing: const Icon(Icons.map_outlined,
+                            color: Color(0xFF558B2F)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               // Sección de Datos
               _buildSectionHeader('Datos'),
               Card(
@@ -135,7 +209,12 @@ class SettingsScreen extends StatelessWidget {
                   trailing: const Icon(Icons.play_circle_outline,
                       color: Color(0xFF2E7D32)),
                   onTap: () {
-                    TutorialService.resetTutorial().then((_) {
+                    final uid = context.read<AuthProvider>().firebaseUser?.uid;
+                    if (uid == null) {
+                      _showSnackBar(context, 'Inicia sesión para ver el tutorial');
+                      return;
+                    }
+                    TutorialService.resetTutorial(userId: uid).then((_) {
                       if (context.mounted) {
                         Navigator.of(context)
                             .pushNamedAndRemoveUntil('/main', (_) => false);
@@ -247,7 +326,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showCurrencyPicker(BuildContext context, AppProvider appProvider) {
-    final currencies = ['MXN', 'USD', 'EUR', 'COP', 'ARS', 'CLP'];
+    final currencies = CurrencyHelper.supported;
     
     showDialog(
       context: context,
@@ -262,6 +341,9 @@ class SettingsScreen extends StatelessWidget {
               final currency = currencies[index];
               return ListTile(
                 title: Text(currency),
+                subtitle: Text(
+                  CurrencyHelper.formatGame(1600, currency, compact: true),
+                ),
                 trailing: appProvider.currency == currency 
                     ? const Icon(Icons.check, color: Color(0xFF2E7D32))
                     : null,

@@ -4,11 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/progress_service.dart';
+import '../utils/currency_helper.dart';
 import 'achievements_screen.dart';
 import 'statistics_screen.dart';
 import 'quick_practice_screen.dart';
 import 'settings_screen.dart';
+import 'savings_pill_theme.dart';
+import 'savings_world_art.dart';
+import 'savings_world_screen.dart';
 
 class ContentScreen extends StatelessWidget {
   const ContentScreen({super.key});
@@ -418,11 +423,18 @@ class ContentScreen extends StatelessWidget {
                             totalCount: t.pills.length,
                             isLocked: !levelUnlocked,
                             onTap: levelUnlocked
-                                ? () => Navigator.of(context).push(
+                                ? () {
+                                    final useExperimentalMap =
+                                        appProvider.developerMode &&
+                                            t.title == 'Ahorros';
+                                    Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (_) => TopicDetailScreen(topic: t),
+                                        builder: (_) => useExperimentalMap
+                                            ? SavingsWorldScreen(topic: t)
+                                            : TopicDetailScreen(topic: t),
                                       ),
-                                    )
+                                    );
+                                  }
                                 : () {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -1823,6 +1835,71 @@ Ana, 35 años, quiere invertir 5.000€ con un perfil moderado. Elige un fondo m
     ],
   ),
   EduPill(
+    type: 'LECCIÓN',
+    typeColor: Color(0xFF7EC6F5),
+    title: 'Cómo crean dinero los bancos',
+    shortDesc: 'Entiende la creación de dinero, el crédito y el papel del BCE.',
+    difficulty: 2,
+    content: '''Muchas personas creen que los bancos solo guardan el dinero de los clientes y lo prestan. En realidad, el sistema bancario moderno **crea dinero nuevo** cada vez que concede un préstamo. Entender esto te ayuda a comprender la inflación, los tipos de interés y por qué el crédito puede expandir o contraer la economía.
+
+**¿De dónde sale el dinero?**
+En la eurozona existen tres formas principales de crear dinero:
+1. **El Banco Central Europeo (BCE):** Emite el efectivo (billetes y monedas) y crea reservas bancarias cuando compra activos o concede crédito a los bancos.
+2. **Los bancos comerciales:** Crean **depósitos bancarios** (dinero scriptural) al conceder préstamos. Cuando Santander, BBVA o CaixaBank te prestan 200.000€ para una hipoteca, no sacan ese dinero de una caja fuerte: lo **crean** contablemente y lo depositan en la cuenta del vendedor.
+3. **El Estado:** A través del gasto público y la deuda, pero la mayor parte del dinero en circulación en la economía real proviene del crédito bancario.
+
+**Reserva fraccionaria (simplificado):**
+Los bancos deben mantener una parte de sus depósitos como reservas en el BCE, pero pueden prestar el resto. Ese préstamo se convierte en un nuevo depósito en la cuenta de otra persona, que a su vez puede generar más crédito. Así el sistema multiplica el dinero inicial.
+
+**Ejemplo práctico:**
+Ana deposita 10.000€ en su banco. El banco mantiene una parte como reserva y presta 9.000€ a Carlos para su negocio. Esos 9.000€ aparecen en la cuenta de Carlos: **dinero nuevo** en la economía. Si Carlos paga a un proveedor, el proveedor deposita el dinero y el ciclo continúa. Ana sigue viendo sus 10.000€ en su cuenta; el sistema ha creado depósitos adicionales.
+
+**¿Por qué importa para tus finanzas?**
+- **Crédito barato = más dinero en circulación:** Puede impulsar la economía, pero también la inflación (como vimos en 2021-2023).
+- **Crédito caro = menos creación de dinero:** Los bancos prestan menos, la economía se enfría y puede bajar la inflación.
+- **Tu deuda es dinero de otra persona:** Cuando pagas una hipoteca, ese dinero deja de circular en el sistema.
+- **Depósitos vs. efectivo:** La mayor parte del "dinero" que usamos son números en cuentas bancarias, no billetes.
+
+**El papel del BCE:**
+- Fija los tipos de interés de referencia (actualmente para controlar la inflación).
+- Regula cuánto crédito pueden crear los bancos (requisitos de capital y liquidez).
+- Actúa como prestamista de último recurso en crisis (como en 2008 o 2020).
+
+**Mitos frecuentes:**
+- ❌ "Los bancos solo prestan lo que otros clientes han depositado." → Crean depósitos al prestar.
+- ❌ "Imprimir billetes es la principal causa de inflación." → En economías modernas, la expansión del crédito suele ser más relevante.
+- ❌ "Si todos retiran su dinero a la vez, el banco lo tiene todo en efectivo." → Solo una fracción está disponible como efectivo; por eso existen garantías de depósitos (hasta 100.000€ en España).
+
+**Consejos para el inversor:**
+- Sigue las decisiones del BCE: subidas de tipos suelen afectar a hipotecas, bonos y bolsa.
+- No confundas "liquidez bancaria" con riqueza real: el crédito fácil puede inflar precios de activos (inmuebles, acciones).
+- Mantén diversificación: en un entorno de crédito restrictivo, el efectivo y los bonos pueden comportarse distinto que en épocas de tipos bajos.
+
+**Recuerda:** Los bancos no son solo intermediarios pasivos; son motores de creación de dinero. Comprenderlo te da contexto para entender inflación, tipos de interés y ciclos económicos.''',
+    quizzes: [
+      PillQuiz(
+        question: '¿Qué ocurre cuando un banco concede un préstamo hipotecario?',
+        options: [
+          'Solo transfiere dinero que otro cliente depositó',
+          'Crea un nuevo depósito en la cuenta del prestatario o beneficiario',
+          'Imprime billetes en el BCE automáticamente',
+          'Reduce el dinero total en la economía',
+        ],
+        correctIndex: 1,
+      ),
+      PillQuiz(
+        question: '¿Quién regula y supervisa la creación de dinero en la eurozona?',
+        options: ['Cada ayuntamiento', 'El Banco Central Europeo (BCE)', 'Las empresas privadas', 'La Seguridad Social'],
+        correctIndex: 1,
+      ),
+      PillQuiz(
+        question: '¿Hasta qué cantidad están garantizados los depósitos bancarios en España?',
+        options: ['10.000€', '50.000€', '100.000€', 'Sin límite'],
+        correctIndex: 2,
+      ),
+    ],
+  ),
+  EduPill(
     type: 'CONSEJO',
     typeColor: Color(0xFF7EC6F5),
     title: 'Planes de pensiones',
@@ -1903,6 +1980,91 @@ Cuando rescates el plan, tributarás como rendimientos del trabajo. Las cantidad
       PillQuiz(
         question: '¿En qué momento puedes rescatar normalmente un plan de pensiones?',
         options: ['Cuando quieras sin penalización', 'Al llegar a la jubilación', 'A los 5 años de apertura', 'Solo en caso de deuda'],
+        correctIndex: 1,
+      ),
+    ],
+  ),
+  EduPill(
+    type: 'LECCIÓN',
+    typeColor: Color(0xFF7EC6F5),
+    title: 'FOREX y cobertura cambiaria',
+    shortDesc: 'Mercado de divisas, tipos de cambio y cómo protegerte del riesgo.',
+    difficulty: 3,
+    content: '''El **FOREX** (Foreign Exchange) es el mercado global donde se intercambian divisas. Es el mercado financiero más líquido del mundo: se negocian más de 7 billones de dólares al día. Si viajas, compras online en el extranjero, inviertes en acciones USA o tu empresa exporta productos, ya estás expuesto al **riesgo cambiario**.
+
+**¿Cómo funciona el FOREX?**
+Las divisas se cotizan **en pares**. Si ves **EUR/USD = 1,09**, significa que 1 euro equivale a 1,09 dólares.
+- **Par base/cotizada:** EUR/USD, GBP/EUR, USD/JPY, EUR/MXN (en brókers internacionales).
+- **Tipo de cambio flotante:** En la mayoría de pares, el precio lo fijan oferta y demanda (turismo, comercio, inversiones, tipos de interés, expectativas).
+- **Participantes:** Bancos centrales, bancos comerciales, empresas multinacionales, fondos de inversión, brókers retail y turistas.
+
+**¿Qué mueve los tipos de cambio?**
+- **Diferencial de tipos de interés:** Si el BCE sube tipos y la Fed los mantiene, el euro suele fortalecerse frente al dólar (inversores buscan mayor rendimiento).
+- **Inflación y crecimiento:** Economías fuertes atraen capital y fortalecen su moneda.
+- **Riesgo geopolítico:** En crisis, el dólar y el franco suizo suelen ser refugio.
+- **Expectativas:** Los mercados mueven precios antes de que ocurran los hechos.
+
+**Ejemplo para un español:**
+María cobra 2.000€/mes. Compra acciones de Apple en dólares. Si el euro se **fortalece** (EUR/USD pasa de 1,09 a 1,15), sus acciones valen **menos en euros** aunque el precio en dólares no cambie. Si el euro se **debilita**, gana en euros aunque Apple no suba.
+
+**Operativa básica (conceptual):**
+- **Comprar (long) EUR/USD:** Apuestas a que el euro subirá frente al dólar.
+- **Vender (short) EUR/USD:** Apuestas a que el euro bajará.
+- **Apalancamiento:** Los brókers permiten operar con poco capital y mucho riesgo. ⚠️ Puedes perder más de lo invertido. En España, CNMV y ESMA limitan el apalancamiento al retail (máx. 30:1 en pares mayores).
+
+**¿Qué es la cobertura (hedging) en FOREX?**
+Es **protegerse** contra movimientos adversos del tipo de cambio, no especular. Usas instrumentos para fijar o limitar el riesgo.
+
+**Instrumentos de cobertura:**
+1. **Forward (plazo):** Acuerdas hoy un tipo de cambio para una operación futura. Una exportadora española que cobrará 100.000 USD en 6 meses puede fijar EUR/USD = 1,08 y saber exactamente cuántos euros recibirá.
+2. **Opciones de divisas:** Pagas una prima por el **derecho** (no obligación) a cambiar a un tipo acordado. Útil si quieres protección pero también beneficiarte si el cambio te favorece.
+3. **ETFs/cuentas en divisa:** Mantener parte del patrimonio en USD u otra moneda para diversificar.
+4. **Facturación en tu moneda:** Negociar contratos en euros cuando sea posible.
+
+**Ejemplo de cobertura:**
+Una PYME española importa materias primas de EEUU por 50.000 USD trimestrales. Si el euro se deprecia un 5%, paga 2.500€ más sin haber cambiado nada en su negocio. Contrata un **forward** con su banco (Santander, BBVA, etc.) y bloquea el tipo de cambio durante el trimestre. Pierde la posibilidad de ganar si el euro sube, pero elimina la sorpresa si baja.
+
+**FOREX especulativo vs. cobertura:**
+- **Especulación:** Objetivo = ganar con movimientos; alto riesgo y corto plazo; ⚠️ solo con capital que puedas perder.
+- **Cobertura:** Objetivo = proteger operaciones reales; pensada para empresas e inversores con exposición internacional; más sensata si el riesgo divisa te afecta de verdad.
+
+**Riesgos del FOREX retail:**
+- Apalancamiento extremo → pérdidas rápidas.
+- Spreads y comisiones ocultas.
+- Mercado 24h → decisiones impulsivas.
+- La mayoría de traders retail pierden dinero (reguladores lo advierten).
+
+**Consejos prácticos:**
+- Si no necesitas exposición internacional, no "operes FOREX por diversión".
+- Si viajas o compras fuera de la UE, compara tipos de cambio (banco vs. Wise, Revolut, etc.).
+- Inversores en activos extranjeros: considera el **riesgo divisa** como parte del rendimiento total.
+- Empresas: habla con el departamento de tesorería o tu banco sobre forwards antes de firmar contratos grandes en otra moneda.
+
+**Recuerda:** El FOREX no es solo trading. Para la mayoría, lo más útil es entender cómo el tipo de cambio afecta tus compras, inversiones y negocio — y usar cobertura cuando la exposición es real y significativa.''',
+    quizzes: [
+      PillQuiz(
+        question: '¿Qué significa EUR/USD = 1,09?',
+        options: [
+          '1 dólar vale 1,09 euros',
+          '1 euro vale 1,09 dólares',
+          'El euro y el dólar valen lo mismo',
+          'Es el tipo de interés del BCE',
+        ],
+        correctIndex: 1,
+      ),
+      PillQuiz(
+        question: '¿Cuál es el objetivo principal de la cobertura (hedging) en divisas?',
+        options: [
+          'Ganar dinero especulando a corto plazo',
+          'Protegerse contra movimientos adversos del tipo de cambio',
+          'Evitar pagar impuestos',
+          'Conseguir apalancamiento máximo',
+        ],
+        correctIndex: 1,
+      ),
+      PillQuiz(
+        question: 'Una empresa española cobrará 100.000 USD en 6 meses. ¿Qué instrumento le permite fijar hoy el tipo de cambio?',
+        options: ['Un depósito a plazo', 'Un forward de divisas', 'Un plan de pensiones', 'Una tarjeta de crédito'],
         correctIndex: 1,
       ),
     ],
@@ -3563,7 +3725,8 @@ class TopicDetailScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         title: Text(topic.title),
       ),
-      body: Consumer<AppProvider>(
+      body: SafeArea(
+        child: Consumer<AppProvider>(
         builder: (context, appProvider, _) {
           final completed = appProvider.completedLessons;
 
@@ -3585,8 +3748,13 @@ class TopicDetailScreen extends StatelessWidget {
             items.add(_DetailItem.pill(pill, i, isLocked));
           }
 
+          final bottomInset = MediaQuery.paddingOf(context).bottom;
+
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, bottomInset + 32),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             itemCount: items.length + 1,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, idx) {
@@ -3612,6 +3780,7 @@ class TopicDetailScreen extends StatelessWidget {
             },
           );
         },
+        ),
       ),
     );
   }
@@ -3735,52 +3904,9 @@ class _PillCard extends StatefulWidget {
 }
 
 class _PillCardState extends State<_PillCard> {
-  /// Navigates to the full-screen swiper, then shows the result dialog.
   Future<void> _openPill(BuildContext context) async {
     if (widget.isLocked) return;
-    final result = await Navigator.of(context).push<Map<String, int>>(
-      PageRouteBuilder(
-        opaque: true,
-        pageBuilder: (ctx, _, __) => _PillSwiperScreen(pill: widget.pill),
-        transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 380),
-      ),
-    );
-    if (result == null || !context.mounted) return;
-
-    final correctCount = result['correctCount']!;
-    final totalCount = result['totalCount']!;
-    final isPerfect = correctCount == totalCount;
-
-    if (isPerfect) {
-      final appProvider = context.read<AppProvider>();
-      if (!appProvider.completedLessons.contains(widget.pill.title)) {
-        appProvider.completeLesson(widget.pill.title);
-      }
-      HapticFeedback.heavyImpact();
-    } else {
-      HapticFeedback.mediumImpact();
-    }
-    if (!context.mounted) return;
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black54,
-      transitionDuration: Duration.zero,
-      pageBuilder: (ctx, _, __) => _PillCompletionDialog(
-        pill: widget.pill,
-        correctCount: correctCount,
-        totalCount: totalCount,
-        onContinue: () => Navigator.of(ctx).pop(),
-        onRetry: isPerfect ? null : () => Navigator.of(ctx).pop(),
-      ),
-    );
+    await openPillLesson(context, widget.pill);
   }
 
   @override
@@ -3989,7 +4115,11 @@ class _PillCardState extends State<_PillCard> {
 
 class _PillSwiperScreen extends StatefulWidget {
   final EduPill pill;
-  const _PillSwiperScreen({required this.pill});
+  final int? savingsPillIndex;
+  const _PillSwiperScreen({
+    required this.pill,
+    this.savingsPillIndex,
+  });
   @override
   State<_PillSwiperScreen> createState() => _PillSwiperScreenState();
 
@@ -4088,6 +4218,7 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
   late final AnimationController _snapCtrl;
   late final AnimationController _revealCtrl;
   late final AnimationController _entryCtrl;
+  late final AnimationController _ambientCtrl;
 
   double _throwStart = 0;
   double _throwEnd = 0;
@@ -4100,6 +4231,9 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
   // ── lazily-built kahoot args ─────────────────────────────────────────────────
   List<List<String>>? _shuffledOptions;
   List<int>? _correctIndices;
+
+  bool get _isSavingsTheme => widget.savingsPillIndex != null;
+  int get _savingsIdx => widget.savingsPillIndex ?? 0;
 
   @override
   void initState() {
@@ -4129,6 +4263,12 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
       vsync: this,
       duration: const Duration(milliseconds: 420),
     )..forward();
+
+    _ambientCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
+    if (_isSavingsTheme) _ambientCtrl.repeat();
 
     final rng = math.Random(42);
     _particles = List.generate(36, (_) => _SwiperParticle.random(rng));
@@ -4259,13 +4399,14 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
 
   Future<void> _launchKahoot() async {
     if (!mounted) return;
-    final result = await Navigator.of(context).push<Map<String, int>>(
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
       PageRouteBuilder(
         opaque: true,
         pageBuilder: (ctx, _, __) => _KahootQuizScreen(
           pill: widget.pill,
           shuffledOptions: _shuffledOptions!,
           correctIndices: _correctIndices!,
+          savingsPillIndex: widget.savingsPillIndex,
         ),
         transitionsBuilder: (ctx, anim, _, child) => FadeTransition(
           opacity: CurvedAnimation(parent: anim, curve: Curves.easeIn),
@@ -4285,6 +4426,7 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
     _snapCtrl.dispose();
     _revealCtrl.dispose();
     _entryCtrl.dispose();
+    _ambientCtrl.dispose();
     super.dispose();
   }
 
@@ -4304,56 +4446,64 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
     final pill = widget.pill;
     final total = _slides.length;
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _darken(pill.typeColor, 0.18),
-              _darken(pill.typeColor, 0.42),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity:
-                CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut),
-            child: Stack(
+    final body = SafeArea(
+      child: FadeTransition(
+        opacity: CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut),
+        child: Stack(
+          children: [
+            Column(
               children: [
-                Column(
-                  children: [
-                    _buildHeader(pill, total),
-                    _buildProgressBar(total),
-                    const SizedBox(height: 12),
-                    Expanded(child: _buildCardStack(total)),
-                    const SizedBox(height: 10),
-                    _buildDots(total),
-                    _buildSwipeHint(),
-                    const SizedBox(height: 14),
-                  ],
-                ),
-
-                // ── Quiz reveal overlay ───────────────────────────────────
-                if (_showReveal) _buildRevealOverlay(),
+                _buildHeader(pill, total),
+                _buildProgressBar(total),
+                const SizedBox(height: 12),
+                Expanded(child: _buildCardStack(total)),
+                const SizedBox(height: 10),
+                _buildDots(total),
+                _buildSwipeHint(),
+                const SizedBox(height: 14),
               ],
             ),
-          ),
+            if (_showReveal) _buildRevealOverlay(),
+          ],
         ),
       ),
+    );
+
+    return Scaffold(
+      body: _isSavingsTheme
+          ? SavingsPillSkyBackground(
+              time: _ambientCtrl,
+              child: body,
+            )
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    _darken(pill.typeColor, 0.18),
+                    _darken(pill.typeColor, 0.42),
+                  ],
+                ),
+              ),
+              child: body,
+            ),
     );
   }
 
   // ── header ──────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(EduPill pill, int total) {
+    final meta = _isSavingsTheme ? SavingsPillMeta.forIndex(_savingsIdx) : null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 8, 16, 0),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.close_rounded, color: Colors.white),
+            icon: Icon(
+              Icons.close_rounded,
+              color: _isSavingsTheme ? const Color(0xFF2A4020) : Colors.white,
+            ),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
@@ -4363,16 +4513,31 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(46),
+                    color: _isSavingsTheme
+                        ? const Color(0xFF684018).withAlpha(220)
+                        : Colors.white.withAlpha(46),
                     borderRadius: BorderRadius.circular(10),
+                    border: _isSavingsTheme
+                        ? Border.all(color: const Color(0xFFFFD848), width: 1.5)
+                        : null,
                   ),
-                  child: Text(
-                    pill.type,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (meta != null) ...[
+                        Icon(meta.icon, color: const Color(0xFFFFD848), size: 14),
+                        const SizedBox(width: 5),
+                      ],
+                      Text(
+                        _isSavingsTheme ? meta!.subtitle : pill.type,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -4381,10 +4546,20 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: _isSavingsTheme
+                        ? const Color(0xFF1A4020)
+                        : Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
+                    shadows: _isSavingsTheme
+                        ? [
+                            Shadow(
+                              color: Colors.white.withAlpha(180),
+                              blurRadius: 8,
+                            ),
+                          ]
+                        : null,
                   ),
                 ),
               ],
@@ -4392,8 +4567,10 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
           ),
           Text(
             '${_currentIdx + 1} / $total',
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: _isSavingsTheme
+                  ? const Color(0xFF2A4020).withAlpha(180)
+                  : Colors.white70,
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
@@ -4418,9 +4595,12 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
           curve: Curves.easeOut,
           builder: (_, v, __) => LinearProgressIndicator(
             value: v,
-            backgroundColor: Colors.white24,
-            valueColor:
-                const AlwaysStoppedAnimation<Color>(Colors.white),
+            backgroundColor: _isSavingsTheme
+                ? const Color(0xFF684018).withAlpha(80)
+                : Colors.white24,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _isSavingsTheme ? const Color(0xFFFFD848) : Colors.white,
+            ),
             minHeight: 5,
           ),
         ),
@@ -4479,6 +4659,86 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
   // ── slide card ───────────────────────────────────────────────────────────────
 
   Widget _buildSlideCard(String text, int index, int total) {
+    if (_isSavingsTheme) {
+      return Container(
+        decoration: savingsSlideCardDecoration(),
+        clipBehavior: Clip.antiAlias,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SavingsSlideTopArt(
+                pillIndex: _savingsIdx,
+                slideIndex: index,
+                time: _ambientCtrl,
+              ),
+              Container(
+                width: double.infinity,
+                decoration: savingsTextPanelDecoration(),
+                padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF58A028).withAlpha(40),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFF684018).withAlpha(80),
+                            ),
+                          ),
+                          child: Text(
+                            '${index + 1} / $total',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A7038),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            SavingsPillMeta.sceneTitle(_savingsIdx, index),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF684018).withAlpha(200),
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          SavingsPillMeta.forIndex(_savingsIdx).icon,
+                          color: const Color(0xFF684018).withAlpha(140),
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _RichTextContent(
+                      text: text,
+                      accentColor: const Color(0xFF28A848),
+                    ),
+                  ],
+                ),
+              ),
+              SavingsSlideBottomArt(
+                pillIndex: _savingsIdx,
+                slideIndex: index,
+                time: _ambientCtrl,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -4531,6 +4791,56 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
   // ── quiz card (static peek behind last slide) ─────────────────────────────
 
   Widget _buildQuizCardStatic() {
+    if (_isSavingsTheme) {
+      return Container(
+        decoration: savingsQuizPeekDecoration(),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: _ambientCtrl,
+              builder: (_, __) => SavingsAmbientOverlay(time: _ambientCtrl),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomPaint(
+                  painter: BuildingPainter(
+                    kind: savingsBuildingForPill(_savingsIdx),
+                    locked: false,
+                    completed: false,
+                    time: _ambientCtrl.value,
+                  ),
+                  size: const Size(72, 80),
+                ),
+                const SizedBox(height: 8),
+                const Icon(Icons.quiz_rounded,
+                    color: Color(0xFFFFD848), size: 48),
+                const SizedBox(height: 12),
+                const Text(
+                  '¡Desafío del pueblo!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Demuestra lo aprendido en ${SavingsPillMeta.forIndex(_savingsIdx).subtitle.toLowerCase()}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(170),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -4581,7 +4891,11 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
           width: active ? 22 : 7,
           height: 7,
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.white38,
+            color: active
+                ? (_isSavingsTheme ? const Color(0xFFFFD848) : Colors.white)
+                : (_isSavingsTheme
+                    ? const Color(0xFF684018).withAlpha(100)
+                    : Colors.white38),
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -4603,16 +4917,21 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (!isFirst) ...[
-              const Icon(Icons.arrow_back_ios_rounded,
-                  color: Colors.white54, size: 13),
+              Icon(Icons.arrow_back_ios_rounded,
+                  color: _isSavingsTheme
+                      ? const Color(0xFF2A4020).withAlpha(140)
+                      : Colors.white54,
+                  size: 13),
               const SizedBox(width: 3),
             ],
             Text(
               isLast
                   ? '¡Desliza para el quiz! →'
                   : 'Desliza  →',
-              style: const TextStyle(
-                color: Colors.white54,
+              style: TextStyle(
+                color: _isSavingsTheme
+                    ? const Color(0xFF2A4020).withAlpha(140)
+                    : Colors.white54,
                 fontSize: 12,
               ),
             ),
@@ -4645,14 +4964,22 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
         parent: _revealCtrl,
         curve: const Interval(0.55, 0.80, curve: Curves.easeOut));
 
+    final revealBg = _isSavingsTheme
+        ? const Color(0xE61A4028)
+        : const Color(0xE61A0533);
+    final accent = _isSavingsTheme
+        ? const Color(0xFFFFD848)
+        : const Color(0xFF7ED957);
+    final glow = _isSavingsTheme
+        ? const Color(0xFF58A028)
+        : const Color(0xFF7B2FF7);
+
     return AnimatedBuilder(
       animation: _revealCtrl,
       builder: (_, __) {
         return Positioned.fill(
           child: Container(
-            color:
-                Color.lerp(Colors.transparent, const Color(0xE61A0533),
-                    bgAnim.value),
+            color: Color.lerp(Colors.transparent, revealBg, bgAnim.value),
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -4678,26 +5005,34 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                         height: 120,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color:
-                              const Color(0xFF7B2FF7).withAlpha(40),
+                          color: glow.withAlpha(40),
                           border: Border.all(
-                            color: const Color(0xFF7ED957),
+                            color: accent,
                             width: 3.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF7B2FF7)
-                                  .withAlpha(100),
+                              color: glow.withAlpha(100),
                               blurRadius: 30,
                               spreadRadius: 6,
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.quiz_rounded,
-                          color: Color(0xFF7ED957),
-                          size: 60,
-                        ),
+                        child: _isSavingsTheme
+                            ? CustomPaint(
+                                painter: BuildingPainter(
+                                  kind: savingsBuildingForPill(_savingsIdx),
+                                  locked: false,
+                                  completed: true,
+                                  time: _ambientCtrl.value,
+                                ),
+                                size: const Size(120, 120),
+                              )
+                            : const Icon(
+                                Icons.quiz_rounded,
+                                color: Color(0xFF7ED957),
+                                size: 60,
+                              ),
                       ),
                     ),
 
@@ -4708,9 +5043,11 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                       opacity: titleAnim.value,
                       child: Transform.translate(
                         offset: Offset(0, 20 * (1 - titleAnim.value)),
-                        child: const Text(
-                          '¡HORA DEL QUIZ!',
-                          style: TextStyle(
+                        child: Text(
+                          _isSavingsTheme
+                              ? '¡DESAFÍO DEL PUEBLO!'
+                              : '¡HORA DEL QUIZ!',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
@@ -4729,7 +5066,9 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                         offset:
                             Offset(0, 16 * (1 - subtitleAnim.value)),
                         child: Text(
-                          '¿Listo para demostrar lo aprendido?',
+                          _isSavingsTheme
+                              ? 'Demuestra lo aprendido en el camino'
+                              : '¿Listo para demostrar lo aprendido?',
                           style: TextStyle(
                             color: Colors.white.withAlpha(178),
                             fontSize: 16,
@@ -4746,13 +5085,13 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(
+                          SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF7ED957)),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(accent),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -4787,10 +5126,15 @@ class _RichTextContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lines = text.split('\n');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: lines.map((line) => _buildLine(line)).toList(),
+    return Consumer<AppProvider>(
+      builder: (context, app, _) {
+        final localized = CurrencyHelper.localizeLessonText(text, app.currency);
+        final lines = localized.split('\n');
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: lines.map((line) => _buildLine(line)).toList(),
+        );
+      },
     );
   }
 
@@ -4919,11 +5263,13 @@ class _KahootQuizScreen extends StatefulWidget {
   final EduPill pill;
   final List<List<String>> shuffledOptions;
   final List<int> correctIndices;
+  final int? savingsPillIndex;
 
   const _KahootQuizScreen({
     required this.pill,
     required this.shuffledOptions,
     required this.correctIndices,
+    this.savingsPillIndex,
   });
 
   @override
@@ -4956,11 +5302,14 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
   late AnimationController _feedbackCtrl;// ✓/✗ badge
   late AnimationController _shakeCtrl;   // wrong-answer shake
   late AnimationController _progressCtrl;// progress bar fill
+  late AnimationController _ambientCtrl;
 
   late Animation<Offset> _questionSlide;
   late Animation<double> _feedbackScale;
   late Animation<double> _feedbackFade;
   late Animation<double> _progressAnim;
+
+  bool get _isSavingsTheme => widget.savingsPillIndex != null;
 
   @override
   void initState() {
@@ -4977,6 +5326,12 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
         vsync: this, duration: const Duration(milliseconds: 420));
     _progressCtrl = AnimationController(vsync: this,
         duration: const Duration(milliseconds: 600));
+
+    _ambientCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
+    if (_isSavingsTheme) _ambientCtrl.repeat();
 
     _questionSlide = Tween<Offset>(
       begin: const Offset(0.4, 0),
@@ -5003,6 +5358,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
     _feedbackCtrl.dispose();
     _shakeCtrl.dispose();
     _progressCtrl.dispose();
+    _ambientCtrl.dispose();
     super.dispose();
   }
 
@@ -5035,6 +5391,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
       Navigator.of(context).pop({
         'correctCount': correctCount,
         'totalCount': widget.shuffledOptions.length,
+        'results': _results.map((r) => r == true).toList(),
       });
       return;
     }
@@ -5069,268 +5426,475 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
     return math.sin(t * math.pi * 5) * 10;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final quiz = widget.shuffledOptions[_qi];
-    final correctIdx = widget.correctIndices[_qi];
-    final total = widget.shuffledOptions.length;
-    final isAnswered = _selected != null;
-    final isCorrect = isAnswered && _results[_qi] == true;
+  /// Fit 2×2 tiles to the grid area — wide on landscape, tall on narrow screens.
+  double _tileAspectForGrid(double width, double height, double spacing) {
+    final tileW = (width - spacing) / 2;
+    final tileH = (height - spacing) / 2;
+    if (tileW <= 0 || tileH <= 0) return 1.2;
+    return (tileW / tileH).clamp(0.45, 5.0);
+  }
 
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1A0533), Color(0xFF0D1B4B)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Header ────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white70),
-                      onPressed: () => Navigator.of(context).pop(
-                          {'correctCount': 0, 'totalCount': total}),
-                    ),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text(
-                            'Pregunta ${_qi + 1} de $total',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          AnimatedBuilder(
-                            animation: _progressAnim,
-                            builder: (_, __) => ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: _progressAnim.value,
-                                backgroundColor: Colors.white24,
-                                valueColor: const AlwaysStoppedAnimation(
-                                    Color(0xFF7ED957)),
-                                minHeight: 7,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-              ),
+  Widget _buildAnswerGrid({
+    required BuildContext context,
+    required List<String> quiz,
+    required int correctIdx,
+    required bool compact,
+    required double tileFontSize,
+    required double tilePad,
+    required double gridSpacing,
+    required EdgeInsets padding,
+  }) {
+    return Padding(
+      padding: padding,
+      child: LayoutBuilder(
+        builder: (context, gridBox) {
+          final aspect = _tileAspectForGrid(
+            gridBox.maxWidth,
+            gridBox.maxHeight,
+            gridSpacing,
+          );
 
-              // ── Question card ──────────────────────────────────────
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                  child: SlideTransition(
-                    position: _questionSlide,
-                    child: FadeTransition(
-                      opacity: _slideCtrl,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x66000000),
-                              blurRadius: 24,
-                              offset: Offset(0, 8),
-                            )
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: widget.pill.typeColor.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                widget.pill.title,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: widget.pill.typeColor.darken(0.2),
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              widget.pill.quizzes[_qi].question,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A2E),
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+          return AnimatedBuilder(
+            animation: _shakeCtrl,
+            builder: (_, __) {
+              return GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: gridSpacing,
+                crossAxisSpacing: gridSpacing,
+                childAspectRatio: aspect,
+                physics: const NeverScrollableScrollPhysics(),
+                children: List.generate(4, (i) {
+                  if (i >= quiz.length) return const SizedBox.shrink();
 
-              // ── Feedback badge ─────────────────────────────────────
-              AnimatedBuilder(
-                animation: _feedbackCtrl,
-                builder: (_, __) => _feedbackCtrl.value > 0
-                    ? Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: FadeTransition(
-                          opacity: _feedbackFade,
-                          child: ScaleTransition(
-                            scale: _feedbackScale,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isCorrect
-                                    ? Colors.green.shade400
-                                    : Colors.red.shade400,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: (isCorrect
-                                            ? Colors.green
-                                            : Colors.red)
-                                        .withOpacity(0.4),
-                                    blurRadius: 12,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isCorrect
-                                        ? Icons.check_circle_rounded
-                                        : Icons.cancel_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    isCorrect ? '¡Correcto! 🎉' : '¡Incorrecto! 😢',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : const SizedBox(height: 44),
-              ),
+                  final isAnswered = _selected != null;
+                  final isSelected = _selected == i;
+                  final isThisCorrect = i == correctIdx;
 
-              // ── Answer tiles 2×2 ──────────────────────────────────
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                  child: AnimatedBuilder(
-                    animation: _shakeCtrl,
+                  double opacity = 1.0;
+                  if (isAnswered) {
+                    if (isThisCorrect) {
+                      opacity = 1.0;
+                    } else if (isSelected) {
+                      opacity = 0.85;
+                    } else {
+                      opacity = 0.35;
+                    }
+                  }
+
+                  final xOffset =
+                      (isAnswered && isSelected && !isThisCorrect)
+                          ? _shakeOffset()
+                          : 0.0;
+
+                  return AnimatedBuilder(
+                    animation: _tilesCtrl,
                     builder: (_, __) {
-                      return GridView.count(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: List.generate(4, (i) {
-                          if (i >= quiz.length) return const SizedBox();
-
-                          final isSelected = _selected == i;
-                          final isThisCorrect = i == correctIdx;
-
-                          // Dimming logic after answer
-                          double opacity = 1.0;
-                          if (isAnswered) {
-                            if (isThisCorrect) {
-                              opacity = 1.0;
-                            } else if (isSelected) {
-                              opacity = 0.85;
-                            } else {
-                              opacity = 0.35;
-                            }
-                          }
-
-                          // Shake only the wrong selected tile
-                          final xOffset = (isAnswered && isSelected && !isThisCorrect)
-                              ? _shakeOffset()
-                              : 0.0;
-
-                          return AnimatedBuilder(
-                            animation: _tilesCtrl,
-                            builder: (_, __) {
-                              final tileDelay = CurvedAnimation(
-                                parent: _tilesCtrl,
-                                curve: Interval(
-                                  i * 0.12,
-                                  (i * 0.12 + 0.6).clamp(0.0, 1.0),
-                                  curve: Curves.easeOutBack,
-                                ),
-                              );
-                              return ScaleTransition(
-                                scale: _selected == null
-                                    ? tileDelay
-                                    : const AlwaysStoppedAnimation(1.0),
-                                child: Transform.translate(
-                                  offset: Offset(xOffset, 0),
-                                  child: Opacity(
-                                    opacity: opacity,
-                                    child: _KahootTile(
-                                      label: quiz[i],
-                                      color: _colors[i],
-                                      icon: _icons[i],
-                                      isAnswered: isAnswered,
-                                      isCorrect: isThisCorrect,
-                                      isSelected: isSelected,
-                                      onTap: () => _onTileTap(i),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }),
+                      final tileDelay = CurvedAnimation(
+                        parent: _tilesCtrl,
+                        curve: Interval(
+                          i * 0.12,
+                          (i * 0.12 + 0.6).clamp(0.0, 1.0),
+                          curve: Curves.easeOutBack,
+                        ),
+                      );
+                      return ScaleTransition(
+                        scale: _selected == null
+                            ? tileDelay
+                            : const AlwaysStoppedAnimation(1.0),
+                        child: Transform.translate(
+                          offset: Offset(xOffset, 0),
+                          child: Opacity(
+                            opacity: opacity,
+                            child: _KahootTile(
+                              label: context.localizeMoneyText(quiz[i]),
+                              color: _colors[i],
+                              icon: _icons[i],
+                              isAnswered: isAnswered,
+                              isCorrect: isThisCorrect,
+                              isSelected: isSelected,
+                              compact: compact,
+                              fontSize: tileFontSize,
+                              padding: tilePad,
+                              onTap: () => _onTileTap(i),
+                            ),
+                          ),
+                        ),
                       );
                     },
+                  );
+                }),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard({
+    required BuildContext context,
+    required bool compact,
+    required double qFontSize,
+    required EdgeInsets padding,
+  }) {
+    return Padding(
+      padding: padding,
+      child: SlideTransition(
+        position: _questionSlide,
+        child: FadeTransition(
+          opacity: _slideCtrl,
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 16 : 24,
+              vertical: compact ? 12 : 20,
+            ),
+            decoration: BoxDecoration(
+              gradient: _isSavingsTheme
+                  ? const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFFFFDF5), Color(0xFFF5EDD8)],
+                    )
+                  : null,
+              color: _isSavingsTheme ? null : Colors.white,
+              borderRadius: BorderRadius.circular(compact ? 18 : 22),
+              border: _isSavingsTheme
+                  ? Border.all(color: const Color(0xFF684018), width: 2.5)
+                  : null,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x66000000),
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
+                )
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, qConstraints) {
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: qConstraints.maxHeight),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: compact ? 8 : 10,
+                            vertical: compact ? 3 : 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _isSavingsTheme
+                                ? const Color(0xFF58A028).withAlpha(40)
+                                : widget.pill.typeColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            widget.pill.title,
+                            style: TextStyle(
+                              fontSize: compact ? 10 : 11,
+                              fontWeight: FontWeight.w700,
+                              color: _isSavingsTheme
+                                  ? const Color(0xFF1A7038)
+                                  : widget.pill.typeColor.darken(0.2),
+                              letterSpacing: 0.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        SizedBox(height: compact ? 10 : 14),
+                        Text(
+                          context.localizeMoneyText(
+                            widget.pill.quizzes[_qi].question,
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: qFontSize,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1A1A2E),
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFeedbackBadge({
+    required bool compact,
+    required bool isCorrect,
+  }) {
+    return AnimatedBuilder(
+      animation: _feedbackCtrl,
+      builder: (_, __) => _feedbackCtrl.value > 0
+          ? Padding(
+              padding: EdgeInsets.only(bottom: compact ? 4 : 8),
+              child: FadeTransition(
+                opacity: _feedbackFade,
+                child: ScaleTransition(
+                  scale: _feedbackScale,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 14 : 20,
+                      vertical: compact ? 6 : 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isCorrect
+                          ? Colors.green.shade400
+                          : Colors.red.shade400,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isCorrect ? Colors.green : Colors.red)
+                              .withOpacity(0.4),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isCorrect
+                              ? Icons.check_circle_rounded
+                              : Icons.cancel_rounded,
+                          color: Colors.white,
+                          size: compact ? 18 : 22,
+                        ),
+                        SizedBox(width: compact ? 6 : 8),
+                        Text(
+                          isCorrect ? '¡Correcto! 🎉' : '¡Incorrecto! 😢',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: compact ? 14 : 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : SizedBox(height: compact ? 28 : 44),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AppProvider>(
+      builder: (context, app, _) {
+        final quiz = widget.shuffledOptions[_qi];
+        final correctIdx = widget.correctIndices[_qi];
+        final total = widget.shuffledOptions.length;
+        final isAnswered = _selected != null;
+        final isCorrect = isAnswered && _results[_qi] == true;
+
+        final savingsIdx = widget.savingsPillIndex ?? 0;
+        final progressColor =
+            _isSavingsTheme ? const Color(0xFFFFD848) : const Color(0xFF7ED957);
+
+        final content = MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: MediaQuery.textScalerOf(context).clamp(
+              maxScaleFactor: 1.15,
+            ),
+          ),
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxHeight < 700;
+                final veryCompact = constraints.maxHeight < 580;
+                final wideLandscape =
+                    constraints.maxWidth > constraints.maxHeight * 1.05;
+
+                final headerPad = compact ? 8.0 : 12.0;
+                final qFontSize = veryCompact ? 15.0 : compact ? 16.0 : 18.0;
+                final tileFontSize = veryCompact ? 11.5 : compact ? 12.5 : 14.0;
+                final tilePad = veryCompact ? 8.0 : compact ? 10.0 : 14.0;
+                final gridSpacing = veryCompact ? 6.0 : compact ? 8.0 : 10.0;
+                final questionFlex = veryCompact ? 5 : 4;
+                final tilesFlex = veryCompact ? 6 : 5;
+
+                final questionPadding = EdgeInsets.fromLTRB(
+                  compact ? 12 : 20,
+                  compact ? 10 : 20,
+                  compact ? 12 : 20,
+                  compact ? 6 : 12,
+                );
+                final gridPadding = EdgeInsets.fromLTRB(
+                  compact ? 8 : 12,
+                  0,
+                  compact ? 8 : 12,
+                  compact ? 8 : 16,
+                );
+
+                final header = Padding(
+                      padding: EdgeInsets.fromLTRB(12, headerPad, 12, 0),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(
+                              Icons.close,
+                              color: _isSavingsTheme
+                                  ? const Color(0xFF2A4020).withAlpha(180)
+                                  : Colors.white70,
+                            ),
+                            onPressed: () => Navigator.of(context).pop(
+                              {'correctCount': 0, 'totalCount': total},
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(
+                                  _isSavingsTheme
+                                      ? 'Desafío · ${SavingsPillMeta.forIndex(savingsIdx).subtitle}'
+                                      : 'Pregunta ${_qi + 1} de $total',
+                                  style: TextStyle(
+                                    color: _isSavingsTheme
+                                        ? const Color(0xFF1A4020)
+                                        : Colors.white70,
+                                    fontSize: compact ? 12 : 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: compact ? 4 : 6),
+                                AnimatedBuilder(
+                                  animation: _progressAnim,
+                                  builder: (_, __) => ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: _progressAnim.value,
+                                      backgroundColor: _isSavingsTheme
+                                          ? const Color(0xFF684018)
+                                              .withAlpha(80)
+                                          : Colors.white24,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        progressColor,
+                                      ),
+                                      minHeight: compact ? 5 : 7,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_isSavingsTheme)
+                            AnimatedBuilder(
+                              animation: _ambientCtrl,
+                              builder: (_, __) => CustomPaint(
+                                painter: BuildingPainter(
+                                  kind: savingsBuildingForPill(savingsIdx),
+                                  locked: false,
+                                  completed: false,
+                                  time: _ambientCtrl.value,
+                                ),
+                                size: Size(compact ? 32 : 40, compact ? 36 : 44),
+                              ),
+                            )
+                          else
+                            SizedBox(width: compact ? 40 : 48),
+                        ],
+                      ),
+                    );
+
+                final answerGrid = _buildAnswerGrid(
+                  context: context,
+                  quiz: quiz,
+                  correctIdx: correctIdx,
+                  compact: compact,
+                  tileFontSize: tileFontSize,
+                  tilePad: tilePad,
+                  gridSpacing: gridSpacing,
+                  padding: gridPadding,
+                );
+
+                final feedback = _buildFeedbackBadge(
+                  compact: compact,
+                  isCorrect: isCorrect,
+                );
+
+                if (wideLandscape) {
+                  return Column(
+                    children: [
+                      header,
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              flex: 11,
+                              child: Column(
+                                children: [
+                                  Expanded(
+                                    child: _buildQuestionCard(
+                                      context: context,
+                                      compact: compact,
+                                      qFontSize: qFontSize,
+                                      padding: questionPadding,
+                                    ),
+                                  ),
+                                  feedback,
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(flex: 13, child: answerGrid),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return Column(
+                  children: [
+                    header,
+                    Expanded(
+                      flex: questionFlex,
+                      child: _buildQuestionCard(
+                        context: context,
+                        compact: compact,
+                        qFontSize: qFontSize,
+                        padding: questionPadding,
+                      ),
+                    ),
+                    feedback,
+                    Expanded(flex: tilesFlex, child: answerGrid),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+
+        return Scaffold(
+          body: _isSavingsTheme
+              ? SavingsPillSkyBackground(time: _ambientCtrl, child: content)
+              : Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1A0533), Color(0xFF0D1B4B)],
+                    ),
+                  ),
+                  child: content,
+                ),
+        );
+      },
     );
   }
 }
@@ -5344,6 +5908,9 @@ class _KahootTile extends StatefulWidget {
   final bool isAnswered;
   final bool isCorrect;
   final bool isSelected;
+  final bool compact;
+  final double fontSize;
+  final double padding;
   final VoidCallback onTap;
 
   const _KahootTile({
@@ -5353,6 +5920,9 @@ class _KahootTile extends StatefulWidget {
     required this.isAnswered,
     required this.isCorrect,
     required this.isSelected,
+    this.compact = false,
+    this.fontSize = 14,
+    this.padding = 14,
     required this.onTap,
   });
 
@@ -5395,6 +5965,9 @@ class _KahootTileState extends State<_KahootTile>
   Widget build(BuildContext context) {
     final showCheck = widget.isAnswered && widget.isCorrect;
     final showCross = widget.isAnswered && widget.isSelected && !widget.isCorrect;
+    final iconSize = widget.compact ? 18.0 : 22.0;
+    final bgIconSize = widget.compact ? 52.0 : 72.0;
+    final resultIconSize = widget.compact ? 40.0 : 52.0;
 
     return GestureDetector(
       onTap: widget.isAnswered ? null : widget.onTap,
@@ -5408,7 +5981,7 @@ class _KahootTileState extends State<_KahootTile>
                 : showCross
                     ? Colors.red.shade600
                     : widget.color,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(widget.compact ? 14 : 18),
             border: widget.isAnswered && widget.isCorrect
                 ? Border.all(color: Colors.white, width: 3)
                 : null,
@@ -5428,44 +6001,39 @@ class _KahootTileState extends State<_KahootTile>
           ),
           child: Stack(
             children: [
-              // Background icon (large, subtle, top-right)
               Positioned(
-                top: -8,
-                right: -8,
+                top: widget.compact ? -6 : -8,
+                right: widget.compact ? -6 : -8,
                 child: Icon(
                   widget.icon,
                   color: Colors.white.withOpacity(0.12),
-                  size: 72,
+                  size: bgIconSize,
                 ),
               ),
-              // Content
               Padding(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(widget.padding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Small icon top-left
-                    Icon(widget.icon, color: Colors.white, size: 22),
+                    Icon(widget.icon, color: Colors.white, size: iconSize),
                     const Spacer(),
-                    // Answer text
                     Text(
                       widget.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        height: 1.3,
-                        shadows: [
+                        fontSize: widget.fontSize,
+                        height: 1.25,
+                        shadows: const [
                           Shadow(blurRadius: 2, color: Color(0x44000000)),
                         ],
                       ),
-                      maxLines: 3,
+                      maxLines: widget.compact ? 5 : 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              // Result overlay icon (centre)
               if (showCheck || showCross)
                 Center(
                   child: TweenAnimationBuilder<double>(
@@ -5479,7 +6047,7 @@ class _KahootTileState extends State<_KahootTile>
                             ? Icons.check_circle_rounded
                             : Icons.cancel_rounded,
                         color: Colors.white,
-                        size: 52,
+                        size: resultIconSize,
                       ),
                     ),
                   ),
@@ -5498,6 +6066,7 @@ class _PillCompletionDialog extends StatefulWidget {
   final EduPill pill;
   final int correctCount;
   final int totalCount;
+  final List<bool> results;
   final VoidCallback onContinue;
   /// Null on perfect score; provided when the user must retry.
   final VoidCallback? onRetry;
@@ -5506,6 +6075,7 @@ class _PillCompletionDialog extends StatefulWidget {
     required this.pill,
     required this.correctCount,
     required this.totalCount,
+    required this.results,
     required this.onContinue,
     this.onRetry,
   });
@@ -5546,19 +6116,33 @@ class _PillCompletionDialogState extends State<_PillCompletionDialog>
     curve: const Interval(0.48, 0.68, curve: Curves.easeOut),
   );
 
-  // Stars pop in sequentially
-  late final Animation<double> _star1 = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(0.55, 0.70, curve: Curves.elasticOut),
-  );
-  late final Animation<double> _star2 = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(0.62, 0.77, curve: Curves.elasticOut),
-  );
-  late final Animation<double> _star3 = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(0.69, 0.84, curve: Curves.elasticOut),
-  );
+  /// One pop-in animation per earned star (one star = one correct answer).
+  late final List<Animation<double>> _starAnims;
+
+  @override
+  void initState() {
+    super.initState();
+    final count = widget.totalCount;
+    const baseStart = 0.55;
+    const step = 0.065;
+    const width = 0.13;
+    _starAnims = List.generate(count, (i) {
+      final start = (baseStart + i * step).clamp(0.0, 0.86);
+      final end = (start + width).clamp(0.0, 1.0);
+      return CurvedAnimation(
+        parent: _timelineCtrl,
+        curve: Interval(start, end, curve: Curves.elasticOut),
+      );
+    });
+  }
+
+  double _starSize(int index, int count) {
+    if (count <= 1) return 44;
+    if (count == 2) return 40;
+    if (count == 3) return index == 1 ? 44 : 34;
+    if (count <= 6) return 32;
+    return 26;
+  }
 
   // XP badge floats up then fades
   late final Animation<double> _xpSlide = Tween<double>(begin: 0, end: -48).animate(
@@ -5695,37 +6279,35 @@ class _PillCompletionDialogState extends State<_PillCompletionDialog>
 
                     const SizedBox(height: 22),
 
-                    // ── Stars (reflect correct answers) ───────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(widget.totalCount, (i) {
-                        final filled = i < widget.correctCount;
-                        // sizes: medium, large, medium for 3-star layout
-                        final size = widget.totalCount == 3
-                            ? (i == 1 ? 44.0 : 34.0)
-                            : 36.0;
-                        final anim = i == 0
-                            ? _star1
-                            : i == 1
-                                ? _star2
-                                : _star3;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: ScaleTransition(
-                            scale: anim,
+                    // ── Stars: one per question, green/red in order ───────
+                    if (widget.totalCount > 0)
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: List.generate(widget.totalCount, (i) {
+                          final correct = i < widget.results.length
+                              ? widget.results[i]
+                              : false;
+                          final size = _starSize(i, widget.totalCount);
+                          return ScaleTransition(
+                            scale: _starAnims[i],
                             child: Icon(
-                              filled
-                                  ? Icons.star_rounded
-                                  : Icons.star_border_rounded,
-                              color: filled
-                                  ? Colors.amber.shade600
-                                  : Colors.grey.shade300,
+                              Icons.star_rounded,
+                              color: correct
+                                  ? Colors.green.shade600
+                                  : Colors.red.shade500,
                               size: size,
                             ),
-                          ),
-                        );
-                      }),
-                    ),
+                          );
+                        }),
+                      )
+                    else
+                      Icon(
+                        Icons.star_border_rounded,
+                        color: Colors.grey.shade300,
+                        size: 40,
+                      ),
 
                     const SizedBox(height: 14),
 
@@ -6108,4 +6690,66 @@ extension ColorUtils on Color {
     final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
     return hslDark.toColor();
   }
+}
+
+/// Opens the pill swiper + quiz flow and handles completion.
+int? savingsPillIndexOf(EduPill pill) {
+  final i = savingsPills.indexWhere((p) => p.title == pill.title);
+  return i >= 0 ? i : null;
+}
+
+Future<void> openPillLesson(BuildContext context, EduPill pill) async {
+  final savingsIdx = savingsPillIndexOf(pill);
+  final result = await Navigator.of(context).push<Map<String, dynamic>>(
+    PageRouteBuilder(
+      opaque: true,
+      pageBuilder: (ctx, _, __) => _PillSwiperScreen(
+        pill: pill,
+        savingsPillIndex: savingsIdx,
+      ),
+      transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
+      transitionDuration: const Duration(milliseconds: 380),
+    ),
+  );
+  if (result == null || !context.mounted) return;
+
+  final correctCount = result['correctCount'] as int;
+  final totalCount = result['totalCount'] as int;
+  final rawResults = result['results'];
+  final results = rawResults is List
+      ? rawResults.map((e) => e == true).toList()
+      : List<bool>.filled(totalCount, false);
+  final isPerfect = correctCount == totalCount;
+
+  if (isPerfect) {
+    final appProvider = context.read<AppProvider>();
+    final userId = context.read<AuthProvider>().firebaseUser?.uid;
+    if (!appProvider.completedLessons.contains(pill.title)) {
+      appProvider.completeLesson(pill.title, userId: userId);
+    }
+    HapticFeedback.heavyImpact();
+  } else {
+    HapticFeedback.mediumImpact();
+  }
+  if (!context.mounted) return;
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.black54,
+    transitionDuration: Duration.zero,
+    pageBuilder: (ctx, _, __) => _PillCompletionDialog(
+      pill: pill,
+      correctCount: correctCount,
+      totalCount: totalCount,
+      results: results,
+      onContinue: () => Navigator.of(ctx).pop(),
+      onRetry: isPerfect ? null : () => Navigator.of(ctx).pop(),
+    ),
+  );
 }

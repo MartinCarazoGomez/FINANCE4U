@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 
 class EntrepreneurSim extends StatefulWidget {
   final VoidCallback? onCompleted;
@@ -66,6 +69,8 @@ class BusinessChoice {
 }
 
 class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderStateMixin {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   // Estado del jugador
   double _cash = 8000; // Capital inicial más realista en euros para España
   double _monthlyRevenue = 0;
@@ -767,7 +772,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
             const SizedBox(height: 12),
             if (choice.moneyImpact != 0)
               Text(
-                '${choice.moneyImpact > 0 ? '+' : ''}\$${choice.moneyImpact.toStringAsFixed(0)}',
+                '${choice.moneyImpact > 0 ? '+' : ''}${_money(choice.moneyImpact, compact: true)}',
                 style: TextStyle(
                   color: choice.moneyImpact > 0 ? Colors.green : Colors.red,
                   fontWeight: FontWeight.bold,
@@ -818,7 +823,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
   void _checkMilestones() {
     if (_businessValue >= 100000 && !_achievements.contains('Primera 100K')) {
       _achievements.add('Primera 100K');
-      _showAchievement('💰 ¡Valuation de \$100K!');
+      _showAchievement('💰 ¡Valuation de ${_money(100000, compact: true)}!');
     }
     
     if (_customers >= 100 && !_achievements.contains('100 Clientes')) {
@@ -855,7 +860,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
           children: [
             Text('¡Felicitaciones!', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            Text('Valuación: \$${_businessValue.toStringAsFixed(0)}'),
+            Text('Valuación: ${_money(_businessValue, compact: true)}'),
             Text('Clientes: $_customers'),
             Text('Empleados: $_employees'),
             Text('Tiempo: $_month meses'),
@@ -982,7 +987,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                children: [
                  Text(title, style: TextStyle(color: canAfford ? Colors.white : Colors.grey, fontWeight: FontWeight.bold)),
-                 Text('\$${cost.toStringAsFixed(0)}', style: TextStyle(color: canAfford ? Colors.green : Colors.red)),
+                 Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.green : Colors.red)),
                ],
              ),
              const SizedBox(height: 4),
@@ -1090,7 +1095,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                  children: [
                    Text(title, style: TextStyle(color: canAfford ? Colors.white : Colors.grey, fontWeight: FontWeight.bold)),
-                   Text('\$${cost.toStringAsFixed(0)}', style: TextStyle(color: canAfford ? Colors.green : Colors.red)),
+                   Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.green : Colors.red)),
                  ],
                ),
                const SizedBox(height: 4),
@@ -1146,7 +1151,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text('Dominio: ${penetration.toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white70)),
         trailing: penetration >= 100 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.deepPurple : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.deepPurple : Colors.red)),
         onTap: canAfford && penetration < 100 ? () {
           setState(() {
             _cash -= cost;
@@ -1204,7 +1209,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text('$benefit\nNivel: ${currentLevel.toStringAsFixed(0)}/1000', style: const TextStyle(color: Colors.white70)),
         trailing: currentLevel >= 1000 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.amber : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.amber : Colors.red)),
         onTap: canAfford && currentLevel < 1000 ? () {
           setState(() {
             _cash -= cost;
@@ -1258,7 +1263,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         enabled: canAfford,
         title: Text(option, style: const TextStyle(color: Colors.white)),
         subtitle: Text(description, style: const TextStyle(color: Colors.white70)),
-        trailing: Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.cyan : Colors.red)),
+        trailing: Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.cyan : Colors.red)),
         onTap: canAfford ? () {
           setState(() {
             _cash -= cost;
@@ -1317,7 +1322,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text(description, style: const TextStyle(color: Colors.white70)),
         trailing: hasUniverse 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000000}M', style: TextStyle(color: canAfford ? Colors.indigo : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.indigo : Colors.red)),
         onTap: canAfford && !hasUniverse ? () {
           setState(() {
             _cash -= cost;
@@ -1334,7 +1339,8 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
         title: const Text('🚀 Entrepreneur Sim', style: TextStyle(color: Colors.white)),
@@ -1342,6 +1348,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         elevation: 0,
       ),
       body: _currentBusiness == null ? _buildBusinessSelection() : _buildBusinessDashboard(),
+    ),
     );
   }
   
@@ -1395,7 +1402,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
               ),
               const SizedBox(height: 12),
               Text(
-                'Capital disponible: €${_cash.toStringAsFixed(0)}',
+                'Capital disponible: ${_money(_cash, compact: true)}',
                 style: const TextStyle(color: Colors.green, fontSize: 18),
               ),
             ],
@@ -1455,9 +1462,9 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('💰 Inversión: \$${idea.startupCost.toStringAsFixed(0)}', 
+                    Text('💰 Inversión: ${_money(idea.startupCost, compact: true)}', 
                          style: const TextStyle(color: Colors.orange)),
-                    Text('📈 Potencial: \$${idea.monthlyRevenuePotential.toStringAsFixed(0)}/mes', 
+                    Text('📈 Potencial: ${_money(idea.monthlyRevenuePotential, compact: true)}/mes', 
                          style: const TextStyle(color: Colors.green)),
                   ],
                 ),
@@ -1554,19 +1561,19 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
                     children: [
                       Column(
                         children: [
-                          Text('\$${_cash.toStringAsFixed(0)}', style: const TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(_money(_cash, compact: true), style: const TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
                           const Text('Efectivo', style: TextStyle(color: Colors.green)),
                         ],
                       ),
                       Column(
                         children: [
-                          Text('\$${_businessValue.toStringAsFixed(0)}', style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(_money(_businessValue, compact: true), style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
                           const Text('Valuación', style: TextStyle(color: Colors.blue)),
                         ],
                       ),
                       Column(
                         children: [
-                          Text('\$${_monthlyRevenue.toStringAsFixed(0)}', style: const TextStyle(color: Colors.purple, fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(_money(_monthlyRevenue, compact: true), style: const TextStyle(color: Colors.purple, fontSize: 18, fontWeight: FontWeight.bold)),
                           const Text('Ingresos/mes', style: TextStyle(color: Colors.purple)),
                         ],
                       ),
@@ -1634,7 +1641,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         // MÉTRICAS PRINCIPALES
         _buildMetricCard('👥 Clientes', '${_customers}', 'Base de usuarios activos', Colors.blue),
         _buildMetricCard('⭐ Reputación', '${_reputation.toStringAsFixed(0)}%', _getReputationText(), _getReputationColor()),
-        _buildMetricCard('💰 Ingresos Mes', '\$${(_monthlyRevenue/1000).toStringAsFixed(1)}K', 'Revenue mensual', Colors.green),
+        _buildMetricCard('💰 Ingresos Mes', _money(_monthlyRevenue, compact: true), 'Revenue mensual', Colors.green),
         _buildMetricCard('📊 Market Share', '${(_marketShare * 100).toStringAsFixed(1)}%', 'Tu porción del mercado', Colors.orange),
         
         // MÉTRICAS DE CALIDAD
@@ -1643,7 +1650,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         _buildMetricCard('🌟 Reviews Online', '${_onlineReviews.toStringAsFixed(1)}/5.0', 'Rating promedio', Colors.amber),
         
         // MÉTRICAS ULTRA-EXTREMAS GALÁCTICAS
-        _buildMetricCard('🦄 Valuación Total', '\$${(_valuation/1000000).toStringAsFixed(1)}M', 'Valuación empresarial extrema', Colors.purple),
+        _buildMetricCard('🦄 Valuación Total', _money(_valuation, compact: true), 'Valuación empresarial extrema', Colors.purple),
         _buildMetricCard('🤖 IA Desarrolladas', '${_aiPersonalities.length}', 'Personalidades de IA activas', Colors.cyan),
         _buildMetricCard('🛡️ Cyberseguridad', '${_cybersecurityLevel.toStringAsFixed(0)}%', 'Nivel de protección digital', Colors.orange),
         _buildMetricCard('📊 Data Analytics', '${_dataAnalytics.toStringAsFixed(0)}%', 'Capacidad de análisis de datos', Colors.teal),
@@ -1668,7 +1675,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         _buildMetricCard('🧩 Paradojas Resueltas', '${_paradoxesSolved.length}', 'Imposibilidades solucionadas', Colors.teal),
         _buildMetricCard('👻 Empleados Dimensionales', '${_dimensionalEmployees.values.fold(0, (a, b) => a + b)}', 'Staff de otros planos', Colors.purple.shade300),
         _buildMetricCard('📈 Clientes Multiversales', '${_multiversalCustomers}', 'Base usuarios infinita', Colors.pink),
-        _buildMetricCard('💰 Ingresos Infinitos', '\$${(_infiniteRevenue/1000000).toStringAsFixed(1)}M', 'Revenue de dimensiones', Colors.green.shade300),
+        _buildMetricCard('💰 Ingresos Infinitos', _money(_infiniteRevenue, compact: true), 'Revenue de dimensiones', Colors.green.shade300),
         
         // MERCADOS GLOBALES
         if (_globalMarkets.values.any((v) => v > 0)) ...[
@@ -2678,12 +2685,12 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         
         // TECNOLOGÍAS DESBLOQUEADAS
         _buildMetricCard('🚀 Tecnologías', '${_technologies.length}', 'Tech stack size', Colors.deepPurple),
-        _buildMetricCard('🧪 I+D Budget', '\$${(_rdBudget/1000).toStringAsFixed(1)}K', 'Investment en innovación', Colors.teal),
+        _buildMetricCard('🧪 I+D Budget', _money(_rdBudget, compact: true), 'Investment en innovación', Colors.teal),
         _buildMetricCard('🌱 Sostenibilidad', '${_sustainability.toStringAsFixed(0)}%', 'Green business rating', Colors.lightGreen),
         
         // OPERACIONES
         _buildMetricCard('👔 Empleados', '$_employees', 'Team size', Colors.purple),
-        _buildMetricCard('📢 Marketing Budget', '\$${(_marketingBudget/1000).toStringAsFixed(1)}K', 'Monthly marketing spend', Colors.cyan),
+        _buildMetricCard('📢 Marketing Budget', _money(_marketingBudget, compact: true), 'Monthly marketing spend', Colors.cyan),
         _buildMetricCard('🌐 Brand Awareness', '${_brandAwareness.toStringAsFixed(0)}%', 'Market recognition', Colors.pink),
         
         // Tech Stack Panel
@@ -4093,7 +4100,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
     // Logros básicos
     if (_businessValue >= 1000000 && !_achievements.contains('Millonario')) {
       _achievements.add('Millonario');
-      _showAchievement('🏆 ¡Primera empresa valuada en \$1M!');
+      _showAchievement('🏆 ¡Primera empresa valuada en ${_money(1000000, compact: true)}!');
     }
     
     if (_technologies.length >= 3 && !_achievements.contains('Tech Pioneer')) {
@@ -4119,7 +4126,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
     // LOGROS ULTRA-EXTREMOS GALÁCTICOS
     if (_valuation >= 1000000000 && !_achievements.contains('Unicorn Empire')) {
       _achievements.add('Unicorn Empire');
-      _showAchievement('🦄 IMPERIO UNICORNIO - Valuación \$1B+!');
+      _showAchievement('🦄 IMPERIO UNICORNIO - Valuación ${_money(1000000000, compact: true)}+!');
     }
     
     if (_globalMarkets.values.where((v) => v > 0).length >= 5 && !_achievements.contains('Global Dominator')) {
@@ -4179,7 +4186,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
     
     if (_valuation >= 100000000000 && !_achievements.contains('Trillionaire Vision')) {
       _achievements.add('Trillionaire Vision');
-      _showAchievement('💎 VISIÓN BILLONARIA - \$100B+ de valuación alcanzada!');
+      _showAchievement('💎 VISIÓN BILLONARIA - ${_money(100000000000, compact: true)}+ de valuación alcanzada!');
     }
     
     if (_viralCoefficient >= 5.0 && !_achievements.contains('Viral Phenomenon')) {
@@ -4435,7 +4442,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text(benefit, style: const TextStyle(color: Colors.white70)),
         trailing: hasAI 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.cyan : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.cyan : Colors.red)),
         onTap: canAfford && !hasAI ? () {
           setState(() {
             _cash -= cost;
@@ -4504,7 +4511,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text('Penetración: ${penetration.toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white70)),
         trailing: penetration >= 100 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.blue : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.blue : Colors.red)),
         onTap: canAfford && penetration < 100 ? () {
           setState(() {
             _cash -= cost;
@@ -4559,7 +4566,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text('Progreso: ${progress.toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white70)),
         trailing: progress >= 100 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.purple : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.purple : Colors.red)),
         onTap: canAfford && progress < 100 ? () {
           setState(() {
             _cash -= cost;
@@ -4615,7 +4622,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text(benefit, style: const TextStyle(color: Colors.white70)),
         trailing: hasPartner 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.purple : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.purple : Colors.red)),
         onTap: canAfford && !hasPartner ? () {
           setState(() {
             _cash -= cost;
@@ -4669,7 +4676,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         enabled: canAfford,
         title: Text(optionName, style: const TextStyle(color: Colors.white)),
         subtitle: Text(benefit, style: const TextStyle(color: Colors.white70)),
-        trailing: Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.lime : Colors.red)),
+        trailing: Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.lime : Colors.red)),
         onTap: canAfford ? () {
           setState(() {
             _cash -= cost;
@@ -4723,7 +4730,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         subtitle: Text(benefit, style: const TextStyle(color: Colors.white70)),
         trailing: hasIt 
           ? const Icon(Icons.check, color: Colors.green)
-          : Text('\$${cost/1000}K', style: TextStyle(color: canAfford ? Colors.indigo : Colors.red)),
+          : Text(_money(cost.toDouble(), compact: true), style: TextStyle(color: canAfford ? Colors.indigo : Colors.red)),
         onTap: canAfford && !hasIt ? () {
           setState(() {
             _cash -= cost;
@@ -4906,7 +4913,7 @@ class _EntrepreneurSimState extends State<EntrepreneurSim> with TickerProviderSt
         title: Text(title, style: const TextStyle(color: Colors.white)),
         subtitle: Text(description, style: const TextStyle(color: Colors.white70)),
         trailing: Text(
-          '\$${(cost/1000000).toStringAsFixed(1)}M', 
+          _money(cost.toDouble(), compact: true), 
           style: TextStyle(color: canAfford ? Colors.green : Colors.red)
         ),
         onTap: canAfford ? () {

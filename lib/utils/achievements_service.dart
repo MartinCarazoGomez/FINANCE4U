@@ -47,7 +47,9 @@ class AchievementsService {
     'Riesgo y rentabilidad': 2,
     'Invierte a largo plazo': 2,
     'Fondos de inversión': 2,
+    'Cómo crean dinero los bancos': 2,
     'Planes de pensiones': 3,
+    'FOREX y cobertura cambiaria': 3,
     'Simula una inversión': 3,
     // Presupuesto
     '¿Qué es un presupuesto?': 1,
@@ -115,7 +117,9 @@ class AchievementsService {
       'Riesgo y rentabilidad',
       'Invierte a largo plazo',
       'Fondos de inversión',
+      'Cómo crean dinero los bancos',
       'Planes de pensiones',
+      'FOREX y cobertura cambiaria',
       'Simula una inversión',
     ],
     'topic_presupuesto': [
@@ -169,10 +173,10 @@ class AchievementsService {
     ],
   };
 
-  static const int totalPills = 52;
+  static const int totalPills = 54;
   static const int totalBasic = 16;
-  static const int totalIntermediate = 25;
-  static const int totalAdvanced = 11;
+  static const int totalIntermediate = 26;
+  static const int totalAdvanced = 12;
 
   // ── Helpers ─────────────────────────────────────────────────────────────
   static int basicCount(Set<String> completed) =>
@@ -189,6 +193,32 @@ class AchievementsService {
     if (pills == null) return 0;
     return completed.where(pills.contains).length;
   }
+
+  static String? topicIdForPill(String pillTitle) {
+    for (final entry in topicPills.entries) {
+      if (entry.value.contains(pillTitle)) return entry.key;
+    }
+    return null;
+  }
+
+  static bool isTopicComplete(String topicId, Set<String> completed) {
+    final pills = topicPills[topicId];
+    if (pills == null || pills.isEmpty) return false;
+    return pills.every(completed.contains);
+  }
+
+  static const Map<String, String> topicDisplayNames = {
+    'topic_ahorros': 'Ahorros',
+    'topic_presupuesto': 'Presupuesto',
+    'topic_planificacion': 'Planificación Financiera',
+    'topic_impuestos': 'Impuestos',
+    'topic_deudas': 'Deudas y Crédito',
+    'topic_seguros': 'Seguros y Protección',
+    'topic_psicologia': 'Psicología del Dinero',
+    'topic_inversiones': 'Inversiones',
+    'topic_emprendimiento': 'Emprendimiento',
+    'topic_bienes_raices': 'Bienes Raíces',
+  };
 
   // ── All achievements ─────────────────────────────────────────────────────
   static const List<Achievement> _achievements = [

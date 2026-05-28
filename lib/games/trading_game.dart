@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math';
 import 'game_rewards.dart';
 import '../providers/app_provider.dart';
+import '../utils/currency_helper.dart';
 import 'package:provider/provider.dart';
 
 class TradingGame extends StatefulWidget {
@@ -57,6 +58,8 @@ class Trade {
 }
 
 class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin {
+  String _money(double amount, {bool compact = false}) => context.money(amount, compact: compact);
+
   // Game state
   double _cash = 5000.0; // Capital inicial más realista en euros
   double _portfolioValue = 5000.0;
@@ -243,7 +246,7 @@ class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('💰 Portafolio Final: €${_portfolioValue.toStringAsFixed(0)}'),
+            Text('💰 Portafolio Final: ${_money(_portfolioValue, compact: true)}'),
             Text('📈 Crecimiento: ${growth.toStringAsFixed(1)}%'),
             Text('⭐ Puntuación: $_score'),
             Text('💼 Operaciones: ${_trades.length}'),
@@ -265,7 +268,8 @@ class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<AppProvider>(
+      builder: (context, app, child) => Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
         title: const Text('📈 Trading Game', style: TextStyle(color: Colors.white)),
@@ -280,7 +284,7 @@ class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin
               border: Border.all(color: Colors.green),
             ),
             child: Text(
-              '\$${_portfolioValue.toStringAsFixed(0)}',
+              _money(_portfolioValue, compact: true),
               style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
             ),
           ),
@@ -299,7 +303,7 @@ class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStatusCard('💰 Efectivo', '\$${_cash.toStringAsFixed(0)}', Colors.blue),
+                _buildStatusCard('💰 Efectivo', _money(_cash, compact: true), Colors.blue),
                 _buildStatusCard('⏰ Tiempo', '${_timeLeft}s', Colors.orange),
                 _buildStatusCard('⭐ Score', '$_score', Colors.purple),
               ],
@@ -352,7 +356,7 @@ class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  '\$${stock.price.toStringAsFixed(2)}',
+                                  _money(stock.price),
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                                 Text(
@@ -375,7 +379,7 @@ class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Posees: $holdings acciones = \$${(holdings * stock.price).toStringAsFixed(0)}',
+                              'Posees: $holdings acciones = ${_money(holdings * stock.price, compact: true)}',
                               style: const TextStyle(color: Colors.blue, fontSize: 12),
                             ),
                           ),
@@ -409,6 +413,7 @@ class _TradingGameState extends State<TradingGame> with TickerProviderStateMixin
           ),
         ],
       ),
+    ),
     );
   }
 

@@ -1,4 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/auth_provider.dart';
+import '../providers/app_provider.dart';
+import '../utils/tutorial_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,38 +22,62 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+      ),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
     _startAnimation();
   }
 
-  void _startAnimation() async {
+  Future<void> _startAnimation() async {
     await Future.delayed(const Duration(milliseconds: 300));
     _controller.forward();
-    
+
     await Future.delayed(const Duration(milliseconds: 2500));
-    
-    if (mounted) {
+
+    if (!mounted) return;
+    await _navigateNext();
+  }
+
+  Future<void> _navigateNext() async {
+    final auth = context.read<AuthProvider>();
+    final app = context.read<AppProvider>();
+    await app.loadLocalProgress();
+    await app.loadSettings();
+    try {
+      await auth.initialize();
+    } catch (e) {
+      debugPrint('Splash auth init error: $e');
+    }
+
+    if (!mounted) return;
+
+    if (auth.isSignedIn && auth.onboardingCompleted) {
+      final uid = auth.firebaseUser?.uid;
+      if (uid != null) {
+        await TutorialService.prepareForUser(uid);
+      }
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed('/main');
+    } else if (auth.isSignedIn) {
+      Navigator.of(context).pushReplacementNamed('/onboarding');
+    } else {
       Navigator.of(context).pushReplacementNamed('/welcome');
     }
   }
@@ -62,20 +92,13 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: GestureDetector(
-        onTap: () {
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/welcome');
-          }
-        },
+        onTap: _navigateNext,
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF2E7D32),
-                Color(0xFF4CAF50),
-              ],
+              colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
             ),
           ),
           child: SafeArea(
@@ -90,7 +113,6 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Logo simple
                           Container(
                             width: 120,
                             height: 120,
@@ -104,10 +126,7 @@ class _SplashScreenState extends State<SplashScreen>
                               color: Color(0xFF2E7D32),
                             ),
                           ),
-                          
                           const SizedBox(height: 40),
-                          
-                          // Nombre de la app
                           const Text(
                             'FINANCE4U',
                             style: TextStyle(
@@ -117,9 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
                               letterSpacing: 1,
                             ),
                           ),
-                          
                           const SizedBox(height: 12),
-                          
                           const Text(
                             'Tu educación financiera',
                             style: TextStyle(
@@ -128,16 +145,14 @@ class _SplashScreenState extends State<SplashScreen>
                               fontWeight: FontWeight.w300,
                             ),
                           ),
-                          
                           const SizedBox(height: 80),
-                          
-                          // Indicador de carga simple
                           const SizedBox(
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           ),
                         ],
@@ -152,4 +167,4 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
-} 
+}

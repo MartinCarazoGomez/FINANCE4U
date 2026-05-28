@@ -2,6 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isGroupMember(groupId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/groups/$(groupId))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+    }
+
     // ── Users ──────────────────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if request.auth != null;
@@ -30,7 +36,6 @@ service cloud.firestore {
 
     // ── Community posts ────────────────────────────────────────────────────
     match /community_posts/{postId} {
-      // Anyone authenticated (including anonymous) can read posts
       allow read: if request.auth != null;
 
       // Authenticated users can create posts
@@ -44,10 +49,63 @@ service cloud.firestore {
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
 
-      // Anyone authenticated can update only the like fields
+      // Anyone authenticated can update like fields or comment count
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['likedBy', 'likeCount']);
+             .hasOnly(['likedBy', 'likeCount'])
+        || (
+          request.auth != null
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['commentCount'])
+        );
+
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+
+        allow create: if request.auth != null
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.content is string
+          && request.resource.data.content.size() > 0
+          && request.resource.data.content.size() <= 280;
+
+        allow delete: if request.auth != null
+          && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    // ── Class groups ───────────────────────────────────────────────────────
+    match /groups/{groupId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['code', 'name', 'pin', 'memberIds'])
+        && request.resource.data.memberIds.size() == 0
+        && request.resource.data.code in ['0001', '0002', '0003'];
+      allow update: if request.auth != null
+        && (
+          request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['memberIds', 'updatedAt'])
+          || (
+            request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['pin', 'updatedAt'])
+            && !('pin' in resource.data)
+          )
+        );
+    }
+
+    // ── Class chat ─────────────────────────────────────────────────────────
+    match /group_messages/{messageId} {
+      allow read: if request.auth != null
+        && isGroupMember(resource.data.groupId);
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && isGroupMember(request.resource.data.groupId)
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 500;
+
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
   }
 }
