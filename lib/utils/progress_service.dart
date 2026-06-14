@@ -302,7 +302,7 @@ class ProgressService {
   
   // Obtener actividades completadas hoy (simulado)
   int _getTodayCompleted() {
-    return 2; // Simulado
+    return 0;
   }
   
   // Calcular precisión promedio (simulado)

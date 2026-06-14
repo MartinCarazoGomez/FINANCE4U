@@ -1,0 +1,29 @@
+FINANCE4U — Android SHA fingerprints
+Package: com.finance4u.education
+Firebase project: finance4u-app-v1
+
+Add BOTH SHA-1 values in:
+  Firebase Console → Project settings → Your apps → Android app → Add fingerprint
+  https://console.firebase.google.com/project/finance4u-app-v1/settings/general
+
+Then re-download google-services.json into android/app/
+
+────────────────────────────────────────────────────────────
+RELEASE (upload-keystore.jks) — registered in google-services.json
+────────────────────────────────────────────────────────────
+SHA-1:   E2:C2:A3:C1:DE:2E:6A:5F:35:09:02:72:15:94:7A:D3:7A:35:3E:0E
+SHA-256: 9A:4C:5F:BA:7A:BE:B4:A9:2A:30:2A:A6:23:48:2A:EF:BB:91:84:9D:EF:31:00:F2:11:42:DF:49:DE:01:3D:A7
+
+────────────────────────────────────────────────────────────
+DEBUG (~/.android/debug.keystore) — ADD THIS to Firebase
+────────────────────────────────────────────────────────────
+SHA-1:   95:A8:72:79:F4:81:0F:E2:78:6A:98:56:8E:D8:88:A3:9F:DA:DE:3A
+SHA-256: F7:00:7B:35:D6:30:19:79:64:79:23:F2:A6:A1:A0:41:1C:35:E9:82:EA:AC:0A:AC:0A:42:EB:C4:C6:4C:73:B1
+
+────────────────────────────────────────────────────────────
+Local fix applied
+────────────────────────────────────────────────────────────
+debug and profile builds now sign with upload-keystore.jks so Google Sign-In
+works without adding the debug SHA-1 (same certificate as release).
+
+Run android\get_sha1.bat or: cd android && gradlew signingReport

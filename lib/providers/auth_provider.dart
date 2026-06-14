@@ -75,6 +75,8 @@ class AuthProvider extends ChangeNotifier {
     _firebaseUser = user;
     if (user == null) {
       _profile = null;
+      await _appProvider?.clearProgressState();
+      _appProvider?.setProgressUserId(null);
       notifyListeners();
       return;
     }
@@ -126,6 +128,10 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _loadProgress(String uid) async {
     if (_appProvider == null) return;
     try {
+      final previousUid = _appProvider!.progressUserId;
+      if (previousUid != null && previousUid != uid) {
+        await _appProvider!.clearProgressState();
+      }
       _appProvider!.setProgressUserId(uid);
       await _appProvider!.loadLocalProgress(userId: uid);
       final data = await FirestoreHelper.getProgress(uid);
@@ -293,6 +299,8 @@ class AuthProvider extends ChangeNotifier {
       await _auth.signOut();
       _profile = null;
       _firebaseUser = null;
+      await _appProvider?.clearProgressState();
+      _appProvider?.setProgressUserId(null);
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('onboarding_completed');
     });

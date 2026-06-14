@@ -21,36 +21,16 @@ class GamesScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final double riverHeight = size.height;
     final double riverWidth = size.width;
-    final double circleSize = 64; // Más pequeño
-    final double topPadding = 80;
-    final double bottomPadding = 40;
-    final double availableHeight = riverHeight - topPadding - bottomPadding;
-    final int gameCount = games.length;
-    // Coordenadas relativas proporcionadas por el usuario (actualizadas)
-    final List<Offset> relativePositions = [
-      Offset(0.435546875, 0.252760736196319),
-      Offset(0.3310546875, 0.2950920245398773),
-      Offset(0.4072265625, 0.347239263803681),
-      Offset(0.5625, 0.3852760736196319),
-      Offset(0.662109375, 0.4349693251533742),
-      Offset(0.5439453125, 0.4950920245398773),
-      Offset(0.365234375, 0.5539877300613497),
-      Offset(0.3525390625, 0.6374233128834356),
-      Offset(0.5556640625, 0.7141104294478527),
-      Offset(0.54296875, 0.8208588957055215),
-    ];
-    final List<Offset> positions = List.generate(games.length, (i) {
-      if (i < relativePositions.length) {
-        final rel = relativePositions[i];
-        return Offset(
-          riverWidth * rel.dx - circleSize / 2,
-          riverHeight * rel.dy - circleSize / 2,
-        );
-      } else {
-        // Si hay más juegos, los coloca en la parte inferior derecha
-        return Offset(riverWidth * 0.95 - circleSize / 2, riverHeight * 0.95 - circleSize / 2);
-      }
-    });
+    const double circleSize = 64;
+
+    // Por ahora el "camino" muestra solo el primer step: Maestro del Presupuesto.
+    const Offset firstStep = Offset(0.435546875, 0.252760736196319);
+    final RiverGame pathGame =
+        games.firstWhere((g) => g.id == 'budget_master');
+    final Offset pathPos = Offset(
+      riverWidth * firstStep.dx - circleSize / 2,
+      riverHeight * firstStep.dy - circleSize / 2,
+    );
 
     return Scaffold(
       body: Consumer<AppProvider>(
@@ -67,6 +47,12 @@ class GamesScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+              // Botón de menú (3 rayas) arriba a la izquierda
+              Positioned(
+                top: 24,
+                left: 16,
+                child: _buildMenuButton(context, appProvider, games),
               ),
               // AppBar flotante
               Positioned(
@@ -99,20 +85,177 @@ class GamesScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Círculos de juegos
-              ...List.generate(games.length, (i) {
-                final game = games[i];
-                final pos = positions[i];
-                final isUnlocked = appProvider.isGameUnlocked(game.id);
-                return Positioned(
-                  left: pos.dx,
-                  top: pos.dy,
-                  child: _buildGameNode(context, game, appProvider, circleSize, isUnlocked),
-                );
-              }),
+              // Único nodo del camino: Maestro del Presupuesto
+              Positioned(
+                left: pathPos.dx,
+                top: pathPos.dy,
+                child: _buildGameNode(
+                  context,
+                  pathGame,
+                  appProvider,
+                  circleSize,
+                  appProvider.isGameUnlocked(pathGame.id),
+                ),
+              ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  // ── Botón de menú con 3 rayas ─────────────────────────────────────────────
+  Widget _buildMenuButton(
+    BuildContext context,
+    AppProvider appProvider,
+    List<RiverGame> games,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _showGamesMenu(context, appProvider, games),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.45),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white24),
+            boxShadow: const [
+              BoxShadow(color: Colors.black38, blurRadius: 8, offset: Offset(0, 2)),
+            ],
+          ),
+          child: const Icon(Icons.menu, color: Colors.white, size: 26),
+        ),
+      ),
+    );
+  }
+
+  // ── Menú desplegable con todos los juegos ─────────────────────────────────
+  void _showGamesMenu(
+    BuildContext context,
+    AppProvider appProvider,
+    List<RiverGame> games,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.92,
+          expand: false,
+          builder: (sheetContext, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF1B2330),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white30,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Todos los juegos',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.05,
+                      ),
+                      itemCount: games.length,
+                      itemBuilder: (gridContext, i) {
+                        final game = games[i];
+                        final unlocked = appProvider.isGameUnlocked(game.id);
+                        return _buildMenuTile(context, game, unlocked);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuTile(BuildContext context, RiverGame game, bool unlocked) {
+    return GestureDetector(
+      onTap: unlocked
+          ? () {
+              Navigator.pop(context);
+              _launchGame(context, game);
+            }
+          : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: unlocked
+              ? game.color.withOpacity(0.92)
+              : Colors.grey.withOpacity(0.32),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: unlocked ? Colors.white24 : Colors.white10,
+          ),
+          boxShadow: unlocked
+              ? [
+                  BoxShadow(
+                    color: game.color.withOpacity(0.35),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(game.emoji, style: const TextStyle(fontSize: 34)),
+            const SizedBox(height: 8),
+            Text(
+              game.title.replaceAll('\n', ' '),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: unlocked ? Colors.white : Colors.white60,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+            if (!unlocked) ...[
+              const SizedBox(height: 6),
+              const Icon(Icons.lock, size: 14, color: Colors.white60),
+            ],
+          ],
+        ),
       ),
     );
   }

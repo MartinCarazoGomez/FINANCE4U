@@ -106,6 +106,20 @@ class FirestoreHelper {
     return doc.data();
   }
 
+  static Future<void> resetProgressDoc(String userId) async {
+    await progressDoc(userId).set({
+      'userId': userId,
+      'level': 1,
+      'totalXP': 0,
+      'streakDays': 0,
+      'completedLessons': <String>[],
+      'unlockedGames': <String>['budget_master'],
+      'classPoints': 0,
+      'completedTopics': <String>[],
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // Game data helpers
   static DocumentReference<Map<String, dynamic>> gameDataDoc(String userId, String gameId) {
     return _gamesCollection().doc('${userId}_$gameId');

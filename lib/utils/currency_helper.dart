@@ -4,10 +4,54 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 
 /// Central currency formatting and EUR-based content conversion.
+///
+/// All monetary values in the app (games, lessons, UI) are authored in **EUR**.
+/// [formatGame] converts from EUR into the user's selected display currency.
 class CurrencyHelper {
   CurrencyHelper._();
 
+  static const baseCurrency = 'EUR';
+
+  /// Reference amount shown in Settings to preview exchange rates.
+  static const settingsPreviewEurAmount = 1000.0;
+
   static const supported = ['EUR', 'MXN', 'USD', 'COP', 'ARS', 'CLP'];
+
+  static const symbols = {
+    'EUR': '€',
+    'USD': '\$',
+    'MXN': 'MX\$',
+    'COP': 'COL\$',
+    'ARS': 'ARS\$',
+    'CLP': 'CL\$',
+  };
+
+  static const names = {
+    'EUR': 'Euro',
+    'USD': 'Dólar estadounidense',
+    'MXN': 'Peso mexicano',
+    'COP': 'Peso colombiano',
+    'ARS': 'Peso argentino',
+    'CLP': 'Peso chileno',
+  };
+
+  static String symbol(String currencyCode) =>
+      symbols[currencyCode] ?? currencyCode;
+
+  static String name(String currencyCode) =>
+      names[currencyCode] ?? currencyCode;
+
+  /// Settings / picker label, e.g. "Euro (€)" or "Peso mexicano (MX$)".
+  static String settingsLabel(String currencyCode) =>
+      '${name(currencyCode)} (${symbol(currencyCode)})';
+
+  /// Settings picker line: €1000 for EUR, converted amount + EUR reference otherwise.
+  static String settingsPreview(String currencyCode) {
+    final converted = formatGame(settingsPreviewEurAmount, currencyCode);
+    if (currencyCode == baseCurrency) return converted;
+    final eurRef = formatGame(settingsPreviewEurAmount, baseCurrency);
+    return '$converted · $eurRef';
+  }
 
   /// Approximate rates vs EUR for display (lesson text + game UI scaling).
   static const ratesFromEur = {
@@ -45,17 +89,17 @@ class CurrencyHelper {
 
     switch (currencyCode) {
       case 'MXN':
-        return '\$$formatted MXN';
+        return '${symbol('MXN')}$formatted';
       case 'USD':
-        return '\$$formatted USD';
+        return '${symbol('USD')}$formatted';
       case 'EUR':
-        return '€$formatted';
+        return '${symbol('EUR')}$formatted';
       case 'COP':
-        return '\$$formatted COP';
+        return '${symbol('COP')}$formatted';
       case 'ARS':
-        return '\$$formatted ARS';
+        return '${symbol('ARS')}$formatted';
       case 'CLP':
-        return '\$$formatted CLP';
+        return '${symbol('CLP')}$formatted';
       default:
         return '\$$formatted';
     }

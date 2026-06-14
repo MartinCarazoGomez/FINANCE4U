@@ -1,0 +1,17 @@
+cd "C:\Users\marti\OneDrive\Documentos\01ICAI\00 Practicas\APPTRACKER HORAS TRABAJADAS"
+npm install
+npm run build
+firebase use internshiphourstracker
+firebase deploy
+
+
+
+-- PARA FNCE U4 No hay que hacer npm run buid, solo el flutter build
+
+cd "C:\Users\marti\duolingo_finanzas"
+firebase logout
+firebase login
+flutter clean
+flutter run -d Windows
+flutter build
+firebase deploy

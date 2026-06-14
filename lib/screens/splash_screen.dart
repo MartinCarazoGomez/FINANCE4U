@@ -18,6 +18,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  bool _navigating = false;
 
   @override
   void initState() {
@@ -56,9 +57,11 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateNext() async {
+    if (_navigating) return;
+    _navigating = true;
+
     final auth = context.read<AuthProvider>();
     final app = context.read<AppProvider>();
-    await app.loadLocalProgress();
     await app.loadSettings();
     try {
       await auth.initialize();

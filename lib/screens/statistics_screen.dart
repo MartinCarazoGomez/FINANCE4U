@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/app_provider.dart';
 import '../utils/progress_service.dart';
 import '../utils/achievements_service.dart';
+import '../utils/streak_service.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -20,12 +24,45 @@ class _StatisticsScreenState extends State<StatisticsScreen> with TickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadAchievementIds();
+  }
+
+  Future<void> _loadAchievementIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('unlocked_achievement_ids') ?? [];
+    if (mounted) {
+      setState(() => unlockedAchievementIds = saved.toSet());
+    }
   }
   
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Map<String, dynamic> _progress(BuildContext context) {
+    final app = context.watch<AppProvider>();
+    StreakService().syncFromApp(
+      streakDays: app.streakDays,
+      lastStreakDay: app.lastStreakDay,
+    );
+    final p = _progressService.getUserProgress();
+    return {
+      ...p,
+      'totalXP': app.totalXP,
+      'currentLevel': app.userLevel,
+      'lessonsCompleted': app.completedLessons.length,
+      'currentStreak': app.streakDays,
+      'maxStreak': StreakService().maxStreak,
+      'daysActive': app.completedLessons.isNotEmpty ? app.streakDays : 0,
+    };
+  }
+
+  int _levelProgress(BuildContext context) {
+    final app = context.watch<AppProvider>();
+    final current = app.totalXP % 100;
+    return current == 0 && app.totalXP > 0 ? 100 : current;
   }
 
   @override
@@ -62,11 +99,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with TickerProvider
   }
   
   Widget _buildGeneralTab() {
-    final progress = _progressService.getUserProgress();
+    final progress = _progress(context);
     final totalXP = progress['totalXP'] ?? 0;
-    final currentLevel = _progressService.getCurrentLevel();
-    final xpForNextLevel = _progressService.getXPForNextLevel();
-    final currentLevelXP = _progressService.getCurrentLevelXP();
+    final currentLevel = progress['currentLevel'] ?? 1;
+    final xpForNextLevel = 100;
+    final currentLevelXP = _levelProgress(context);
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -83,7 +120,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with TickerProvider
   }
   
   Widget _buildProgressTab() {
-    final progress = _progressService.getUserProgress();
+    final progress = _progress(context);
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -108,7 +145,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with TickerProvider
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildWeeklyActivity(),
+          _buildWeeklyActivity(context),
           const SizedBox(height: 16),
           _buildDailyGoals(),
           const SizedBox(height: 16),
@@ -222,10 +259,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with TickerProvider
   
   Widget _buildStatsGrid(Map<String, dynamic> progress) {
     final stats = [
-      StatItem('Días Activos', '${progress['daysActive'] ?? 7}', Icons.calendar_today, Colors.blue),
-      StatItem('Tiempo Total', '${progress['totalMinutes'] ?? 120} min', Icons.timer, Colors.orange),
-      StatItem('Precisión', '${progress['accuracy'] ?? 85}%', Icons.track_changes, Colors.green),
-      StatItem('Racha Actual', '${progress['currentStreak'] ?? 3} días', Icons.local_fire_department, Colors.red),
+      StatItem('Días Activos', '${progress['daysActive'] ?? 0}', Icons.calendar_today, Colors.blue),
+      StatItem('Tiempo Total', '${progress['totalMinutes'] ?? 0} min', Icons.timer, Colors.orange),
+      StatItem('Precisión', '${progress['accuracy'] ?? 0}%', Icons.track_changes, Colors.green),
+      StatItem('Racha Actual', '${progress['currentStreak'] ?? 0} días', Icons.local_fire_department, Colors.red),
     ];
     
     return GridView.builder(
@@ -538,17 +575,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> with TickerProvider
     );
   }
   
-  Widget _buildWeeklyActivity() {
-    // Simular datos de actividad semanal
-    final weeklyData = [
-      DayActivity('L', 2, Colors.green),
-      DayActivity('M', 3, Colors.green),
-      DayActivity('X', 1, Colors.orange),
-      DayActivity('J', 4, Colors.green),
-      DayActivity('V', 0, Colors.grey),
-      DayActivity('S', 2, Colors.green),
-      DayActivity('D', 3, Colors.green),
-    ];
+  Widget _buildWeeklyActivity(BuildContext context) {
+    final app = context.watch<AppProvider>();
+    StreakService().syncFromApp(
+      streakDays: app.streakDays,
+      lastStreakDay: app.lastStreakDay,
+    );
+    final week = StreakService().getWeekProgress();
+    const labels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    final weeklyData = List.generate(7, (i) {
+      final active = week[i];
+      return DayActivity(
+        labels[i],
+        active ? 3 : 0,
+        active ? Colors.green : Colors.grey,
+      );
+    });
     
     return Card(
       elevation: 4,

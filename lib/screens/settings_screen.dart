@@ -121,10 +121,11 @@ class SettingsScreen extends StatelessWidget {
               _buildSectionHeader('Moneda'),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.attach_money, color: Color(0xFF2E7D32)),
+                  leading: _currencySymbolAvatar(appProvider.currency),
                   title: const Text('Moneda Local'),
                   subtitle: Text(
-                    '${appProvider.currency} · ${appProvider.formatCurrency(1600)}',
+                    '${CurrencyHelper.name(appProvider.currency)} · '
+                    '${CurrencyHelper.settingsPreview(appProvider.currency)}',
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () => _showCurrencyPicker(context, appProvider),
@@ -144,7 +145,7 @@ class SettingsScreen extends StatelessWidget {
                       title: const Text('Modo desarrollador'),
                       subtitle: Text(
                         appProvider.developerMode
-                            ? 'Contenido experimental activado'
+                            ? 'Mapa y decoración experimental de Ahorros'
                             : 'Desactivado · módulos en vista estándar',
                       ),
                       trailing: Switch(
@@ -160,7 +161,7 @@ class SettingsScreen extends StatelessWidget {
                             color: Color(0xFF558B2F)),
                         title: const Text('Contenido experimental'),
                         subtitle: const Text(
-                          'Ahorros: mapa interactivo en lugar de la lista de píldoras',
+                          'Ahorros: mapa interactivo y decoración especial de píldoras',
                         ),
                         trailing: const Icon(Icons.map_outlined,
                             color: Color(0xFF558B2F)),
@@ -318,10 +319,9 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       initialTime: initialTime,
     ).then((time) {
-      if (time != null) {
-        appProvider.updateReminderTime('${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}');
-        _showSnackBar(context, 'Hora de recordatorio actualizada');
-      }
+      if (time == null || !context.mounted) return;
+      appProvider.updateReminderTime('${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}');
+      _showSnackBar(context, 'Hora de recordatorio actualizada');
     });
   }
 
@@ -340,17 +340,19 @@ class SettingsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final currency = currencies[index];
               return ListTile(
-                title: Text(currency),
-                subtitle: Text(
-                  CurrencyHelper.formatGame(1600, currency, compact: true),
-                ),
+                leading: _currencySymbolAvatar(currency),
+                title: Text(CurrencyHelper.settingsLabel(currency)),
+                subtitle: Text(CurrencyHelper.settingsPreview(currency)),
                 trailing: appProvider.currency == currency 
                     ? const Icon(Icons.check, color: Color(0xFF2E7D32))
                     : null,
                 onTap: () {
                   appProvider.updateCurrency(currency);
                   Navigator.pop(context);
-                  _showSnackBar(context, 'Moneda actualizada a $currency');
+                  _showSnackBar(
+                    context,
+                    'Moneda actualizada a ${CurrencyHelper.settingsLabel(currency)}',
+                  );
                 },
               );
             },
@@ -374,10 +376,13 @@ class SettingsScreen extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              appProvider.resetData();
+            onPressed: () async {
               Navigator.pop(context);
-              _showSnackBar(context, 'Datos eliminados');
+              final auth = context.read<AuthProvider>();
+              await appProvider.resetData(syncUserId: auth.firebaseUser?.uid);
+              if (context.mounted) {
+                _showSnackBar(context, 'Datos eliminados');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -386,6 +391,23 @@ class SettingsScreen extends StatelessWidget {
             child: const Text('Eliminar'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _currencySymbolAvatar(String currencyCode) {
+    final symbol = CurrencyHelper.symbol(currencyCode);
+    final fontSize = symbol.length > 1 ? 13.0 : 18.0;
+
+    return CircleAvatar(
+      backgroundColor: const Color(0xFFE8F5E9),
+      child: Text(
+        symbol,
+        style: TextStyle(
+          color: const Color(0xFF2E7D32),
+          fontWeight: FontWeight.bold,
+          fontSize: fontSize,
+        ),
       ),
     );
   }

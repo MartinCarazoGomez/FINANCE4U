@@ -75,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     try {
       await context.read<AuthProvider>().updateUsername(name);
-      setState(() => _editingName = false);
+      if (mounted) setState(() => _editingName = false);
     } catch (e) {
       _showError(e);
     }

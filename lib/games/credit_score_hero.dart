@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../utils/currency_helper.dart';
+import '../utils/streak_day_helper.dart';
 
 class CreditScoreHero extends StatefulWidget {
   final VoidCallback onCompleted;
@@ -1646,20 +1647,15 @@ class _CreditScoreHeroState extends State<CreditScoreHero>
   }
 
   void _checkDailyStreak() {
-    DateTime now = DateTime.now();
-    DateTime today = DateTime(now.year, now.month, now.day);
-    DateTime lastPlay = DateTime(lastPlayDate.year, lastPlayDate.month, lastPlayDate.day);
-    
-    if (today.difference(lastPlay).inDays == 1) {
-      // Consecutive day
+    final today = StreakDayHelper.currentStreakDay();
+    final lastDay = StreakDayHelper.streakDayIndex(lastPlayDate);
+    final gap = today - lastDay;
+    if (gap == 1) {
       dailyStreak++;
-    } else if (today.difference(lastPlay).inDays > 1) {
-      // Streak broken
+    } else if (gap > 1) {
       dailyStreak = 1;
     }
-    // Same day = maintain streak
-    
-    lastPlayDate = now;
+    lastPlayDate = DateTime.now();
   }
 
   void _updateMarketConditions() {

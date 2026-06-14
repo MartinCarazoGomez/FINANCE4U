@@ -4111,6 +4111,207 @@ class _PillCardState extends State<_PillCard> {
   }
 }
 
+// ── Swipe hint overlay (curved arrow + sliding hand) ─────────────────────────
+
+class _CurvedSwipeArrowPainter extends CustomPainter {
+  final Color color;
+
+  const _CurvedSwipeArrowPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.6
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+
+    final p0 = Offset(size.width * 0.06, size.height * 0.88);
+    final p1 = Offset(size.width * 0.42, size.height * 0.10);
+    final p2 = Offset(size.width * 0.92, size.height * 0.42);
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(p0.dx, p0.dy)
+        ..quadraticBezierTo(p1.dx, p1.dy, p2.dx, p2.dy),
+      stroke,
+    );
+
+    // Direction tangent at the curve end (derivative of the quadratic bézier
+    // at t = 1 points along p2 - p1). The arrowhead is built symmetrically
+    // around this axis so its tip lands exactly on the end of the curve.
+    final dir = p2 - p1;
+    final dist = dir.distance;
+    if (dist == 0) return;
+    final ux = dir.dx / dist;
+    final uy = dir.dy / dist;
+
+    const headLen = 11.0;
+    const headHalf = 6.5;
+
+    final base = Offset(p2.dx - ux * headLen, p2.dy - uy * headLen);
+    final perp = Offset(-uy, ux);
+    final wingA =
+        Offset(base.dx + perp.dx * headHalf, base.dy + perp.dy * headHalf);
+    final wingB =
+        Offset(base.dx - perp.dx * headHalf, base.dy - perp.dy * headHalf);
+
+    final head = Path()
+      ..moveTo(p2.dx, p2.dy)
+      ..lineTo(wingA.dx, wingA.dy)
+      ..lineTo(wingB.dx, wingB.dy)
+      ..close();
+
+    canvas.drawPath(
+      head,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CurvedSwipeArrowPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+class _SwipeCardHint extends StatefulWidget {
+  final Color color;
+  final bool visible;
+
+  const _SwipeCardHint({
+    required this.color,
+    this.visible = true,
+  });
+
+  @override
+  State<_SwipeCardHint> createState() => _SwipeCardHintState();
+}
+
+class _SwipeCardHintState extends State<_SwipeCardHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _handCtrl;
+  final math.Random _rng = math.Random();
+
+  int _trajectory = 0;
+
+  /// Shared start point for every trajectory. Keeping all paths anchored to
+  /// the same origin means switching trajectories at the very start (t = 0)
+  /// produces no visual jump.
+  static const Offset _start = Offset(4, 12);
+
+  /// 5 trajectories for the hand, each a quadratic bézier expressed as
+  /// [start, control, end] in the hint's (left, bottom) space.
+  /// `bottom` grows upward; the box is 78x58 and the icon is 24px.
+  /// All share [_start]; index 0 keeps the original near-horizontal sweep.
+  static const List<List<Offset>> _paths = [
+    // 0 — near-horizontal (the original motion)
+    [_start, Offset(15, 14), Offset(26, 12)],
+    // 1 — rising arc that echoes the arrow
+    [_start, Offset(18, 26), Offset(40, 22)],
+    // 2 — tall arc, peaks high then comes down
+    [_start, Offset(22, 32), Offset(42, 18)],
+    // 3 — gentle diagonal climb
+    [_start, Offset(16, 16), Offset(34, 26)],
+    // 4 — low dip then swoosh up to the right
+    [_start, Offset(24, 6), Offset(40, 27)],
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _trajectory = _rng.nextInt(_paths.length);
+    _handCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )
+      ..addStatusListener(_onStatus)
+      ..forward();
+  }
+
+  // Drive a smooth forward → reverse cycle. The trajectory only changes once
+  // the hand is fully back at the shared start (dismissed), so the transition
+  // is seamless instead of jumping mid-motion.
+  void _onStatus(AnimationStatus status) {
+    if (!mounted) return;
+    if (status == AnimationStatus.completed) {
+      _handCtrl.reverse();
+    } else if (status == AnimationStatus.dismissed) {
+      var next = _rng.nextInt(_paths.length);
+      if (next == _trajectory) next = (next + 1) % _paths.length;
+      setState(() => _trajectory = next);
+      _handCtrl.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _handCtrl.dispose();
+    super.dispose();
+  }
+
+  Offset _bezier(List<Offset> p, double t) {
+    final mt = 1 - t;
+    final x = mt * mt * p[0].dx + 2 * mt * t * p[1].dx + t * t * p[2].dx;
+    final y = mt * mt * p[0].dy + 2 * mt * t * p[1].dy + t * t * p[2].dy;
+    return Offset(x, y);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: AnimatedOpacity(
+        opacity: widget.visible ? 1.0 : 0,
+        duration: const Duration(milliseconds: 180),
+        child: SizedBox(
+          width: 78,
+          height: 58,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                right: 0,
+                bottom: 2,
+                child: CustomPaint(
+                  size: const Size(52, 34),
+                  painter: _CurvedSwipeArrowPainter(color: widget.color),
+                ),
+              ),
+              AnimatedBuilder(
+                animation: _handCtrl,
+                builder: (_, __) {
+                  final t = Curves.easeInOut.transform(_handCtrl.value);
+                  final path = _paths[_trajectory];
+                  final pos = _bezier(path, t);
+                  // Tilt the hand slightly along the local direction of travel.
+                  final ahead = _bezier(path, (t + 0.06).clamp(0.0, 1.0));
+                  final angle = -0.08 -
+                      math.atan2(ahead.dy - pos.dy, ahead.dx - pos.dx) * 0.25;
+                  return Positioned(
+                    left: pos.dx,
+                    bottom: pos.dy,
+                    child: Transform.rotate(
+                      angle: angle,
+                      child: Icon(
+                        Icons.back_hand_rounded,
+                        size: 24,
+                        color: widget.color,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── Pill swiper screen ────────────────────────────────────────────────────────
 
 class _PillSwiperScreen extends StatefulWidget {
@@ -4439,6 +4640,8 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
         .toColor();
   }
 
+  bool _shouldShowCardSwipeHint() => !_animating && _dragX.abs() < 8;
+
   // ── build ───────────────────────────────────────────────────────────────────
 
   @override
@@ -4583,6 +4786,7 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
   // ── progress bar ─────────────────────────────────────────────────────────────
 
   Widget _buildProgressBar(int total) {
+    if (total <= 0) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: ClipRRect(
@@ -4632,9 +4836,14 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                   child: Opacity(
                     opacity: 0.5 + dragFrac * 0.5,
                     child: nextIdx == total
-                        ? _buildQuizCardStatic()
+                        ? _buildQuizCardStatic(
+                            showSwipeHint: _shouldShowCardSwipeHint(),
+                          )
                         : _buildSlideCard(
-                            _slides[nextIdx], nextIdx, total),
+                            _slides[nextIdx],
+                            nextIdx,
+                            total,
+                          ),
                   ),
                 ),
               ),
@@ -4647,7 +4856,11 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                   ..rotateZ(_dragX * 0.00045),
                 alignment: Alignment.bottomCenter,
                 child: _buildSlideCard(
-                    _slides[_currentIdx], _currentIdx, total),
+                  _slides[_currentIdx],
+                  _currentIdx,
+                  total,
+                  showSwipeHint: _shouldShowCardSwipeHint(),
+                ),
               ),
             ),
           ],
@@ -4658,83 +4871,100 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
 
   // ── slide card ───────────────────────────────────────────────────────────────
 
-  Widget _buildSlideCard(String text, int index, int total) {
+  Widget _buildSlideCard(
+    String text,
+    int index,
+    int total, {
+    bool showSwipeHint = false,
+  }) {
     if (_isSavingsTheme) {
       return Container(
         decoration: savingsSlideCardDecoration(),
         clipBehavior: Clip.antiAlias,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SavingsSlideTopArt(
-                pillIndex: _savingsIdx,
-                slideIndex: index,
-                time: _ambientCtrl,
-              ),
-              Container(
-                width: double.infinity,
-                decoration: savingsTextPanelDecoration(),
-                padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SavingsSlideTopArt(
+                    pillIndex: _savingsIdx,
+                    slideIndex: index,
+                    time: _ambientCtrl,
+                  ),
+                  Container(
+                    width: double.infinity,
+                    decoration: savingsTextPanelDecoration(),
+                    padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF58A028).withAlpha(40),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: const Color(0xFF684018).withAlpha(80),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF58A028).withAlpha(40),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF684018).withAlpha(80),
+                                ),
+                              ),
+                              child: Text(
+                                '${index + 1} / $total',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1A7038),
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            '${index + 1} / $total',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A7038),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                SavingsPillMeta.sceneTitle(_savingsIdx, index),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF684018).withAlpha(200),
+                                ),
+                              ),
                             ),
-                          ),
+                            Icon(
+                              SavingsPillMeta.forIndex(_savingsIdx).icon,
+                              color: const Color(0xFF684018).withAlpha(140),
+                              size: 18,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            SavingsPillMeta.sceneTitle(_savingsIdx, index),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF684018).withAlpha(200),
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          SavingsPillMeta.forIndex(_savingsIdx).icon,
-                          color: const Color(0xFF684018).withAlpha(140),
-                          size: 18,
+                        const SizedBox(height: 14),
+                        _RichTextContent(
+                          text: text,
+                          accentColor: const Color(0xFF28A848),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    _RichTextContent(
-                      text: text,
-                      accentColor: const Color(0xFF28A848),
-                    ),
-                  ],
-                ),
+                  ),
+                  SavingsSlideBottomArt(
+                    pillIndex: _savingsIdx,
+                    slideIndex: index,
+                    time: _ambientCtrl,
+                  ),
+                ],
               ),
-              SavingsSlideBottomArt(
-                pillIndex: _savingsIdx,
-                slideIndex: index,
-                time: _ambientCtrl,
+            ),
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: _SwipeCardHint(
+                color: const Color(0xFF684018),
+                visible: showSwipeHint,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -4751,46 +4981,58 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
           ),
         ],
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color:
-                        widget.pill.typeColor.withAlpha(31),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${index + 1} / $total',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: _darken(widget.pill.typeColor, 0.15),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: widget.pill.typeColor.withAlpha(31),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${index + 1} / $total',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _darken(widget.pill.typeColor, 0.15),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
+                const SizedBox(height: 16),
+                _RichTextContent(
+                  text: text,
+                  accentColor: widget.pill.typeColor,
+                ),
+                const SizedBox(height: 48),
               ],
             ),
-            const SizedBox(height: 16),
-            _RichTextContent(
-              text: text,
-              accentColor: widget.pill.typeColor,
+          ),
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: _SwipeCardHint(
+              color: _darken(widget.pill.typeColor, 0.12),
+              visible: showSwipeHint,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   // ── quiz card (static peek behind last slide) ─────────────────────────────
 
-  Widget _buildQuizCardStatic() {
+  Widget _buildQuizCardStatic({bool showSwipeHint = false}) {
     if (_isSavingsTheme) {
       return Container(
         decoration: savingsQuizPeekDecoration(),
@@ -4836,6 +5078,14 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
                 ),
               ],
             ),
+            Positioned(
+              right: 10,
+              bottom: 10,
+              child: _SwipeCardHint(
+                color: const Color(0xFFFFD848),
+                visible: showSwipeHint,
+              ),
+            ),
           ],
         ),
       );
@@ -4857,23 +5107,35 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
           ),
         ],
       ),
-      child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.quiz_rounded,
-                color: Color(0xFF7ED957), size: 64),
-            SizedBox(height: 16),
-            Text(
-              '¡Hora del Quiz!',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-              ),
+      child: Stack(
+        children: [
+          const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.quiz_rounded,
+                    color: Color(0xFF7ED957), size: 64),
+                SizedBox(height: 16),
+                Text(
+                  '¡Hora del Quiz!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: _SwipeCardHint(
+              color: Colors.white,
+              visible: showSwipeHint,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -6700,12 +6962,14 @@ int? savingsPillIndexOf(EduPill pill) {
 
 Future<void> openPillLesson(BuildContext context, EduPill pill) async {
   final savingsIdx = savingsPillIndexOf(pill);
+  final useSavingsTheme =
+      savingsIdx != null && context.read<AppProvider>().developerMode;
   final result = await Navigator.of(context).push<Map<String, dynamic>>(
     PageRouteBuilder(
       opaque: true,
       pageBuilder: (ctx, _, __) => _PillSwiperScreen(
         pill: pill,
-        savingsPillIndex: savingsIdx,
+        savingsPillIndex: useSavingsTheme ? savingsIdx : null,
       ),
       transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
         position: Tween<Offset>(

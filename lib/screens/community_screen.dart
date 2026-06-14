@@ -52,7 +52,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     try {
       await CommunityService.createPost(username: name, content: message);
       _messageController.clear();
-      FocusScope.of(context).unfocus();
+      if (mounted) FocusScope.of(context).unfocus();
     } catch (e) {
       _showSnack('Error al publicar. Comprueba tu conexión.');
     } finally {

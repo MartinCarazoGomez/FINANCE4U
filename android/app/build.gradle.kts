@@ -51,12 +51,22 @@ android {
     }
     
     buildTypes {
+        debug {
+            // Use upload keystore so Google Sign-In matches Firebase SHA-1 registration.
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+}
+
+// Flutter "profile" builds also need the registered release certificate.
+afterEvaluate {
+    android.buildTypes.findByName("profile")?.signingConfig =
+        android.signingConfigs.getByName("release")
 }
 
 flutter {

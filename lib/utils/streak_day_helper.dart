@@ -55,4 +55,9 @@ class StreakDayHelper {
   static bool isStreakBroken(int? lastStreakDay, [DateTime? now]) {
     return daysSince(lastStreakDay, now) > 1;
   }
+
+  /// Monday = 1 … Sunday = 7 in Europe/Madrid.
+  static int madridWeekday([DateTime? instant]) {
+    return toMadrid(instant ?? DateTime.now()).weekday;
+  }
 }

@@ -8,6 +8,7 @@ import '../utils/achievements_service.dart';
 import '../utils/currency_helper.dart';
 import '../utils/progress_service.dart';
 import '../utils/streak_day_helper.dart';
+import '../utils/streak_service.dart';
 
 class AppProvider extends ChangeNotifier {
   final LocalProgressService _localProgress = LocalProgressService();
@@ -31,18 +32,9 @@ class AppProvider extends ChangeNotifier {
   Set<String> _completedTopics = {};
   int _classPoints = 0;
   String? _progressUserId;
-  List<String> _unlockedGames = [
-    'budget_master',
-    'credit_score', 
-    'debt_destroyer',
-    'emergency_fund',
-    'entrepreneur',
-    'trading',
-    'real_estate',
-    'insurance',
-    'retirement',
-    'smart_shopper'
-  ];
+  static const _starterGames = ['budget_master'];
+
+  List<String> _unlockedGames = List.from(_starterGames);
   
   // Datos de juegos (alternativa a SharedPreferences)
   Map<String, dynamic> _gameData = {};
@@ -62,9 +54,11 @@ class AppProvider extends ChangeNotifier {
   int get userLevel => _userLevel;
   int get totalXP => _totalXP;
   int get streakDays => _streakDays;
+  int? get lastStreakDay => _lastStreakDay;
   Set<String> get completedLessons => _completedLessons;
   Set<String> get completedTopics => _completedTopics;
   int get classPoints => _classPoints;
+  String? get progressUserId => _progressUserId;
   List<String> get unlockedGames => List.unmodifiable(_unlockedGames);
   String get reminderTime => _reminderTime;
   String get currency => _currency;
@@ -99,6 +93,7 @@ class AppProvider extends ChangeNotifier {
   Future<void> loadSettings() async {
     try {
       _developerMode = await _settings.loadDeveloperMode();
+      _currency = await _settings.loadCurrency();
       notifyListeners();
     } catch (e) {
       debugPrint('AppProvider.loadSettings error: $e');
@@ -154,11 +149,9 @@ class AppProvider extends ChangeNotifier {
       addXP(10);
     }
 
-    ProgressService().completeLesson(lessonId);
-    notifyListeners();
-
     if (userId != null) _progressUserId = userId;
     _scheduleBackgroundSync(userId);
+    notifyListeners();
   }
 
   void _scheduleBackgroundSync(String? userId) {
@@ -235,7 +228,8 @@ class AppProvider extends ChangeNotifier {
 
     final games = data['unlockedGames'];
     if (games is List && games.isNotEmpty) {
-      _unlockedGames = games.whereType<String>().toList();
+      final remote = games.whereType<String>().toSet();
+      _unlockedGames = {..._unlockedGames, ...remote}.toList();
     }
 
     notifyListeners();
@@ -249,12 +243,13 @@ class AppProvider extends ChangeNotifier {
     final remoteClassPoints = (data['classPoints'] as num?)?.toInt();
 
     if (merge) {
-      if (remoteLevel != null) {
-        _userLevel = remoteLevel > _userLevel ? remoteLevel : _userLevel;
-      }
       if (remoteXP != null) {
         _totalXP = remoteXP > _totalXP ? remoteXP : _totalXP;
       }
+      if (remoteLevel != null) {
+        _userLevel = remoteLevel > _userLevel ? remoteLevel : _userLevel;
+      }
+      _syncLevelFromXP();
       _mergeStreak(
         remoteStreak: remoteStreak,
         remoteLastStreakDay: remoteLastStreakDay,
@@ -267,6 +262,7 @@ class AppProvider extends ChangeNotifier {
     } else {
       _userLevel = remoteLevel ?? _userLevel;
       _totalXP = remoteXP ?? _totalXP;
+      _syncLevelFromXP();
       _streakDays = remoteStreak ?? _streakDays;
       _lastStreakDay = remoteLastStreakDay ?? _lastStreakDay;
       _classPoints = remoteClassPoints ?? _classPoints;
@@ -287,6 +283,22 @@ class AppProvider extends ChangeNotifier {
     }
 
     _syncCompletedTopicsFromLessons();
+    _syncStreakService();
+  }
+
+  void _syncLevelFromXP() {
+    final levelFromXp = (_totalXP / 100).floor() + 1;
+    if (levelFromXp != _userLevel) {
+      _userLevel = levelFromXp;
+      _unlockGamesForLevel(_userLevel);
+    }
+  }
+
+  void _syncStreakService() {
+    StreakService().syncFromApp(
+      streakDays: _streakDays,
+      lastStreakDay: _lastStreakDay,
+    );
   }
 
   void _syncCompletedTopicsFromLessons() {
@@ -313,14 +325,11 @@ class AppProvider extends ChangeNotifier {
   }
 
   void _validateStreak() {
-    if (_lastStreakDay == null) {
-      // Legacy saves only stored streakDays — cannot verify, start fresh.
-      if (_streakDays > 0) _streakDays = 0;
-      return;
-    }
+    if (_lastStreakDay == null) return;
     if (StreakDayHelper.isStreakBroken(_lastStreakDay)) {
       _streakDays = 0;
     }
+    _syncStreakService();
   }
 
   void _updateStreak() {
@@ -339,6 +348,7 @@ class AppProvider extends ChangeNotifier {
     }
     _lastStreakDay = today;
     _lastCompletionDate = DateTime.now();
+    _syncStreakService();
   }
   
   void unlockGame(String gameId) {
@@ -402,9 +412,9 @@ class AppProvider extends ChangeNotifier {
     return currentLevelXP / 100.0;
   }
   
-  // Métodos para formateo de moneda (simplificados)
-  String formatCurrency(double amount) {
-    return CurrencyHelper.formatGame(amount, _currency);
+  // Métodos para formateo de moneda — importes internos siempre en EUR.
+  String formatCurrency(double eurAmount) {
+    return CurrencyHelper.formatGame(eurAmount, _currency);
   }
   
   // Métodos para persistencia de juegos (alternativa a SharedPreferences)
@@ -512,9 +522,28 @@ class AppProvider extends ChangeNotifier {
   void updateCurrency(String currency) {
     _currency = currency;
     notifyListeners();
+    unawaited(_settings.saveCurrency(currency));
   }
-  
-  Future<void> resetData() async {
+
+  /// Clears gameplay progress without wiping profile settings.
+  Future<void> clearProgressState() async {
+    _userLevel = 1;
+    _totalXP = 0;
+    _streakDays = 0;
+    _lastStreakDay = null;
+    _lastCompletionDate = null;
+    _completedLessons = {};
+    _completedTopics = {};
+    _classPoints = 0;
+    _unlockedGames = List.from(_starterGames);
+    _gameData.clear();
+    StreakService().resetAllStats();
+    ProgressService().resetProgress();
+    _syncStreakService();
+    notifyListeners();
+  }
+
+  Future<void> resetData({String? syncUserId}) async {
     _username = 'Usuario Finance4U';
     _email = 'usuario@finance4u.com';
     _userLevel = 1;
@@ -530,20 +559,19 @@ class AppProvider extends ChangeNotifier {
     _currency = 'EUR';
     _developerMode = false;
     await _settings.clear();
-    _unlockedGames = [
-      'budget_master',
-      'credit_score', 
-      'debt_destroyer',
-      'emergency_fund',
-      'entrepreneur',
-      'trading',
-      'real_estate',
-      'insurance',
-      'retirement',
-      'smart_shopper'
-    ];
+    _unlockedGames = List.from(_starterGames);
     _gameData.clear();
+    StreakService().resetAllStats();
+    ProgressService().resetProgress();
     await _localProgress.clear(userId: _progressUserId);
+    if (syncUserId != null) {
+      try {
+        await FirestoreHelper.resetProgressDoc(syncUserId);
+      } catch (e) {
+        debugPrint('AppProvider.resetData Firestore error: $e');
+      }
+    }
+    _syncStreakService();
     notifyListeners();
   }
 } 

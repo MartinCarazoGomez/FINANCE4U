@@ -479,6 +479,8 @@ class _SavingsWorldScreenState extends State<SavingsWorldScreen>
   }
 
   void _onWorldTap(Offset worldPos, Set<String> completed) {
+    HapticFeedback.selectionClick();
+
     // Check building hit
     for (final b in _kBuildings) {
       if (b.hitRect.contains(worldPos)) {
@@ -683,25 +685,26 @@ class _SavingsWorldScreenState extends State<SavingsWorldScreen>
                           ),
                         ),
 
-                        // Tap layer at viewport coords (reliable on mobile)
-                        Positioned.fill(
-                          child: Listener(
-                            behavior: HitTestBehavior.translucent,
-                            onPointerDown: (event) => _onViewportTap(
-                              event.localPosition,
-                              viewport,
-                              worldScale,
-                              cam,
-                              completed,
-                            ),
-                          ),
-                        ),
-
                         // Vignette
                         IgnorePointer(
                           child: CustomPaint(
                             painter: VignettePainter(),
                             size: viewport,
+                          ),
+                        ),
+
+                        // Tap layer on top — opaque so hits register even though
+                        // the world visuals are wrapped in IgnorePointer.
+                        Positioned.fill(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTapDown: (details) => _onViewportTap(
+                              details.localPosition,
+                              viewport,
+                              worldScale,
+                              cam,
+                              completed,
+                            ),
                           ),
                         ),
                       ],

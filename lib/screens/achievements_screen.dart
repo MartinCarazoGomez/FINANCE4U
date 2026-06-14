@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/app_provider.dart';
 import '../utils/achievements_service.dart';
 import '../utils/progress_service.dart';
+import '../utils/streak_service.dart';
 
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
@@ -65,11 +66,15 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   void _checkProgress() {
+    final app = Provider.of<AppProvider>(context, listen: false);
+    StreakService().syncFromApp(
+      streakDays: app.streakDays,
+      lastStreakDay: app.lastStreakDay,
+    );
     final p = _progress.getUserProgress();
 
     // Pull completed lesson titles from AppProvider for difficulty/topic checks
-    final completedLessons =
-        Provider.of<AppProvider>(context, listen: false).completedLessons;
+    final completedLessons = app.completedLessons;
 
     // Compute per-difficulty and per-topic counts and fold into the progress map
     final enriched = Map<String, dynamic>.from(p)
@@ -88,11 +93,11 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
     // Re-compute from scratch (no time-based achievements on screen open)
     final dataUnlocked = _service.checkAchievements(
-      lessonsCompleted: p['lessonsCompleted'] ?? 0,
+      lessonsCompleted: completedLessons.length,
       gamesCompleted: p['gamesCompleted'] ?? 0,
-      currentStreak: p['currentStreak'] ?? 0,
-      totalXP: p['totalXP'] ?? 0,
-      currentLevel: p['currentLevel'] ?? 1,
+      currentStreak: app.streakDays,
+      totalXP: app.totalXP,
+      currentLevel: app.userLevel,
       studyTimeMinutes: p['totalMinutes'] ?? 0,
       completedLessons: completedLessons,
       allowTimeAchievements: false, // never grant time-based on screen open

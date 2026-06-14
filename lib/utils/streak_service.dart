@@ -102,8 +102,8 @@ class StreakService {
   // Obtener el número de días activos en la semana actual
   int getActiveThisWeek() {
     final today = StreakDayHelper.currentStreakDay();
-    final startOfWeekDay = today - (DateTime.now().weekday - 1);
-    
+    final startOfWeekDay = today - (StreakDayHelper.madridWeekday() - 1);
+
     return _activeStreakDays
         .where((day) => day >= startOfWeekDay && day <= startOfWeekDay + 6)
         .length;
@@ -167,24 +167,31 @@ class StreakService {
   
   // Verificar si es elegible para recordatorio de streak
   bool shouldShowStreakReminder() {
-    // Mostrar recordatorio si:
-    // 1. No ha estado activo hoy
-    // 2. Tiene una racha actual > 0
-    // 3. Son después de las 6 PM
-    final now = DateTime.now();
-    return !hasCompletedToday && 
-           _currentStreak > 0 && 
-           now.hour >= 18;
+    final madrid = StreakDayHelper.toMadrid(DateTime.now());
+    return !hasCompletedToday &&
+        _currentStreak > 0 &&
+        madrid.hour >= 18;
   }
-  
-  // Obtener progreso de la semana (array de 7 elementos para cada día)
+
+  /// Obtener progreso de la semana (array de 7 elementos para cada día)
   List<bool> getWeekProgress() {
     final today = StreakDayHelper.currentStreakDay();
-    final startOfWeekDay = today - (DateTime.now().weekday - 1);
-    
+    final startOfWeekDay = today - (StreakDayHelper.madridWeekday() - 1);
+
     return List.generate(7, (i) {
       return _activeStreakDays.contains(startOfWeekDay + i);
     });
+  }
+
+  /// Align in-memory streak with persisted [AppProvider] data.
+  void syncFromApp({required int streakDays, int? lastStreakDay}) {
+    _currentStreak = streakDays;
+    _lastStreakDay = lastStreakDay;
+    if (streakDays > _maxStreak) _maxStreak = streakDays;
+    if (lastStreakDay != null && !_activeStreakDays.contains(lastStreakDay)) {
+      _activeStreakDays.add(lastStreakDay);
+    }
+    checkStreakStatus();
   }
   
   // Resetear el streak (para testing o casos especiales)

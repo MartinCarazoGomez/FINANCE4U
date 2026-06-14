@@ -85,7 +85,7 @@ class _ClassScreenState extends State<ClassScreen> {
         content: text,
       );
       _messageController.clear();
-      if (!_chatExpanded) setState(() => _chatExpanded = true);
+      if (mounted && !_chatExpanded) setState(() => _chatExpanded = true);
       _refresh();
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (_chatScrollController.hasClients) {
