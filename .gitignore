@@ -44,11 +44,12 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Firebase configuration files (add these manually after Firebase setup)
+# Firebase native config (keep out of repo)
 **/google-services.json
 **/GoogleService-Info.plist
-**/firebase_options.dart
-lib/firebase_options.dart
+
+# firebase_options.dart is committed — client API keys are restricted by
+# Firebase App Check / authorized domains, not by hiding the file.
 
 # Environment variables
 .env
