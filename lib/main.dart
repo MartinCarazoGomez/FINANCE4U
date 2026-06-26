@@ -37,7 +37,8 @@ void main() async {
     // Handle Firebase initialization error
     // In production, you might want to show an error screen
     debugPrint('Firebase initialization error: $e');
-  }
+  } 
+  
   
   // Activar edge-to-edge: el app ocupa toda la pantalla y Flutter
   // reporta correctamente MediaQuery.padding (altura de la barra del sistema).
