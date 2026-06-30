@@ -14,6 +14,28 @@ import 'settings_screen.dart';
 import 'savings_pill_theme.dart';
 import 'savings_world_art.dart';
 import 'savings_world_screen.dart';
+import '../data/pill_quiz_data.dart';
+import '../data/pill_quiz_extras.dart';
+
+const int _kQuestionsPerPill = kQuestionsPerPill;
+
+List<PillQuiz> _quizzesForPill(EduPill pill) {
+  final extras = pillQuizExtras[pill.title] ?? const <PillQuizData>[];
+  final merged = <PillQuiz>[
+    ...pill.quizzes,
+    ...extras.map(
+      (e) => PillQuiz(
+        question: e.question,
+        options: e.options,
+        correctIndex: e.correctIndex,
+      ),
+    ),
+  ];
+  if (merged.length >= _kQuestionsPerPill) {
+    return merged.take(_kQuestionsPerPill).toList();
+  }
+  return merged;
+}
 
 class ContentScreen extends StatelessWidget {
   const ContentScreen({super.key});
@@ -4477,7 +4499,7 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
     // Pre-shuffle quiz options once
     final shuffled = <List<String>>[];
     final correct = <int>[];
-    for (final q in widget.pill.quizzes) {
+    for (final q in _quizzesForPill(widget.pill)) {
       final opts = q.getShuffledOptions();
       shuffled.add(opts);
       correct.add(q.getCorrectIndexAfterShuffle(opts));
@@ -4603,7 +4625,7 @@ class _PillSwiperScreenState extends State<_PillSwiperScreen>
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
       PageRouteBuilder(
         opaque: true,
-        pageBuilder: (ctx, _, __) => _KahootQuizScreen(
+        pageBuilder: (ctx, _, __) => _KahootQuizFlowScreen(
           pill: widget.pill,
           shuffledOptions: _shuffledOptions!,
           correctIndices: _correctIndices!,
@@ -5519,6 +5541,329 @@ class _RichTextContent extends StatelessWidget {
   }
 }
 
+// ── Kahoot-style quiz flow (main round → summary → retry → summary) ───────────
+
+enum _QuizFlowStep { mainQuiz, firstSummary, retryQuiz, secondSummary }
+
+class _KahootQuizFlowScreen extends StatefulWidget {
+  final EduPill pill;
+  final List<List<String>> shuffledOptions;
+  final List<int> correctIndices;
+  final int? savingsPillIndex;
+
+  const _KahootQuizFlowScreen({
+    required this.pill,
+    required this.shuffledOptions,
+    required this.correctIndices,
+    this.savingsPillIndex,
+  });
+
+  @override
+  State<_KahootQuizFlowScreen> createState() => _KahootQuizFlowScreenState();
+}
+
+class _KahootQuizFlowScreenState extends State<_KahootQuizFlowScreen> {
+  _QuizFlowStep _step = _QuizFlowStep.mainQuiz;
+  List<bool> _mainResults = [];
+  List<int> _wrongIndices = [];
+  List<bool> _retryResults = [];
+
+  void _finish({required int retryErrors}) {
+    Navigator.of(context).pop({
+      'correctCount': _mainResults.where((r) => r).length,
+      'totalCount': _mainResults.length,
+      'results': _mainResults,
+      'mainErrors': _wrongIndices.length,
+      'retryErrors': retryErrors,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    switch (_step) {
+      case _QuizFlowStep.mainQuiz:
+        return _KahootQuizScreen(
+          pill: widget.pill,
+          shuffledOptions: widget.shuffledOptions,
+          correctIndices: widget.correctIndices,
+          savingsPillIndex: widget.savingsPillIndex,
+          isRetryRound: false,
+          onComplete: (results) {
+            _mainResults = results;
+            _wrongIndices = [
+              for (var i = 0; i < results.length; i++)
+                if (!results[i]) i,
+            ];
+            setState(() => _step = _QuizFlowStep.firstSummary);
+          },
+        );
+      case _QuizFlowStep.firstSummary:
+        return _QuizRoundSummaryScreen(
+          pill: widget.pill,
+          savingsPillIndex: widget.savingsPillIndex,
+          errorCount: _wrongIndices.length,
+          totalQuestions: widget.shuffledOptions.length,
+          isRetrySummary: false,
+          onContinue: () {
+            if (_wrongIndices.isEmpty) {
+              _finish(retryErrors: 0);
+            } else {
+              setState(() => _step = _QuizFlowStep.retryQuiz);
+            }
+          },
+        );
+      case _QuizFlowStep.retryQuiz:
+        final retryShuffled =
+            _wrongIndices.map((i) => widget.shuffledOptions[i]).toList();
+        final retryCorrect =
+            _wrongIndices.map((i) => widget.correctIndices[i]).toList();
+        return _KahootQuizScreen(
+          pill: widget.pill,
+          shuffledOptions: retryShuffled,
+          correctIndices: retryCorrect,
+          savingsPillIndex: widget.savingsPillIndex,
+          isRetryRound: true,
+          questionIndices: _wrongIndices,
+          onComplete: (results) {
+            _retryResults = results;
+            setState(() => _step = _QuizFlowStep.secondSummary);
+          },
+        );
+      case _QuizFlowStep.secondSummary:
+        final retryErrors = _retryResults.where((r) => !r).length;
+        return _QuizRoundSummaryScreen(
+          pill: widget.pill,
+          savingsPillIndex: widget.savingsPillIndex,
+          errorCount: retryErrors,
+          totalQuestions: _retryResults.length,
+          isRetrySummary: true,
+          onContinue: () => _finish(retryErrors: retryErrors),
+        );
+    }
+  }
+}
+
+class _QuizRoundSummaryScreen extends StatefulWidget {
+  final EduPill pill;
+  final int? savingsPillIndex;
+  final int errorCount;
+  final int totalQuestions;
+  final bool isRetrySummary;
+  final VoidCallback onContinue;
+
+  const _QuizRoundSummaryScreen({
+    required this.pill,
+    required this.savingsPillIndex,
+    required this.errorCount,
+    required this.totalQuestions,
+    required this.isRetrySummary,
+    required this.onContinue,
+  });
+
+  bool get _isSavingsTheme => savingsPillIndex != null;
+
+  @override
+  State<_QuizRoundSummaryScreen> createState() =>
+      _QuizRoundSummaryScreenState();
+}
+
+class _QuizRoundSummaryScreenState extends State<_QuizRoundSummaryScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ambientCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ambientCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
+    if (widget._isSavingsTheme) _ambientCtrl.repeat();
+  }
+
+  @override
+  void dispose() {
+    _ambientCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPerfect = widget.errorCount == 0;
+    final title = widget.isRetrySummary
+        ? (isPerfect ? '¡Repaso completado!' : 'Resumen del repaso')
+        : (isPerfect ? '¡Quiz perfecto!' : 'Resumen del quiz');
+
+    final content = SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 420),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 32,
+                  offset: const Offset(0, 14),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isPerfect ? Icons.emoji_events_rounded : Icons.fact_check_rounded,
+                  size: 64,
+                  color: isPerfect ? Colors.amber.shade600 : Colors.orange.shade700,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A1A2E),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.pill.title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isPerfect
+                        ? Colors.green.shade50
+                        : Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isPerfect
+                          ? Colors.green.shade200
+                          : Colors.orange.shade200,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${widget.errorCount}',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          color: isPerfect
+                              ? Colors.green.shade700
+                              : Colors.orange.shade800,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.errorCount == 1
+                            ? 'error cometido'
+                            : 'errores cometidos',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isPerfect
+                              ? Colors.green.shade700
+                              : Colors.orange.shade800,
+                        ),
+                      ),
+                      if (widget.totalQuestions > 0) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.isRetrySummary
+                              ? 'de ${widget.totalQuestions} preguntas repasadas'
+                              : 'de ${widget.totalQuestions} preguntas del quiz',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  widget.isRetrySummary
+                      ? (isPerfect
+                          ? 'Has corregido todos tus errores. ¡Buen trabajo!'
+                          : 'Sigue practicando para afianzar lo aprendido.')
+                      : (isPerfect
+                          ? 'No tienes errores que repasar.'
+                          : 'A continuación repasarás las preguntas que fallaste.'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: widget.onContinue,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: widget.pill.typeColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      widget.isRetrySummary
+                          ? 'Continuar'
+                          : (isPerfect ? 'Continuar' : 'Repasar errores'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return Scaffold(
+      body: widget._isSavingsTheme
+          ? SavingsPillSkyBackground(
+              time: _ambientCtrl,
+              child: content,
+            )
+          : Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1A0533), Color(0xFF0D1B4B)],
+                ),
+              ),
+              child: content,
+            ),
+    );
+  }
+}
+
 // ── Kahoot-style quiz screen ──────────────────────────────────────────────────
 
 class _KahootQuizScreen extends StatefulWidget {
@@ -5526,12 +5871,18 @@ class _KahootQuizScreen extends StatefulWidget {
   final List<List<String>> shuffledOptions;
   final List<int> correctIndices;
   final int? savingsPillIndex;
+  final bool isRetryRound;
+  final List<int>? questionIndices;
+  final void Function(List<bool> results)? onComplete;
 
   const _KahootQuizScreen({
     required this.pill,
     required this.shuffledOptions,
     required this.correctIndices,
     this.savingsPillIndex,
+    this.isRetryRound = false,
+    this.questionIndices,
+    this.onComplete,
   });
 
   @override
@@ -5649,12 +6000,17 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
     if (!mounted) return;
     final isLast = _qi == widget.shuffledOptions.length - 1;
     if (isLast) {
-      final correctCount = _results.where((r) => r == true).length;
-      Navigator.of(context).pop({
-        'correctCount': correctCount,
-        'totalCount': widget.shuffledOptions.length,
-        'results': _results.map((r) => r == true).toList(),
-      });
+      final results = _results.map((r) => r == true).toList();
+      if (widget.onComplete != null) {
+        widget.onComplete!(results);
+      } else {
+        final correctCount = results.where((r) => r).length;
+        Navigator.of(context).pop({
+          'correctCount': correctCount,
+          'totalCount': widget.shuffledOptions.length,
+          'results': results,
+        });
+      }
       return;
     }
 
@@ -5680,6 +6036,14 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
 
     _slideCtrl.forward();
     _tilesCtrl.forward();
+  }
+
+  int _questionIndexAt(int localIndex) =>
+      widget.questionIndices?[localIndex] ?? localIndex;
+
+  PillQuiz _quizAt(int localIndex) {
+    final all = _quizzesForPill(widget.pill);
+    return all[_questionIndexAt(localIndex)];
   }
 
   /// Shake offset for the wrong tile
@@ -5868,7 +6232,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                         SizedBox(height: compact ? 10 : 14),
                         Text(
                           context.localizeMoneyText(
-                            widget.pill.quizzes[_qi].question,
+                            _quizAt(_qi).question,
                           ),
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -6020,9 +6384,11 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                             child: Column(
                               children: [
                                 Text(
-                                  _isSavingsTheme
-                                      ? 'Desafío · ${SavingsPillMeta.forIndex(savingsIdx).subtitle}'
-                                      : 'Pregunta ${_qi + 1} de $total',
+                                  widget.isRetryRound
+                                      ? 'Repaso · Pregunta ${_qi + 1} de $total'
+                                      : _isSavingsTheme
+                                          ? 'Desafío · ${SavingsPillMeta.forIndex(savingsIdx).subtitle}'
+                                          : 'Pregunta ${_qi + 1} de $total',
                                   style: TextStyle(
                                     color: _isSavingsTheme
                                         ? const Color(0xFF1A4020)
@@ -6403,7 +6769,8 @@ class _PillCompletionDialogState extends State<_PillCompletionDialog>
     if (count == 2) return 40;
     if (count == 3) return index == 1 ? 44 : 34;
     if (count <= 6) return 32;
-    return 26;
+    if (count <= 10) return 24;
+    return 20;
   }
 
   // XP badge floats up then fades
@@ -6989,7 +7356,10 @@ Future<void> openPillLesson(BuildContext context, EduPill pill) async {
   final results = rawResults is List
       ? rawResults.map((e) => e == true).toList()
       : List<bool>.filled(totalCount, false);
-  final isPerfect = correctCount == totalCount;
+  final retryErrors = result['retryErrors'] as int? ?? 0;
+  final mainErrors =
+      result['mainErrors'] as int? ?? (totalCount - correctCount);
+  final isPerfect = mainErrors == 0 || (mainErrors > 0 && retryErrors == 0);
 
   if (isPerfect) {
     final appProvider = context.read<AppProvider>();
