@@ -21,16 +21,69 @@ const int _kQuestionsPerPill = kQuestionsPerPill;
 
 List<PillQuiz> _quizzesForPill(EduPill pill) {
   final extras = pillQuizExtras[pill.title] ?? const <PillQuizData>[];
-  final merged = <PillQuiz>[
-    ...pill.quizzes,
-    ...extras.map(
+  final theoretical = <PillQuiz>[
+    ...pill.quizzes.map(
+      (q) => PillQuiz(
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        isPractical: false,
+      ),
+    ),
+    ...extras.take(2).map(
       (e) => PillQuiz(
         question: e.question,
         options: e.options,
         correctIndex: e.correctIndex,
+        isPractical: false,
       ),
     ),
-  ];
+  ].take(5).toList();
+  final practical = extras.skip(2).take(5).map(
+    (e) => PillQuiz(
+      question: e.question,
+      options: e.options,
+      correctIndex: e.correctIndex,
+      isPractical: true,
+    ),
+  ).toList();
+
+  // Orden: 2 teóricas · 2 prácticas · 2 teóricas · 2 prácticas · 1 teórica · 1 práctica
+  while (theoretical.length < 5 && pill.quizzes.isNotEmpty) {
+    final src = pill.quizzes[theoretical.length % pill.quizzes.length];
+    theoretical.add(PillQuiz(
+      question: src.question,
+      options: src.options,
+      correctIndex: src.correctIndex,
+      isPractical: false,
+    ));
+  }
+  while (practical.length < 5 && extras.isNotEmpty) {
+    final src = extras[practical.length % extras.length];
+    practical.add(PillQuiz(
+      question: src.question,
+      options: src.options,
+      correctIndex: src.correctIndex,
+      isPractical: true,
+    ));
+  }
+
+  if (theoretical.length >= 5 && practical.length >= 5) {
+    return [
+      theoretical[0],
+      theoretical[1],
+      practical[0],
+      practical[1],
+      theoretical[2],
+      theoretical[3],
+      practical[2],
+      practical[3],
+      theoretical[4],
+      practical[4],
+    ];
+  }
+
+  final merged = <PillQuiz>[...theoretical, ...practical];
   if (merged.length >= _kQuestionsPerPill) {
     return merged.take(_kQuestionsPerPill).toList();
   }
@@ -971,7 +1024,14 @@ class PillQuiz {
   final String question;
   final List<String> options;
   final int correctIndex;
-  PillQuiz({required this.question, required this.options, required this.correctIndex});
+  /// false = lección teórica (contenido leído) · true = caso práctico
+  final bool isPractical;
+  PillQuiz({
+    required this.question,
+    required this.options,
+    required this.correctIndex,
+    this.isPractical = false,
+  });
   
   // Método para obtener las opciones en orden aleatorio
   List<String> getShuffledOptions() {
@@ -5541,9 +5601,9 @@ class _RichTextContent extends StatelessWidget {
   }
 }
 
-// ── Kahoot-style quiz flow (main round → summary → retry → summary) ───────────
+// ── Kahoot-style quiz flow (quiz → summary → retry loop until all correct) ─────
 
-enum _QuizFlowStep { mainQuiz, firstSummary, retryQuiz, secondSummary }
+enum _QuizFlowStep { quiz, summary }
 
 class _KahootQuizFlowScreen extends StatefulWidget {
   final EduPill pill;
@@ -5563,81 +5623,97 @@ class _KahootQuizFlowScreen extends StatefulWidget {
 }
 
 class _KahootQuizFlowScreenState extends State<_KahootQuizFlowScreen> {
-  _QuizFlowStep _step = _QuizFlowStep.mainQuiz;
-  List<bool> _mainResults = [];
-  List<int> _wrongIndices = [];
-  List<bool> _retryResults = [];
+  _QuizFlowStep _step = _QuizFlowStep.quiz;
+  late List<bool> _masterCorrect;
+  bool _firstRoundComplete = false;
+  int _roundKey = 0;
+  int _retryRound = 0;
 
-  void _finish({required int retryErrors}) {
+  @override
+  void initState() {
+    super.initState();
+    _masterCorrect = List.filled(widget.shuffledOptions.length, false);
+  }
+
+  List<int> get _wrongIndices => [
+        for (var i = 0; i < _masterCorrect.length; i++)
+          if (!_masterCorrect[i]) i,
+      ];
+
+  int get _points => _masterCorrect.where((c) => c).length;
+
+  Set<int> get _priorCorrectIndices => {
+        for (var i = 0; i < _masterCorrect.length; i++)
+          if (_masterCorrect[i]) i,
+      };
+
+  void _finish() {
     Navigator.of(context).pop({
-      'correctCount': _mainResults.where((r) => r).length,
-      'totalCount': _mainResults.length,
-      'results': _mainResults,
-      'mainErrors': _wrongIndices.length,
-      'retryErrors': retryErrors,
+      'correctCount': _points,
+      'totalCount': widget.shuffledOptions.length,
+      'results': List<bool>.from(_masterCorrect),
+      'mainErrors': 0,
+      'retryErrors': 0,
+    });
+  }
+
+  void _onRoundComplete(List<bool> results, List<int> indices) {
+    for (var i = 0; i < indices.length; i++) {
+      if (results[i]) _masterCorrect[indices[i]] = true;
+    }
+    if (!_firstRoundComplete) _firstRoundComplete = true;
+    setState(() {
+      if (_wrongIndices.isEmpty) {
+        _finish();
+      } else {
+        _step = _QuizFlowStep.summary;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     switch (_step) {
-      case _QuizFlowStep.mainQuiz:
-        return _KahootQuizScreen(
-          pill: widget.pill,
-          shuffledOptions: widget.shuffledOptions,
-          correctIndices: widget.correctIndices,
-          savingsPillIndex: widget.savingsPillIndex,
-          isRetryRound: false,
-          onComplete: (results) {
-            _mainResults = results;
-            _wrongIndices = [
-              for (var i = 0; i < results.length; i++)
-                if (!results[i]) i,
-            ];
-            setState(() => _step = _QuizFlowStep.firstSummary);
-          },
-        );
-      case _QuizFlowStep.firstSummary:
+      case _QuizFlowStep.summary:
         return _QuizRoundSummaryScreen(
           pill: widget.pill,
           savingsPillIndex: widget.savingsPillIndex,
           errorCount: _wrongIndices.length,
           totalQuestions: widget.shuffledOptions.length,
-          isRetrySummary: false,
+          pointsEarned: _points,
+          retryRound: _retryRound,
+          isRetrySummary: _firstRoundComplete,
           onContinue: () {
             if (_wrongIndices.isEmpty) {
-              _finish(retryErrors: 0);
+              _finish();
             } else {
-              setState(() => _step = _QuizFlowStep.retryQuiz);
+              setState(() {
+                _retryRound++;
+                _roundKey++;
+                _step = _QuizFlowStep.quiz;
+              });
             }
           },
         );
-      case _QuizFlowStep.retryQuiz:
-        final retryShuffled =
-            _wrongIndices.map((i) => widget.shuffledOptions[i]).toList();
-        final retryCorrect =
-            _wrongIndices.map((i) => widget.correctIndices[i]).toList();
+      case _QuizFlowStep.quiz:
+        final indices = !_firstRoundComplete
+            ? List.generate(widget.shuffledOptions.length, (i) => i)
+            : List<int>.from(_wrongIndices);
+        final retryShuffled = indices.map((i) => widget.shuffledOptions[i]).toList();
+        final retryCorrect = indices.map((i) => widget.correctIndices[i]).toList();
         return _KahootQuizScreen(
+          key: ValueKey('quiz-$_roundKey'),
           pill: widget.pill,
           shuffledOptions: retryShuffled,
           correctIndices: retryCorrect,
           savingsPillIndex: widget.savingsPillIndex,
-          isRetryRound: true,
-          questionIndices: _wrongIndices,
-          onComplete: (results) {
-            _retryResults = results;
-            setState(() => _step = _QuizFlowStep.secondSummary);
-          },
-        );
-      case _QuizFlowStep.secondSummary:
-        final retryErrors = _retryResults.where((r) => !r).length;
-        return _QuizRoundSummaryScreen(
-          pill: widget.pill,
-          savingsPillIndex: widget.savingsPillIndex,
-          errorCount: retryErrors,
-          totalQuestions: _retryResults.length,
-          isRetrySummary: true,
-          onContinue: () => _finish(retryErrors: retryErrors),
+          isRetryRound: _firstRoundComplete,
+          questionIndices: indices,
+          totalPointsTarget: widget.shuffledOptions.length,
+          basePoints: _points,
+          priorCorrectIndices: _priorCorrectIndices,
+          retryAttempt: _retryRound,
+          onComplete: (results) => _onRoundComplete(results, indices),
         );
     }
   }
@@ -5648,6 +5724,8 @@ class _QuizRoundSummaryScreen extends StatefulWidget {
   final int? savingsPillIndex;
   final int errorCount;
   final int totalQuestions;
+  final int pointsEarned;
+  final int retryRound;
   final bool isRetrySummary;
   final VoidCallback onContinue;
 
@@ -5656,6 +5734,8 @@ class _QuizRoundSummaryScreen extends StatefulWidget {
     required this.savingsPillIndex,
     required this.errorCount,
     required this.totalQuestions,
+    required this.pointsEarned,
+    this.retryRound = 0,
     required this.isRetrySummary,
     required this.onContinue,
   });
@@ -5690,9 +5770,11 @@ class _QuizRoundSummaryScreenState extends State<_QuizRoundSummaryScreen>
   @override
   Widget build(BuildContext context) {
     final isPerfect = widget.errorCount == 0;
-    final title = widget.isRetrySummary
-        ? (isPerfect ? '¡Repaso completado!' : 'Resumen del repaso')
-        : (isPerfect ? '¡Quiz perfecto!' : 'Resumen del quiz');
+    final title = isPerfect
+        ? '¡Píldora dominada!'
+        : widget.isRetrySummary
+            ? 'Repaso · intento ${widget.retryRound + 1}'
+            : 'Resumen del quiz';
 
     final content = SafeArea(
       child: Center(
@@ -5785,9 +5867,11 @@ class _QuizRoundSummaryScreenState extends State<_QuizRoundSummaryScreen>
                       if (widget.totalQuestions > 0) ...[
                         const SizedBox(height: 8),
                         Text(
-                          widget.isRetrySummary
-                              ? 'de ${widget.totalQuestions} preguntas repasadas'
-                              : 'de ${widget.totalQuestions} preguntas del quiz',
+                          isPerfect
+                              ? '${widget.pointsEarned} de ${widget.totalQuestions} puntos'
+                              : widget.isRetrySummary
+                                  ? 'Te quedan ${widget.errorCount} por acertar'
+                                  : 'de ${widget.totalQuestions} preguntas del quiz',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey.shade600,
@@ -5799,13 +5883,11 @@ class _QuizRoundSummaryScreenState extends State<_QuizRoundSummaryScreen>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  widget.isRetrySummary
-                      ? (isPerfect
-                          ? 'Has corregido todos tus errores. ¡Buen trabajo!'
-                          : 'Sigue practicando para afianzar lo aprendido.')
-                      : (isPerfect
-                          ? 'No tienes errores que repasar.'
-                          : 'A continuación repasarás las preguntas que fallaste.'),
+                  isPerfect
+                      ? 'Has respondido correctamente todas las preguntas.'
+                      : widget.isRetrySummary
+                          ? 'Repasa las preguntas falladas. Debes acertarlas todas para completar la píldora.'
+                          : 'A continuación repasarás las preguntas que fallaste.',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade700,
@@ -5827,9 +5909,11 @@ class _QuizRoundSummaryScreenState extends State<_QuizRoundSummaryScreen>
                       ),
                     ),
                     child: Text(
-                      widget.isRetrySummary
+                      isPerfect
                           ? 'Continuar'
-                          : (isPerfect ? 'Continuar' : 'Repasar errores'),
+                          : (widget.isRetrySummary
+                              ? 'Reintentar preguntas'
+                              : 'Repasar errores'),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -5874,8 +5958,13 @@ class _KahootQuizScreen extends StatefulWidget {
   final bool isRetryRound;
   final List<int>? questionIndices;
   final void Function(List<bool> results)? onComplete;
+  final int totalPointsTarget;
+  final int basePoints;
+  final Set<int> priorCorrectIndices;
+  final int retryAttempt;
 
   const _KahootQuizScreen({
+    super.key,
     required this.pill,
     required this.shuffledOptions,
     required this.correctIndices,
@@ -5883,6 +5972,10 @@ class _KahootQuizScreen extends StatefulWidget {
     this.isRetryRound = false,
     this.questionIndices,
     this.onComplete,
+    this.totalPointsTarget = 10,
+    this.basePoints = 0,
+    this.priorCorrectIndices = const {},
+    this.retryAttempt = 0,
   });
 
   @override
@@ -5891,9 +5984,22 @@ class _KahootQuizScreen extends StatefulWidget {
 
 class _KahootQuizScreenState extends State<_KahootQuizScreen>
     with TickerProviderStateMixin {
+  static const _motivationalMessages = [
+    'No te preocupes, ¡a la siguiente lo conseguirás!',
+    'La práctica hace al maestro 💪',
+    'Cada error te acerca al acierto',
+    '¡Sigue intentándolo, vas muy bien!',
+    'Repasa la píldora y vuelve con más fuerza',
+    '¡Ánimo! Lo importante es no rendirse',
+  ];
+
   int _qi = 0;
-  int? _selected; // index 0-3, null = not answered yet
-  late List<bool?> _results; // true/false per question
+  int? _selected;
+  late List<bool?> _results;
+  int _pointsDisplay = 0;
+  final Set<int> _newlyCorrectThisRound = {};
+  late AnimationController _pointsCtrl;
+  late Animation<double> _pointsPulse;
 
   // Classic Kahoot tile colours
   static const _colors = [
@@ -5928,6 +6034,15 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
   void initState() {
     super.initState();
     _results = List<bool?>.filled(widget.shuffledOptions.length, null);
+    _pointsDisplay = widget.basePoints;
+
+    _pointsCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _pointsPulse = Tween<double>(begin: 1, end: 1.12).animate(
+      CurvedAnimation(parent: _pointsCtrl, curve: Curves.elasticOut),
+    );
 
     _slideCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 380));
@@ -5966,6 +6081,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
 
   @override
   void dispose() {
+    _pointsCtrl.dispose();
     _slideCtrl.dispose();
     _tilesCtrl.dispose();
     _feedbackCtrl.dispose();
@@ -5976,23 +6092,30 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
   }
 
   void _onTileTap(int tileIndex) {
-    if (_selected != null) return; // already answered
+    if (_selected != null) return;
     final isCorrect = tileIndex == widget.correctIndices[_qi];
+    final globalIdx = _questionIndexAt(_qi);
 
     setState(() {
       _selected = tileIndex;
       _results[_qi] = isCorrect;
+      if (isCorrect &&
+          !widget.priorCorrectIndices.contains(globalIdx) &&
+          !_newlyCorrectThisRound.contains(globalIdx)) {
+        _newlyCorrectThisRound.add(globalIdx);
+        _pointsDisplay = widget.basePoints + _newlyCorrectThisRound.length;
+      }
     });
 
     if (isCorrect) {
       HapticFeedback.lightImpact();
+      _pointsCtrl.forward(from: 0);
     } else {
       HapticFeedback.mediumImpact();
       _shakeCtrl.forward(from: 0);
     }
     _feedbackCtrl.forward(from: 0);
 
-    // Auto-advance after 1.8 s
     Future.delayed(const Duration(milliseconds: 1800), _advance);
   }
 
@@ -6211,6 +6334,44 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                             vertical: compact ? 3 : 4,
                           ),
                           decoration: BoxDecoration(
+                            color: _quizAt(_qi).isPractical
+                                ? Colors.orange.shade50
+                                : (_isSavingsTheme
+                                    ? const Color(0xFF58A028).withAlpha(40)
+                                    : Colors.blue.shade50),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _quizAt(_qi).isPractical
+                                  ? Colors.orange.shade300
+                                  : (_isSavingsTheme
+                                      ? const Color(0xFF58A028)
+                                      : Colors.blue.shade200),
+                            ),
+                          ),
+                          child: Text(
+                            _quizAt(_qi).isPractical
+                                ? '🎯 Caso práctico'
+                                : '📖 Lección teórica',
+                            style: TextStyle(
+                              fontSize: compact ? 10 : 11,
+                              fontWeight: FontWeight.w700,
+                              color: _quizAt(_qi).isPractical
+                                  ? Colors.orange.shade800
+                                  : (_isSavingsTheme
+                                      ? const Color(0xFF1A7038)
+                                      : Colors.blue.shade800),
+                              letterSpacing: 0.3,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        SizedBox(height: compact ? 6 : 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: compact ? 8 : 10,
+                            vertical: compact ? 3 : 4,
+                          ),
+                          decoration: BoxDecoration(
                             color: _isSavingsTheme
                                 ? const Color(0xFF58A028).withAlpha(40)
                                 : widget.pill.typeColor.withOpacity(0.15),
@@ -6254,10 +6415,96 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
     );
   }
 
+  Widget _buildPointsBar({
+    required bool compact,
+    required Color progressColor,
+  }) {
+    final target = widget.totalPointsTarget;
+    final value = target > 0 ? (_pointsDisplay / target).clamp(0.0, 1.0) : 0.0;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, compact ? 4 : 8, 12, compact ? 4 : 8),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 12 : 16,
+          vertical: compact ? 8 : 10,
+        ),
+        decoration: BoxDecoration(
+          color: _isSavingsTheme
+              ? Colors.white.withAlpha(210)
+              : Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: _isSavingsTheme
+                ? const Color(0xFF684018).withAlpha(60)
+                : Colors.white24,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.stars_rounded,
+                  size: compact ? 16 : 18,
+                  color: progressColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Puntos',
+                  style: TextStyle(
+                    color: _isSavingsTheme
+                        ? const Color(0xFF1A4020)
+                        : Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: compact ? 12 : 13,
+                  ),
+                ),
+                const Spacer(),
+                ScaleTransition(
+                  scale: _pointsPulse,
+                  child: Text(
+                    '$_pointsDisplay / $target',
+                    style: TextStyle(
+                      color: _isSavingsTheme
+                          ? const Color(0xFF1A7038)
+                          : progressColor,
+                      fontWeight: FontWeight.w900,
+                      fontSize: compact ? 14 : 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: compact ? 6 : 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: value),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
+                builder: (_, v, __) => LinearProgressIndicator(
+                  value: v,
+                  backgroundColor: _isSavingsTheme
+                      ? const Color(0xFF684018).withAlpha(50)
+                      : Colors.white24,
+                  valueColor: AlwaysStoppedAnimation(progressColor),
+                  minHeight: compact ? 8 : 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFeedbackBadge({
     required bool compact,
     required bool isCorrect,
   }) {
+    final wrongMsg = _motivationalMessages[
+        _questionIndexAt(_qi) % _motivationalMessages.length];
     return AnimatedBuilder(
       animation: _feedbackCtrl,
       builder: (_, __) => _feedbackCtrl.value > 0
@@ -6270,16 +6517,16 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                   child: Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: compact ? 14 : 20,
-                      vertical: compact ? 6 : 8,
+                      vertical: compact ? 8 : 10,
                     ),
                     decoration: BoxDecoration(
                       color: isCorrect
                           ? Colors.green.shade400
-                          : Colors.red.shade400,
+                          : Colors.orange.shade400,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: (isCorrect ? Colors.green : Colors.red)
+                          color: (isCorrect ? Colors.green : Colors.orange)
                               .withOpacity(0.4),
                           blurRadius: 12,
                           spreadRadius: 2,
@@ -6291,18 +6538,23 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                       children: [
                         Icon(
                           isCorrect
-                              ? Icons.check_circle_rounded
-                              : Icons.cancel_rounded,
+                              ? Icons.celebration_rounded
+                              : Icons.favorite_rounded,
                           color: Colors.white,
                           size: compact ? 18 : 22,
                         ),
                         SizedBox(width: compact ? 6 : 8),
-                        Text(
-                          isCorrect ? '¡Correcto! 🎉' : '¡Incorrecto! 😢',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: compact ? 14 : 16,
+                        Flexible(
+                          child: Text(
+                            isCorrect
+                                ? '+1 punto 🎊'
+                                : wrongMsg,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: compact ? 13 : 15,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
@@ -6385,7 +6637,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                               children: [
                                 Text(
                                   widget.isRetryRound
-                                      ? 'Repaso · Pregunta ${_qi + 1} de $total'
+                                      ? 'Repaso ${widget.retryAttempt + 1} · ${_qi + 1}/$total'
                                       : _isSavingsTheme
                                           ? 'Desafío · ${SavingsPillMeta.forIndex(savingsIdx).subtitle}'
                                           : 'Pregunta ${_qi + 1} de $total',
@@ -6454,10 +6706,16 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                   isCorrect: isCorrect,
                 );
 
+                final pointsBar = _buildPointsBar(
+                  compact: compact,
+                  progressColor: progressColor,
+                );
+
                 if (wideLandscape) {
                   return Column(
                     children: [
                       header,
+                      pointsBar,
                       Expanded(
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -6490,6 +6748,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                 return Column(
                   children: [
                     header,
+                    pointsBar,
                     Expanded(
                       flex: questionFlex,
                       child: _buildQuestionCard(
@@ -7359,7 +7618,7 @@ Future<void> openPillLesson(BuildContext context, EduPill pill) async {
   final retryErrors = result['retryErrors'] as int? ?? 0;
   final mainErrors =
       result['mainErrors'] as int? ?? (totalCount - correctCount);
-  final isPerfect = mainErrors == 0 || (mainErrors > 0 && retryErrors == 0);
+  final isPerfect = correctCount == totalCount;
 
   if (isPerfect) {
     final appProvider = context.read<AppProvider>();
