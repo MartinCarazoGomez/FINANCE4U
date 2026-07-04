@@ -26,6 +26,7 @@ class CardTrigger {
   static const taxes = 'taxes';
   static const credit = 'credit';
   static const savings = 'savings';
+  static const data = 'data';
 }
 
 const kFlashcards = <String, Flashcard>{
@@ -78,6 +79,17 @@ const kFlashcards = <String, Flashcard>{
         'Guardar parte de tu paga semanal para cuando quieras algo especial '
         'sin tener que pedirlo.',
   ),
+  CardTrigger.data: Flashcard(
+    id: CardTrigger.data,
+    emoji: '📊',
+    title: 'El valor de la información',
+    body: 'Los datos también cuestan dinero, pero te ayudan a decidir mejor. '
+        'Saber cuántos clientes vendrán te permite comprar lo justo: ni te '
+        'sobra mercancía ni te quedas corto.',
+    example:
+        'Una heladería mira la previsión del tiempo: si mañana hará sol, '
+        'compra más helado; si llueve, compra menos.',
+  ),
 };
 
 class MentorLine {
@@ -128,6 +140,15 @@ class MentorSays {
   static const impago =
       'No te ha llegado para pagar. No pasa nada, pero baja tu reputación y '
       'vendrán menos clientes. Intenta vender más el mes que viene.';
+  static const firstOffice =
+      'Bienvenido a tu oficina. Desde este ordenador puedes estudiar tu '
+      'negocio: contrata un analista y sabrás cuántos clientes esperar.';
+  static const analystHired =
+      'Has fichado a tu primer analista. Cada mes te costará su salario, '
+      'pero la información que te da vale oro para planificar tus compras.';
+  static const analystSenior =
+      'Analista sénior a bordo: previsiones más precisas y avisos cuando el '
+      'mercado se vuelva loco. La buena información se paga.';
 }
 
 /// Opciones de avatar para personalización (estilo selección de personaje AAA).
@@ -287,6 +308,7 @@ const kSceneProvider = 'assets/moneygarden/mg_scene_provider.jpg';
 const kSceneShop = 'assets/moneygarden/mg_scene_shop.jpg';
 const kSceneBills = 'assets/moneygarden/mg_scene_bills.jpg';
 const kScenePiggy = 'assets/moneygarden/mg_scene_piggy.jpg';
+const kSceneOffice = 'assets/moneygarden/mg_scene_office.jpg';
 
 /// Paleta MoneyGarden (vaporwave suave, apto para 10-18 años).
 class MgColors {
@@ -297,4 +319,5 @@ class MgColors {
   static const magenta = Color(0xFFFF6FB5);
   static const yellow = Color(0xFFFFD34E);
   static const coin = Color(0xFFFFC531);
+  static const violet = Color(0xFF9B7BFF);
 }

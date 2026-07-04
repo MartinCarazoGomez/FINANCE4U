@@ -26,6 +26,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
   late MgSnapshot _snap;
   MgZone? _walkingTo;
   String _coinText = '';
+  int _officeTab = 0;
 
   // Posiciones relativas de las zonas sobre la ilustración del mapa (0..1),
   // alineadas con los cuatro edificios de la imagen.
@@ -34,14 +35,16 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     MgZone.shop: Offset(0.79, 0.26),
     MgZone.bills: Offset(0.21, 0.72),
     MgZone.piggybank: Offset(0.79, 0.70),
+    MgZone.office: Offset(0.50, 0.47),
   };
-  static const _avatarHome = Offset(0.5, 0.55);
+  static const _avatarHome = Offset(0.5, 0.72);
 
   static const _zoneColor = <MgZone, Color>{
     MgZone.provider: MgColors.cyan,
     MgZone.shop: MgColors.green,
     MgZone.bills: MgColors.magenta,
     MgZone.piggybank: MgColors.yellow,
+    MgZone.office: MgColors.violet,
   };
 
   AvatarOption get _opt =>
@@ -146,6 +149,8 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
         return _buildBills();
       case GamePhase.piggybank:
         return _buildPiggybank();
+      case GamePhase.office:
+        return _buildOffice();
       case GamePhase.monthSummary:
         return _buildSummary();
       case GamePhase.gameOver:
@@ -784,6 +789,8 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
                             if (_snap.month >= 2)
                               _mapZone(
                                   MgZone.piggybank, Icons.savings, 'Hucha', w, h),
+                            _mapZone(MgZone.office, Icons.computer, 'Oficina',
+                                w, h),
                             // Ficha del jugador
                             AnimatedPositioned(
                               duration: const Duration(milliseconds: 500),
@@ -1266,6 +1273,495 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
         _tip('Consejo: guarda algo cada mes. En el Mes 12 necesitas '
             '${_c(MoneyGardenEngine.victorySavings)} en la hucha para ganar.'),
       ],
+    );
+  }
+
+  // ── Zona Oficina (ordenador con pestañas) ────────────────────────────────────
+  Widget _buildOffice() {
+    return _zoneScaffold(
+      key: 'office',
+      title: '💻 Tu oficina',
+      subtitle:
+          'El centro de mando. Estudia tus datos y contrata analistas para '
+          'anticipar la demanda.',
+      color: MgColors.violet,
+      children: [
+        _sceneBanner(kSceneOffice, MgColors.violet),
+        const SizedBox(height: 12),
+        _computer(),
+      ],
+    );
+  }
+
+  Widget _computer() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C1120),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: MgColors.violet.withValues(alpha: 0.45)),
+        boxShadow: [
+          BoxShadow(
+            color: MgColors.violet.withValues(alpha: 0.15),
+            blurRadius: 16,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Barra de título estilo sistema operativo
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Row(
+              children: [
+                for (final c in [
+                  const Color(0xFFFF5F57),
+                  const Color(0xFFFEBC2E),
+                  const Color(0xFF28C840)
+                ])
+                  Container(
+                    width: 10,
+                    height: 10,
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                  ),
+                const SizedBox(width: 6),
+                const Text('MG-OS · Ordenador del negocio',
+                    style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+          // Pestañas
+          Container(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+            child: Row(
+              children: [
+                _computerTab(0, Icons.ssid_chart, 'Previsión'),
+                _computerTab(1, Icons.bar_chart, 'Historial'),
+                _computerTab(2, Icons.group, 'Equipo'),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: switch (_officeTab) {
+                0 => _forecastTab(),
+                1 => _statsTab(),
+                _ => _teamTab(),
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _computerTab(int index, IconData icon, String label) {
+    final selected = _officeTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _officeTab = index);
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: selected
+                ? MgColors.violet.withValues(alpha: 0.2)
+                : Colors.transparent,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(10)),
+            border: Border(
+              bottom: BorderSide(
+                color: selected ? MgColors.violet : Colors.white12,
+                width: selected ? 2 : 1,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon,
+                  size: 14,
+                  color: selected ? MgColors.violet : Colors.white38),
+              const SizedBox(width: 4),
+              Text(label,
+                  style: TextStyle(
+                      color: selected ? MgColors.violet : Colors.white38,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Pestaña 1: previsión de demanda (requiere analista)
+  Widget _forecastTab() {
+    if (_snap.analystLevel == 0) {
+      return Column(
+        key: const ValueKey('forecast-locked'),
+        children: [
+          const SizedBox(height: 8),
+          Icon(Icons.lock, color: Colors.white24, size: 40),
+          const SizedBox(height: 10),
+          const Text(
+            'Previsión bloqueada',
+            style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w800,
+                fontSize: 14),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Contrata un analista en la pestaña Equipo para ver cuántos '
+            'clientes se esperan el próximo mes.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.55), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          _btn('Ir a Equipo', MgColors.violet, () {
+            setState(() => _officeTab = 2);
+          }),
+        ],
+      );
+    }
+    if (!_snap.hasNextMonth) {
+      return _tip(
+          '🏁 Es tu último mes: ya no queda nada que predecir. ¡Dalo todo!',
+          color: MgColors.violet);
+    }
+    // Mes volátil: el júnior no saca nada en claro; el sénior avisa.
+    if (_snap.nextVolatile && _snap.analystLevel < 2) {
+      return Column(
+        key: const ValueKey('forecast-noise'),
+        children: [
+          const SizedBox(height: 8),
+          const Text('🌪️', style: TextStyle(fontSize: 40)),
+          const SizedBox(height: 10),
+          const Text('Datos no concluyentes',
+              style: TextStyle(
+                  color: MgColors.yellow,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14)),
+          const SizedBox(height: 6),
+          Text(
+            'El mercado anda revuelto y tu analista júnior no consigue una '
+            'previsión fiable para el mes ${_snap.month + 1}. Un analista '
+            'sénior sabría leer estos datos.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+          ),
+        ],
+      );
+    }
+    final mean = _snap.forecastMeanShown;
+    final sigma = _snap.forecastSigmaShown;
+    final lo = (mean - sigma).round();
+    final hi = (mean + sigma).round();
+    return Column(
+      key: ValueKey('forecast-${_snap.month}-${_snap.analystLevel}'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Demanda prevista · Mes ${_snap.month + 1}',
+          style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 13),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _snap.analystLevel >= 2
+              ? 'Previsión del analista sénior'
+              : 'Estimación aproximada del analista júnior',
+          style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+        ),
+        if (_snap.nextVolatile) ...[
+          const SizedBox(height: 8),
+          _tip(
+              '🌪️ Aviso del sénior: se espera un mes volátil. La campana es '
+              'mucho más ancha de lo normal: prepárate para cualquier cosa.',
+              color: MgColors.yellow),
+        ],
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 150,
+          width: double.infinity,
+          child: CustomPaint(
+            painter: _BellCurvePainter(
+              mean: mean,
+              sigma: sigma,
+              color: MgColors.violet,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _tip(
+          '📈 Lo más probable: ~${mean.round()} clientes. Unas 2 de cada 3 '
+          'veces caerá entre $lo y $hi. Compra stock con cabeza.',
+          color: MgColors.violet,
+        ),
+      ],
+    );
+  }
+
+  // Pestaña 2: historial de demanda y estadísticas
+  Widget _statsTab() {
+    final h = _snap.history;
+    if (h.isEmpty) {
+      return _tip(
+          '📅 Aún no hay datos. Cierra tu primer mes y aquí verás la demanda, '
+          'tus ventas y mucho más.',
+          color: MgColors.violet);
+    }
+    final totalRevenue = h.fold<double>(0, (s, r) => s + r.revenue);
+    final totalProfit = h.fold<double>(0, (s, r) => s + r.profit);
+    final best = h.reduce((a, b) => a.profit >= b.profit ? a : b);
+    final lostClients = h.fold<int>(0, (s, r) => s + (r.demand - r.sold));
+    final avgSold =
+        (h.fold<int>(0, (s, r) => s + r.sold) / h.length).toStringAsFixed(1);
+    final maxDemand =
+        h.fold<int>(1, (m, r) => r.demand > m ? r.demand : m);
+    return Column(
+      key: const ValueKey('stats'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Demanda vs. ventas por mes',
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 13)),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 130,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (final r in h)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _histBar(r.demand / maxDemand, MgColors.violet),
+                            const SizedBox(width: 2),
+                            _histBar(r.sold / maxDemand,
+                                r.impago ? MgColors.magenta : MgColors.green),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text('M${r.month}',
+                            style: const TextStyle(
+                                color: Colors.white38,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            _legendDot(MgColors.violet, 'Clientes que vinieron'),
+            const SizedBox(width: 12),
+            _legendDot(MgColors.green, 'Ventas'),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _statStrip([
+          _stat('💰 Ingresos', _c(totalRevenue), MgColors.green),
+          _stat('📈 Beneficio', _c(totalProfit),
+              totalProfit >= 0 ? MgColors.green : MgColors.magenta),
+        ]),
+        const SizedBox(height: 8),
+        _statStrip([
+          _stat('🏆 Mejor mes', 'M${best.month}', MgColors.yellow),
+          _stat('🛍️ Ventas/mes', avgSold, MgColors.cyan),
+          _stat('🚶 Perdidos', '$lostClients', MgColors.magenta),
+        ]),
+        if (lostClients > 3) ...[
+          const SizedBox(height: 10),
+          _tip(
+              '💡 Has dejado escapar $lostClients clientes por falta de '
+              'stock. Cada uno era dinero que se fue a otra tienda.',
+              color: MgColors.yellow),
+        ],
+      ],
+    );
+  }
+
+  Widget _histBar(double factor, Color color) {
+    return Container(
+      width: 9,
+      height: (96 * factor.clamp(0.04, 1.0)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.85),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+      ),
+    );
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(label,
+            style: const TextStyle(color: Colors.white54, fontSize: 10)),
+      ],
+    );
+  }
+
+  // Pestaña 3: contratar analistas
+  Widget _teamTab() {
+    final level = _snap.analystLevel;
+    return Column(
+      key: const ValueKey('team'),
+      children: [
+        _analystCard(
+          icon: Icons.query_stats,
+          name: 'Analista júnior',
+          salary: 10,
+          desc: 'Te dibuja la campana de demanda del próximo mes, aunque con '
+              'margen de error. En meses revueltos se pierde.',
+          active: level >= 1,
+          action: level == 0
+              ? _btn('Contratar · 10 🪙/mes', MgColors.violet, () {
+                  HapticFeedback.lightImpact();
+                  _engine.hireAnalyst();
+                })
+              : null,
+        ),
+        const SizedBox(height: 10),
+        _analystCard(
+          icon: Icons.insights,
+          name: 'Analista sénior',
+          salary: 20,
+          desc: 'Previsión precisa, y además te avisa cuando viene un mes '
+              'volátil. La mejor información del mercado.',
+          active: level >= 2,
+          action: level == 1
+              ? _btn('Ascender a sénior · 20 🪙/mes', MgColors.violet, () {
+                  HapticFeedback.lightImpact();
+                  _engine.upgradeAnalyst();
+                })
+              : (level == 0
+                  ? _tip('Necesitas primero un analista júnior.',
+                      color: MgColors.yellow)
+                  : null),
+        ),
+        if (level > 0) ...[
+          const SizedBox(height: 12),
+          _btn('Despedir al equipo (ahorras el salario)', Colors.white24,
+              outlined: true, () {
+            HapticFeedback.mediumImpact();
+            _engine.fireAnalysts();
+          }),
+        ],
+      ],
+    );
+  }
+
+  Widget _analystCard({
+    required IconData icon,
+    required String name,
+    required int salary,
+    required String desc,
+    required bool active,
+    Widget? action,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: active
+            ? MgColors.violet.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: active ? MgColors.violet : Colors.white12,
+          width: active ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: MgColors.violet.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: MgColors.violet, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(name,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13)),
+              ),
+              if (active)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: MgColors.green.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: MgColors.green.withValues(alpha: 0.5)),
+                  ),
+                  child: const Text('EN PLANTILLA',
+                      style: TextStyle(
+                          color: MgColors.green,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(desc,
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.65),
+                  fontSize: 12,
+                  height: 1.35)),
+          if (action != null) ...[
+            const SizedBox(height: 10),
+            action,
+          ],
+        ],
+      ),
     );
   }
 

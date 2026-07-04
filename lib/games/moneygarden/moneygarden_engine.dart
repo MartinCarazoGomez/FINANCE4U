@@ -16,12 +16,36 @@ enum GamePhase {
   shop,
   bills,
   piggybank,
+  office,
   monthSummary,
   gameOver,
   victory,
 }
 
-enum MgZone { provider, shop, bills, piggybank }
+enum MgZone { provider, shop, bills, piggybank, office }
+
+/// Registro histórico de un mes cerrado (para la pestaña de estadísticas).
+class MgMonthRecord {
+  final int month;
+  final int demand;
+  final int sold;
+  final double revenue;
+  final double profit;
+  final double savings;
+  final int reputation;
+  final bool impago;
+
+  const MgMonthRecord({
+    required this.month,
+    required this.demand,
+    required this.sold,
+    required this.revenue,
+    required this.profit,
+    required this.savings,
+    required this.reputation,
+    required this.impago,
+  });
+}
 
 class MgSnapshot {
   final GamePhase phase;
@@ -67,6 +91,15 @@ class MgSnapshot {
   final bool lastImpago;
   final int consecutiveImpagos;
 
+  // Oficina: analistas, previsión de demanda e histórico
+  final int analystLevel; // 0 sin analista, 1 júnior, 2 sénior
+  final double analystSalary;
+  final List<MgMonthRecord> history;
+  final bool nextVolatile;
+  final double forecastMean;
+  final double forecastSigma;
+  final int juniorBias;
+
   // Tarjeta educativa pendiente y cuaderno
   final Flashcard? pendingCard;
   final List<String> notebook;
@@ -107,6 +140,13 @@ class MgSnapshot {
     required this.lastRepChange,
     required this.lastImpago,
     required this.consecutiveImpagos,
+    required this.analystLevel,
+    required this.analystSalary,
+    required this.history,
+    required this.nextVolatile,
+    required this.forecastMean,
+    required this.forecastSigma,
+    required this.juniorBias,
     required this.pendingCard,
     required this.notebook,
     required this.mentorFlash,
@@ -118,7 +158,17 @@ class MgSnapshot {
   bool get outOfDemand => customersRemaining <= 0;
 
   /// Total que hay que pagar al cobrador este mes.
-  double get billsDue => rent + eventCost;
+  double get billsDue => rent + eventCost + analystSalary;
+
+  /// ¿Queda un mes por delante que se pueda predecir?
+  bool get hasNextMonth => month < MoneyGardenEngine.totalMonths;
+
+  /// Previsión que muestra el analista según su nivel.
+  /// El júnior trabaja con menos datos: media desplazada y más incertidumbre.
+  double get forecastMeanShown =>
+      analystLevel >= 2 ? forecastMean : forecastMean + juniorBias;
+  double get forecastSigmaShown =>
+      analystLevel >= 2 ? forecastSigma : forecastSigma * 1.6;
 
   bool get avatarStyleReady => avatarStyle >= 0;
   String get avatarEmoji =>
@@ -180,8 +230,32 @@ class MoneyGardenEngine {
   final List<String> _notebook = [];
   String? _mentorFlash;
 
+  // Oficina: analistas, previsión e histórico
+  int _analystLevel = 0;
+  final List<MgMonthRecord> _history = [];
+  bool _volatileThisMonth = false;
+  bool _nextVolatile = false;
+  int _juniorBias = 0;
+  double _demandBaseRolled = 0;
+  bool _visitedOffice = false;
+
   double get _taxRate => _month >= 3 ? 0.10 : 0.0;
   double get _unitPrice => (_basePrice + _priceAdjust).clamp(1, 999).toDouble();
+  double get _analystSalary =>
+      _analystLevel == 1 ? 10 : (_analystLevel == 2 ? 20 : 0);
+
+  // Parámetros de la distribución de demanda (compartidos entre la demanda
+  // real y la previsión del analista, para que la curva sea honesta).
+  double _demandMean(int rep, int month) => 8 + rep * 0.4 + (month - 1);
+  double _demandSigma(int month, bool volatile) =>
+      (month >= 7 ? 3.0 : 1.5) * (volatile ? 2.5 : 1.0);
+
+  /// Muestra gaussiana estándar (Box-Muller).
+  double _gauss() {
+    final u1 = _rng.nextDouble().clamp(1e-9, 1.0);
+    final u2 = _rng.nextDouble();
+    return sqrt(-2 * log(u1)) * cos(2 * pi * u2);
+  }
 
   MgSnapshot get snapshot => MgSnapshot(
         phase: _phase,
@@ -216,6 +290,13 @@ class MoneyGardenEngine {
         lastRepChange: _lastRepChange,
         lastImpago: _lastImpago,
         consecutiveImpagos: _consecutiveImpagos,
+        analystLevel: _analystLevel,
+        analystSalary: _analystSalary,
+        history: List.unmodifiable(_history),
+        nextVolatile: _nextVolatile,
+        forecastMean: _demandMean(_reputation, _month + 1),
+        forecastSigma: _demandSigma(_month + 1, _nextVolatile),
+        juniorBias: _juniorBias,
         pendingCard: _pendingCard,
         notebook: List.unmodifiable(_notebook),
         mentorFlash: _mentorFlash,
@@ -264,6 +345,11 @@ class MoneyGardenEngine {
     _boughtThisMonth = false;
     _billsPaidThisMonth = false;
     _lastImpago = false;
+    // La volatilidad prevista para este mes se decidió el mes anterior;
+    // aquí se sortea la del mes siguiente (estable al consultar la oficina).
+    _volatileThisMonth = _nextVolatile;
+    _nextVolatile = _month + 1 >= 4 && _rng.nextDouble() < 0.25;
+    _juniorBias = _rng.nextInt(5) - 2; // error fijo del júnior este mes
     _computeDemand();
     _rollEvent();
     _rollCredit();
@@ -271,23 +357,21 @@ class MoneyGardenEngine {
   }
 
   void _computeDemand() {
-    var base = 8 + (_reputation * 0.4).round() + (_month - 1);
-    // Estacionalidad y clientes más exigentes a partir del mes 7.
-    if (_month >= 7) {
-      final swing = _rng.nextInt(7) - 3; // -3..+3
-      base += swing;
-    }
-    // Precio alto reduce clientes; precio bajo los aumenta.
-    _customersTotal = base.clamp(_minSales + 1, 40);
+    // Demanda gaussiana real: la misma distribución que ve el analista.
+    final mean = _demandMean(_reputation, _month);
+    final sigma = _demandSigma(_month, _volatileThisMonth);
+    _demandBaseRolled = mean + _gauss() * sigma;
+    _customersTotal =
+        _demandBaseRolled.round().clamp(_minSales + 1, 40);
     _customersRemaining = _customersTotal;
   }
 
   void _applyPriceToDemand() {
-    // Recalcula la cola en función del precio, respetando ya vendidas.
-    var base = 8 + (_reputation * 0.4).round() + (_month - 1);
-    if (_month >= 7) base += 0;
+    // Recalcula la cola en función del precio sobre la demanda ya sorteada,
+    // respetando las unidades vendidas.
     final factor = 1 - (_priceAdjust * 0.15);
-    final adjusted = (base * factor).round().clamp(_minSales + 1, 40);
+    final adjusted =
+        (_demandBaseRolled * factor).round().clamp(_minSales + 1, 40);
     _customersRemaining = (adjusted - _soldThisMonth).clamp(0, adjusted);
     _customersTotal = adjusted;
   }
@@ -326,7 +410,35 @@ class MoneyGardenEngine {
       case MgZone.piggybank:
         _phase = GamePhase.piggybank;
         break;
+      case MgZone.office:
+        _phase = GamePhase.office;
+        if (!_visitedOffice) {
+          _visitedOffice = true;
+          _mentorFlash = MentorSays.firstOffice;
+        }
+        break;
     }
+    _notify();
+  }
+
+  // ── Oficina: contratar analistas ─────────────────────────────────────────────
+  void hireAnalyst() {
+    if (_analystLevel != 0) return;
+    _analystLevel = 1;
+    _trigger(CardTrigger.data, MentorSays.analystHired);
+    _notify();
+  }
+
+  void upgradeAnalyst() {
+    if (_analystLevel != 1) return;
+    _analystLevel = 2;
+    _mentorFlash = MentorSays.analystSenior;
+    _notify();
+  }
+
+  void fireAnalysts() {
+    if (_analystLevel == 0) return;
+    _analystLevel = 0;
     _notify();
   }
 
@@ -420,7 +532,7 @@ class MoneyGardenEngine {
 
     final tax = _monthRevenue * _taxRate;
     final loanPayment = _loanDueThisMonth();
-    final totalDue = _rent + _eventCost + tax + loanPayment;
+    final totalDue = _rent + _eventCost + tax + loanPayment + _analystSalary;
 
     if (_coins < totalDue) {
       _handleImpago();
@@ -493,8 +605,23 @@ class MoneyGardenEngine {
       _reputation = (_reputation + _lastRepChange).clamp(0, 100);
     }
 
-    _lastProfit =
-        _monthRevenue - _monthGoodsCost - _rent - _eventCost - _lastTaxPaid;
+    _lastProfit = _monthRevenue -
+        _monthGoodsCost -
+        _rent -
+        _eventCost -
+        _lastTaxPaid -
+        _analystSalary;
+
+    _history.add(MgMonthRecord(
+      month: _month,
+      demand: _customersTotal,
+      sold: _soldThisMonth,
+      revenue: _monthRevenue,
+      profit: _lastProfit,
+      savings: _savings,
+      reputation: _reputation,
+      impago: _lastImpago,
+    ));
 
     _mentorFlash = MentorSays.monthClose;
     _phase = GamePhase.monthSummary;
@@ -524,6 +651,12 @@ class MoneyGardenEngine {
     _consecutiveImpagos = 0;
     _loanOutstanding = 0;
     _loanMonthsLeft = 0;
+    _analystLevel = 0;
+    _history.clear();
+    _volatileThisMonth = false;
+    _nextVolatile = false;
+    _juniorBias = 0;
+    _visitedOffice = false;
     _seenCards.clear();
     _notebook.clear();
     _pendingCard = null;
