@@ -1,7 +1,8 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Persists pill progress on device so completions survive app restarts
-/// and are not lost when Firestore reloads with stale data.
+/// Persists progress on device so XP, lessons, games and streaks survive restarts.
 class LocalProgressService {
   static const _keyLastUid = 'progress_last_uid';
 
@@ -13,6 +14,19 @@ class LocalProgressService {
     final raw = prefs.getString(_storageKey(uid));
     if (raw == null) return null;
 
+    if (raw.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) return decoded;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return _decodeLegacy(raw);
+  }
+
+  Map<String, dynamic>? _decodeLegacy(String raw) {
     final parts = raw.split('|');
     if (parts.length < 6) return null;
 
@@ -38,23 +52,28 @@ class LocalProgressService {
     required int totalXP,
     required int userLevel,
     required int streakDays,
+    required List<String> unlockedGames,
+    required Map<String, dynamic> gameData,
     int? lastStreakDay,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final uid = userId ?? 'guest';
     await prefs.setString(_keyLastUid, uid);
 
-    final encoded = [
-      completedLessons.join('\u001f'),
-      completedTopics.join('\u001f'),
-      classPoints.toString(),
-      totalXP.toString(),
-      userLevel.toString(),
-      streakDays.toString(),
-      lastStreakDay?.toString() ?? '',
-    ].join('|');
+    final payload = jsonEncode({
+      'v': 2,
+      'completedLessons': completedLessons,
+      'completedTopics': completedTopics,
+      'classPoints': classPoints,
+      'totalXP': totalXP,
+      'level': userLevel,
+      'streakDays': streakDays,
+      'lastStreakDay': lastStreakDay,
+      'unlockedGames': unlockedGames,
+      'gameData': gameData,
+    });
 
-    await prefs.setString(_storageKey(uid), encoded);
+    await prefs.setString(_storageKey(uid), payload);
   }
 
   Future<void> clear({String? userId}) async {

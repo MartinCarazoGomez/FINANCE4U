@@ -85,9 +85,11 @@ class AppProvider extends ChangeNotifier {
   }
   
   void addXP(int xp) {
+    if (xp <= 0) return;
     _totalXP += xp;
     _checkLevelUp();
     notifyListeners();
+    _scheduleBackgroundSync(_progressUserId);
   }
   
   Future<void> loadSettings() async {
@@ -108,6 +110,7 @@ class AppProvider extends ChangeNotifier {
         _applyProgressData(data, merge: true);
         _validateStreak();
         notifyListeners();
+        await _saveLocalProgress();
       }
     } catch (e) {
       debugPrint('AppProvider.loadLocalProgress error: $e');
@@ -149,8 +152,9 @@ class AppProvider extends ChangeNotifier {
       addXP(10);
     }
 
-    if (userId != null) _progressUserId = userId;
-    _scheduleBackgroundSync(userId);
+    final uid = userId ?? _progressUserId;
+    if (uid != null) _progressUserId = uid;
+    _scheduleBackgroundSync(uid);
     notifyListeners();
   }
 
@@ -195,6 +199,8 @@ class AppProvider extends ChangeNotifier {
         userLevel: _userLevel,
         streakDays: _streakDays,
         lastStreakDay: _lastStreakDay,
+        unlockedGames: _unlockedGames,
+        gameData: Map<String, dynamic>.from(_gameData),
       );
     } catch (e) {
       debugPrint('AppProvider._saveLocalProgress error: $e');
@@ -284,6 +290,25 @@ class AppProvider extends ChangeNotifier {
           merge ? {..._completedTopics, ...remoteTopics} : remoteTopics;
     }
 
+    final games = data['unlockedGames'];
+    if (games is List) {
+      final remoteGames = games.whereType<String>().toSet();
+      _unlockedGames = merge
+          ? {..._starterGames, ..._unlockedGames, ...remoteGames}.toList()
+          : {..._starterGames, ...remoteGames}.toList();
+    }
+
+    final gameData = data['gameData'];
+    if (gameData is Map) {
+      for (final entry in gameData.entries) {
+        final value = entry.value;
+        if (value is Map) {
+          _gameData[entry.key.toString()] =
+              Map<String, dynamic>.from(value);
+        }
+      }
+    }
+
     _syncCompletedTopicsFromLessons();
     _syncStreakService();
   }
@@ -357,6 +382,7 @@ class AppProvider extends ChangeNotifier {
     if (!_unlockedGames.contains(gameId)) {
       _unlockedGames.add(gameId);
       notifyListeners();
+      _scheduleBackgroundSync(_progressUserId);
     }
   }
   
@@ -419,10 +445,31 @@ class AppProvider extends ChangeNotifier {
     return CurrencyHelper.formatGame(eurAmount, _currency);
   }
   
-  // Métodos para persistencia de juegos (alternativa a SharedPreferences)
+  // Métodos para persistencia de juegos
   void saveGameData(String gameId, Map<String, dynamic> data) {
-    _gameData[gameId] = data;
+    _gameData[gameId] = Map<String, dynamic>.from(data);
     notifyListeners();
+    unawaited(_persistGameData(gameId));
+  }
+
+  void restoreGameData(String gameId, Map<String, dynamic> data) {
+    _gameData[gameId] = Map<String, dynamic>.from(data);
+  }
+
+  Future<void> _persistGameData(String gameId) async {
+    await _saveLocalProgress();
+    final uid = _progressUserId;
+    if (uid == null) return;
+    try {
+      await FirestoreHelper.saveGameData(
+        userId: uid,
+        gameId: gameId,
+        data: _gameData[gameId] ?? {},
+      );
+    } catch (e) {
+      debugPrint('AppProvider._persistGameData error: $e');
+    }
+    await _persistProgressWithRetry(uid);
   }
   
   Map<String, dynamic>? getGameData(String gameId) {
@@ -542,6 +589,11 @@ class AppProvider extends ChangeNotifier {
     StreakService().resetAllStats();
     ProgressService().resetProgress();
     _syncStreakService();
+    try {
+      await _localProgress.clear(userId: _progressUserId);
+    } catch (e) {
+      debugPrint('AppProvider.clearProgressState error: $e');
+    }
     notifyListeners();
   }
 

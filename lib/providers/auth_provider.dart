@@ -74,9 +74,12 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _onAuthStateChanged(User? user) async {
     _firebaseUser = user;
     if (user == null) {
-      _profile = null;
-      await _appProvider?.clearProgressState();
-      _appProvider?.setProgressUserId(null);
+      // Solo limpiar al cerrar sesión real, no en el null inicial de Firebase.
+      if (_profile != null) {
+        _profile = null;
+        await _appProvider?.clearProgressState();
+        _appProvider?.setProgressUserId(null);
+      }
       notifyListeners();
       return;
     }
@@ -138,9 +141,38 @@ class AuthProvider extends ChangeNotifier {
       if (data != null) {
         _appProvider!.loadFromFirestore(data);
       }
+      await _loadRemoteGameData(uid);
     } catch (e) {
       debugPrint('AuthProvider._loadProgress error: $e');
     }
+  }
+
+  Future<void> _loadRemoteGameData(String uid) async {
+    if (_appProvider == null) return;
+    const gameIds = [
+      'budget_master',
+      'debt_destroyer',
+      'moneygarden',
+      'credit_score',
+    ];
+    for (final gameId in gameIds) {
+      try {
+        final remote = await FirestoreHelper.getGameData(uid, gameId);
+        if (remote == null) continue;
+        final clean = Map<String, dynamic>.from(remote)
+          ..remove('userId')
+          ..remove('gameId')
+          ..remove('updatedAt');
+        if (clean.isEmpty) continue;
+        final local = _appProvider!.getGameData(gameId);
+        if (local == null || local.isEmpty) {
+          _appProvider!.restoreGameData(gameId, clean);
+        }
+      } catch (e) {
+        debugPrint('AuthProvider._loadRemoteGameData $gameId: $e');
+      }
+    }
+    _appProvider!.notifyListeners();
   }
 
   Future<void> _cacheProfileLocally() async {
