@@ -233,7 +233,7 @@ class AuthService {
           totalXP: 0,
           streakDays: 0,
           completedLessons: [],
-          unlockedGames: ['budget_master', 'fintech_tycoon'],
+          unlockedGames: ['budget_master', 'moneygarden'],
         );
       }
 
@@ -305,7 +305,7 @@ class AuthService {
       totalXP: 0,
       streakDays: 0,
       completedLessons: [],
-      unlockedGames: ['budget_master', 'fintech_tycoon'],
+      unlockedGames: ['budget_master', 'moneygarden'],
     );
   }
 

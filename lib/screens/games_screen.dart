@@ -6,7 +6,7 @@ import '../games/credit_score_hero.dart';
 import '../games/debt_destroyer_game.dart';
 import '../games/emergency_fund_builder.dart';
 import '../games/entrepreneur_sim.dart';
-import '../games/fintech_tycoon/fintech_tycoon_game.dart';
+import '../games/moneygarden/moneygarden_game.dart';
 import '../games/insurance_guardian.dart';
 import '../games/smart_shopper_game.dart';
 import '../games/trading_game.dart';
@@ -27,7 +27,7 @@ class GamesScreen extends StatelessWidget {
     // Nodos visibles en el camino del río (juegos de inicio).
     const pathSteps = <String, Offset>{
       'budget_master': Offset(0.435546875, 0.252760736196319),
-      'fintech_tycoon': Offset(0.52, 0.38),
+      'moneygarden': Offset(0.52, 0.38),
     };
     final pathGames = games
         .where((g) => pathSteps.containsKey(g.id))
@@ -388,13 +388,13 @@ class GamesScreen extends StatelessWidget {
         description: 'Construye tu fondo de emergencia',
       ),
       RiverGame(
-        id: 'fintech_tycoon',
-        title: 'Fintech\nTycoon',
-        emoji: '🌆',
-        color: const Color(0xFFFF007F),
+        id: 'moneygarden',
+        title: 'Money\nGarden',
+        emoji: '🌱',
+        color: const Color(0xFF3DDC84),
         riverPosition: RiverPosition.right,
-        screen: const FintechTycoonGame(),
-        description: 'Construye tu imperio digital desde un garaje',
+        screen: const MoneyGardenGame(),
+        description: 'Monta tu negocio: compra, vende y aprende a gestionar',
       ),
       RiverGame(
         id: 'entrepreneur',

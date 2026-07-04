@@ -32,7 +32,7 @@ class AppProvider extends ChangeNotifier {
   Set<String> _completedTopics = {};
   int _classPoints = 0;
   String? _progressUserId;
-  static const _starterGames = ['budget_master', 'fintech_tycoon'];
+  static const _starterGames = ['budget_master', 'moneygarden'];
 
   List<String> _unlockedGames = List.from(_starterGames);
   

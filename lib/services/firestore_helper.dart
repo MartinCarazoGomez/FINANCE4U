@@ -113,7 +113,7 @@ class FirestoreHelper {
       'totalXP': 0,
       'streakDays': 0,
       'completedLessons': <String>[],
-      'unlockedGames': <String>['budget_master', 'fintech_tycoon'],
+      'unlockedGames': <String>['budget_master', 'moneygarden'],
       'classPoints': 0,
       'completedTopics': <String>[],
       'updatedAt': FieldValue.serverTimestamp(),

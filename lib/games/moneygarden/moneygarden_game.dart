@@ -1,0 +1,1415 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'moneygarden_data.dart';
+import 'moneygarden_engine.dart';
+
+/// MoneyGarden — videojuego educativo de finanzas (10-18 años).
+/// Mapa navegable con avatar, mentor Coach Kai y tarjetas educativas.
+class MoneyGardenGame extends StatefulWidget {
+  final VoidCallback? onCompleted;
+
+  const MoneyGardenGame({super.key, this.onCompleted});
+
+  @override
+  State<MoneyGardenGame> createState() => _MoneyGardenGameState();
+}
+
+class _MoneyGardenGameState extends State<MoneyGardenGame>
+    with TickerProviderStateMixin {
+  late final MoneyGardenEngine _engine;
+  late final TextEditingController _nameCtrl;
+  late final AnimationController _idleCtrl;
+  late final AnimationController _coinCtrl;
+
+  late MgSnapshot _snap;
+  MgZone? _walkingTo;
+  String _coinText = '';
+
+  // Posiciones relativas de las zonas en el mapa (0..1).
+  static const _zonePos = <MgZone, Offset>{
+    MgZone.provider: Offset(0.22, 0.30),
+    MgZone.shop: Offset(0.74, 0.34),
+    MgZone.bills: Offset(0.30, 0.70),
+    MgZone.piggybank: Offset(0.76, 0.72),
+  };
+  static const _avatarHome = Offset(0.5, 0.52);
+  Offset _avatarPos = _avatarHome;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController();
+    _engine = MoneyGardenEngine(onChanged: _onUpdate);
+    _snap = _engine.snapshot;
+    _idleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _coinCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+  }
+
+  void _onUpdate(MgSnapshot snap) {
+    if (!mounted) return;
+    setState(() => _snap = snap);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _idleCtrl.dispose();
+    _coinCtrl.dispose();
+    super.dispose();
+  }
+
+  String _c(num coins) {
+    final n = coins is int ? coins : (coins as double);
+    final rounded = n.abs() < 100 ? n.toStringAsFixed(n == n.roundToDouble() ? 0 : 1) : n.round().toString();
+    return '$rounded 🪙';
+  }
+
+  void _coinPop(String text) {
+    setState(() => _coinText = text);
+    _coinCtrl.forward(from: 0);
+  }
+
+  // Camina el avatar a una zona y luego abre su panel.
+  void _walkTo(MgZone zone) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _walkingTo = zone;
+      _avatarPos = _zonePos[zone]!;
+    });
+    Future.delayed(const Duration(milliseconds: 550), () {
+      if (!mounted) return;
+      _walkingTo = null;
+      _engine.goToZone(zone);
+    });
+  }
+
+  void _returnMap() {
+    setState(() => _avatarPos = _avatarHome);
+    _engine.backToMap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: MgColors.bg,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _buildPhase(),
+            ),
+            if (_snap.pendingCard != null) _flashcardOverlay(_snap.pendingCard!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhase() {
+    switch (_snap.phase) {
+      case GamePhase.personalize:
+        return _buildPersonalize();
+      case GamePhase.onboarding:
+        return _buildOnboarding();
+      case GamePhase.map:
+        return _buildMap();
+      case GamePhase.provider:
+        return _buildProvider();
+      case GamePhase.shop:
+        return _buildShop();
+      case GamePhase.bills:
+        return _buildBills();
+      case GamePhase.piggybank:
+        return _buildPiggybank();
+      case GamePhase.monthSummary:
+        return _buildSummary();
+      case GamePhase.gameOver:
+        return _buildEnd(false);
+      case GamePhase.victory:
+        return _buildEnd(true);
+    }
+  }
+
+  // ── Personalización ──────────────────────────────────────────────────────────
+  Widget _buildPersonalize() {
+    return Container(
+      key: const ValueKey('personalize'),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Text('🌱 MoneyGarden',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Crea tu personaje',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: MgColors.cyan,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('${_snap.avatarStyle >= 0 ? _snap.avatarEmoji : "🙂"}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 64)),
+          const SizedBox(height: 16),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 4,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              children: List.generate(kAvatarOptions.length, (i) {
+                final opt = kAvatarOptions[i];
+                final selected = _snap.avatarStyle == i;
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _engine.setAvatarStyle(i);
+                    if (_nameCtrl.text.isEmpty) _nameCtrl.text = opt.label;
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? MgColors.magenta.withValues(alpha: 0.25)
+                          : Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: selected ? MgColors.magenta : Colors.white24,
+                        width: selected ? 2 : 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(opt.emoji, style: const TextStyle(fontSize: 34)),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _nameCtrl,
+            onChanged: _engine.setAvatarName,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              hintText: 'Nombre de tu personaje',
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: 0.08),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: MgColors.cyan.withValues(alpha: 0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: MgColors.cyan, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _btn(
+            'Continuar',
+            MgColors.green,
+            (_snap.avatarStyle >= 0 && _snap.avatarName.isNotEmpty)
+                ? () {
+                    FocusScope.of(context).unfocus();
+                    _engine.finishPersonalize();
+                  }
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Onboarding narrativo (Coach Kai) ─────────────────────────────────────────
+  Widget _buildOnboarding() {
+    final line = kOnboarding[_snap.onboardingStep];
+    final isLast = _snap.onboardingStep == kOnboarding.length - 1;
+    return Container(
+      key: ValueKey('onb-${_snap.onboardingStep}'),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [MgColors.bgSoft, MgColors.bg],
+        ),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _engine.skipOnboarding,
+              child: const Text('Saltar',
+                  style: TextStyle(color: Colors.white54)),
+            ),
+          ),
+          const Spacer(),
+          AnimatedBuilder(
+            animation: _idleCtrl,
+            builder: (_, __) => Transform.translate(
+              offset: Offset(0, -4 + _idleCtrl.value * 8),
+              child: const Text('🧑‍🏫', style: TextStyle(fontSize: 84)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text('Coach Kai',
+              style: TextStyle(
+                color: MgColors.yellow,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              )),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: MgColors.cyan.withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              line.text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(kOnboarding.length, (i) {
+              final active = i == _snap.onboardingStep;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: active ? 20 : 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: active ? MgColors.magenta : Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 18),
+          _btn(isLast ? '¡Empezar el Mes 1! 🚀' : 'Siguiente', MgColors.magenta,
+              () {
+            HapticFeedback.lightImpact();
+            _engine.nextOnboarding();
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ── Mapa navegable ───────────────────────────────────────────────────────────
+  Widget _buildMap() {
+    return Column(
+      key: const ValueKey('map'),
+      children: [
+        _hud(),
+        _mentorBanner(),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final w = box.maxWidth;
+              final h = box.maxHeight;
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF1B2A22), Color(0xFF141B2E)],
+                        ),
+                      ),
+                    ),
+                  ),
+                  _mapZone(MgZone.provider, '🏭', 'Proveedor', w, h,
+                      done: _snap.boughtThisMonth),
+                  _mapZone(MgZone.shop, '🏪', 'Tienda', w, h,
+                      badge: _snap.minSalesMet
+                          ? null
+                          : '${_snap.soldThisMonth}/${_snap.minSales}'),
+                  _mapZone(MgZone.bills, '📬', 'Facturas', w, h,
+                      done: _snap.billsPaidThisMonth,
+                      locked: !_snap.minSalesMet && !_snap.outOfDemand),
+                  if (_snap.month >= 2)
+                    _mapZone(MgZone.piggybank, '🐷', 'Hucha', w, h),
+                  // Avatar
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                    left: w * _avatarPos.dx - 26,
+                    top: h * _avatarPos.dy - 26,
+                    child: AnimatedBuilder(
+                      animation: _idleCtrl,
+                      builder: (_, __) => Transform.translate(
+                        offset: Offset(0, _walkingTo != null ? 0 : -2 + _idleCtrl.value * 4),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_snap.avatarEmoji,
+                                style: const TextStyle(fontSize: 44)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: _btn(
+            _snap.billsPaidThisMonth
+                ? '📅 Cerrar el mes ${_snap.month} ▶'
+                : (_snap.minSalesMet || _snap.outOfDemand)
+                    ? '📬 Ve a Facturas para cerrar el mes'
+                    : 'Vende al menos ${_snap.minSales} clientes para avanzar',
+            _snap.billsPaidThisMonth ? MgColors.green : Colors.white24,
+            _snap.billsPaidThisMonth
+                ? () => _engine.closeMonth()
+                : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _mapZone(MgZone zone, String emoji, String label, double w, double h,
+      {bool done = false, bool locked = false, String? badge}) {
+    final pos = _zonePos[zone]!;
+    return Positioned(
+      left: w * pos.dx - 44,
+      top: h * pos.dy - 44,
+      child: GestureDetector(
+        onTap: locked ? null : () => _walkTo(zone),
+        child: Opacity(
+          opacity: locked ? 0.45 : 1,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 74,
+                height: 74,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: done
+                        ? MgColors.green
+                        : MgColors.cyan.withValues(alpha: 0.5),
+                    width: done ? 2.5 : 1.5,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Center(child: Text(emoji, style: const TextStyle(fontSize: 38))),
+                    if (done)
+                      const Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Icon(Icons.check_circle,
+                            color: MgColors.green, size: 18),
+                      ),
+                    if (locked)
+                      const Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Icon(Icons.lock, color: Colors.white54, size: 16),
+                      ),
+                    if (badge != null)
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: MgColors.magenta,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(badge,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(label,
+                  style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Zona Proveedor (comprar) ─────────────────────────────────────────────────
+  Widget _buildProvider() {
+    final canBuy = _snap.coins >= _snap.unitCost;
+    return _zoneScaffold(
+      key: 'provider',
+      title: '🏭 Almacén del proveedor',
+      subtitle:
+          'Compra camisetas a ${_c(_snap.unitCost)} cada una. Es tu gasto variable.',
+      color: MgColors.cyan,
+      children: [
+        _scene('🏭', _snap.avatarEmoji, '📦'),
+        const SizedBox(height: 12),
+        _statStrip([
+          _stat('👕 Stock', '${_snap.inventory}', MgColors.cyan),
+          _stat('🪙 Caja', _c(_snap.coins), MgColors.coin),
+          _stat('💰 Venta', _c(_snap.unitPrice), MgColors.green),
+        ]),
+        const SizedBox(height: 16),
+        _btn(
+          canBuy ? '📦 Comprar 1 (−${_c(_snap.unitCost)})' : 'Sin monedas',
+          MgColors.cyan,
+          canBuy
+              ? () {
+                  if (_engine.buyOne()) {
+                    _coinPop('+1 👕');
+                    HapticFeedback.selectionClick();
+                  }
+                }
+              : null,
+        ),
+        const SizedBox(height: 10),
+        _btn('📦 Comprar 5', MgColors.magenta, outlined: true,
+            _snap.coins >= _snap.unitCost
+                ? () {
+                    final n = _engine.buyBatch(5);
+                    if (n > 0) _coinPop('+$n 👕');
+                  }
+                : null),
+        if (_snap.creditOffered) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: MgColors.yellow.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: MgColors.yellow.withValues(alpha: 0.5)),
+            ),
+            child: Column(
+              children: [
+                const Text('🏦 El proveedor te ofrece crédito',
+                    style: TextStyle(
+                        color: MgColors.yellow, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                Text(
+                  'Te presta 50 🪙 ahora; devuelves 55 🪙 en 2 meses (10% interés).',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+                _btn('Aceptar préstamo', MgColors.yellow, () {
+                  _engine.takeLoan();
+                  _coinPop('+50 🪙');
+                }),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        _tip('Te esperan ${_snap.customersRemaining} clientes este mes. '
+            'Compra suficiente para no quedarte corto.'),
+      ],
+    );
+  }
+
+  // ── Zona Tienda (vender) ─────────────────────────────────────────────────────
+  Widget _buildShop() {
+    return _zoneScaffold(
+      key: 'shop',
+      title: '🏪 Tu tienda',
+      subtitle:
+          'Atiende a los clientes. Vendes a ${_c(_snap.unitPrice)} cada camiseta.',
+      color: MgColors.green,
+      children: [
+        _scene(_snap.avatarEmoji,
+            _snap.customersRemaining > 0 ? '🧑' : '🙌', '👕'),
+        const SizedBox(height: 12),
+        _statStrip([
+          _stat('👕 Stock', '${_snap.inventory}', MgColors.cyan),
+          _stat('🧑 En cola', '${_snap.customersRemaining}', MgColors.yellow),
+          _stat('✅ Vendidas', '${_snap.soldThisMonth}/${_snap.minSales}',
+              MgColors.green),
+        ]),
+        const SizedBox(height: 10),
+        _priceSelector(),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: _snap.customersTotal > 0
+                ? _snap.soldThisMonth / _snap.customersTotal
+                : 0,
+            minHeight: 10,
+            backgroundColor: Colors.white12,
+            valueColor: const AlwaysStoppedAnimation(MgColors.green),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_snap.canServe)
+          _btn('💸 Vender (+${_c(_snap.profitPerUnit)} beneficio)',
+              MgColors.green, () {
+            if (_engine.serveCustomer()) {
+              _coinPop('+${_c(_snap.unitPrice)}');
+              HapticFeedback.lightImpact();
+            }
+          })
+        else if (_snap.inventory <= 0 && _snap.customersRemaining > 0)
+          _tip('¡Sin stock y aún hay ${_snap.customersRemaining} clientes! '
+              'Vuelve al proveedor a comprar más.',
+              color: MgColors.yellow)
+        else
+          _tip('🎉 ¡Has atendido a todos los clientes de este mes!',
+              color: MgColors.green),
+      ],
+    );
+  }
+
+  Widget _priceSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Text('Precio de venta',
+              style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const Spacer(),
+          _roundBtn(Icons.remove, () {
+            _engine.setPriceAdjust(_snap.priceAdjust - 1);
+          }),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(_c(_snap.unitPrice),
+                style: const TextStyle(
+                    color: MgColors.coin,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15)),
+          ),
+          _roundBtn(Icons.add, () {
+            _engine.setPriceAdjust(_snap.priceAdjust + 1);
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ── Zona Facturas (pagar gastos fijos) ───────────────────────────────────────
+  Widget _buildBills() {
+    final tax = _snap.monthRevenue * _snap.taxRate;
+    final loan = (_snap.loanOutstanding > 0 && _snap.loanMonthsLeft > 0)
+        ? _snap.loanOutstanding / _snap.loanMonthsLeft
+        : 0.0;
+    final total = _snap.rent + _snap.eventCost + tax + loan;
+    return _zoneScaffold(
+      key: 'bills',
+      title: '📬 Buzón de facturas',
+      subtitle: 'El cobrador ha llegado. Estos gastos hay que pagarlos.',
+      color: MgColors.magenta,
+      children: [
+        _scene(_snap.avatarEmoji, '🧾', '💵'),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: MgColors.magenta.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            children: [
+              _billRow('🏠 Alquiler (gasto fijo)', _snap.rent),
+              if (_snap.eventCost > 0)
+                _billRow('⚡ ${_snap.eventText}', _snap.eventCost),
+              if (tax > 0) _billRow('🏛️ Impuesto (10% ventas)', tax),
+              if (loan > 0) _billRow('🏦 Cuota del préstamo', loan),
+              const Divider(color: Colors.white12, height: 20),
+              _billRow('Total a pagar', total, bold: true),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text('Tienes ${_c(_snap.coins)}',
+            style: TextStyle(
+                color: _snap.coins >= total ? MgColors.green : MgColors.magenta,
+                fontWeight: FontWeight.w700)),
+        const SizedBox(height: 16),
+        if (_snap.billsPaidThisMonth)
+          _tip('✅ Ya has pagado tus gastos de este mes.',
+              color: MgColors.green)
+        else if (!_snap.minSalesMet && !_snap.outOfDemand)
+          _tip('Aún no has vendido a ${_snap.minSales} clientes. '
+              'Ve a la tienda antes de pagar.',
+              color: MgColors.yellow)
+        else
+          _btn('💵 Pagar al cobrador', MgColors.magenta, () {
+            final ok = _engine.payBills();
+            if (ok) {
+              _coinPop('−${_c(total)}');
+              HapticFeedback.mediumImpact();
+            }
+          }),
+      ],
+    );
+  }
+
+  Widget _billRow(String label, double amount, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(label,
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: bold ? 15 : 13,
+                    fontWeight: bold ? FontWeight.w900 : FontWeight.w500)),
+          ),
+          Text(_c(amount),
+              style: TextStyle(
+                  color: MgColors.magenta,
+                  fontSize: bold ? 16 : 14,
+                  fontWeight: FontWeight.w800)),
+        ],
+      ),
+    );
+  }
+
+  // ── Zona Hucha (ahorro, mes 2+) ──────────────────────────────────────────────
+  Widget _buildPiggybank() {
+    return _zoneScaffold(
+      key: 'piggy',
+      title: '🐷 Tu hucha',
+      subtitle: 'Guarda parte de tu beneficio. Te protege en meses malos.',
+      color: MgColors.yellow,
+      children: [
+        _scene(_snap.avatarEmoji, '🐷', '🪙'),
+        const SizedBox(height: 12),
+        _statStrip([
+          _stat('🪙 Caja', _c(_snap.coins), MgColors.coin),
+          _stat('🐷 Ahorrado', _c(_snap.savings), MgColors.yellow),
+          _stat('🎯 Meta', _c(MoneyGardenEngine.victorySavings), MgColors.green),
+        ]),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _btn('Guardar 10 🪙', MgColors.yellow,
+                  _snap.coins >= 10
+                      ? () {
+                          _engine.deposit(10);
+                          _coinPop('🐷 +10');
+                        }
+                      : null),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _btn('Sacar 10 🪙', MgColors.cyan, outlined: true,
+                  _snap.savings >= 10
+                      ? () {
+                          _engine.withdraw(10);
+                          _coinPop('−10 🪙');
+                        }
+                      : null),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _tip('Consejo: guarda algo cada mes. En el Mes 12 necesitas '
+            '${_c(MoneyGardenEngine.victorySavings)} en la hucha para ganar.'),
+      ],
+    );
+  }
+
+  // ── Resumen de mes ───────────────────────────────────────────────────────────
+  Widget _buildSummary() {
+    final positive = _snap.lastProfit >= 0;
+    return Container(
+      key: const ValueKey('summary'),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const SizedBox(height: 6),
+          Text('Resumen del Mes ${_snap.month}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          if (_snap.lastImpago)
+            const Text('😟 Este mes no pudiste pagar todo',
+                style: TextStyle(color: MgColors.magenta, fontSize: 13)),
+          const SizedBox(height: 16),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                      color: (positive ? MgColors.green : MgColors.magenta)
+                          .withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  children: [
+                    _sumRow('🛍️ Ingresos por ventas', _snap.monthRevenue,
+                        MgColors.green),
+                    _sumRow('📦 Coste mercancía (variable)',
+                        -_snap.monthGoodsCost, MgColors.yellow),
+                    _sumRow('🏠 Alquiler (fijo)', -_snap.rent, MgColors.magenta),
+                    if (_snap.eventCost > 0)
+                      _sumRow('⚡ Imprevisto', -_snap.eventCost, MgColors.magenta),
+                    if (_snap.lastTaxPaid > 0)
+                      _sumRow('🏛️ Impuesto', -_snap.lastTaxPaid,
+                          MgColors.magenta),
+                    const Divider(color: Colors.white12, height: 22),
+                    _sumRow(positive ? '✅ Beneficio' : '❌ Pérdidas',
+                        _snap.lastProfit,
+                        positive ? MgColors.green : MgColors.magenta,
+                        bold: true),
+                    const SizedBox(height: 16),
+                    _kaiNote(_summaryFeedback()),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _statStrip([
+            _stat('🪙 Caja', _c(_snap.coins), MgColors.coin),
+            _stat('🐷 Hucha', _c(_snap.savings), MgColors.yellow),
+            _stat('⭐ Fama', '${_snap.reputation}', MgColors.cyan),
+          ]),
+          const SizedBox(height: 14),
+          _btn(
+            _snap.month >= MoneyGardenEngine.totalMonths
+                ? '🏁 Ver resultado final'
+                : '▶ Empezar Mes ${_snap.month + 1}',
+            MgColors.green,
+            () {
+              setState(() => _avatarPos = _avatarHome);
+              _engine.nextMonth();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _summaryFeedback() {
+    if (_snap.lastImpago) {
+      return 'Este mes no llegaste a pagar todo. Baja tu fama. Si vuelve a '
+          'pasar el mes que viene, tu negocio cerrará. ¡Vende más!';
+    }
+    if (_snap.lastProfit < 0) {
+      return 'Has perdido dinero. Revisa cuánto compras y a qué precio vendes.';
+    }
+    if (_snap.month == 1) {
+      return 'Has comprado, vendido y pagado tus gastos como un profesional. '
+          '¡Buen comienzo!';
+    }
+    return '¡Buen trabajo! Sigue creciendo poco a poco y no olvides tu hucha.';
+  }
+
+  // ── Fin del juego ────────────────────────────────────────────────────────────
+  Widget _buildEnd(bool won) {
+    return Container(
+      key: ValueKey(won ? 'victory' : 'gameover'),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(won ? '🏆' : '💤', style: const TextStyle(fontSize: 80)),
+          const SizedBox(height: 16),
+          Text(
+            won ? '¡Lo lograste!' : 'Tu negocio ha cerrado',
+            style: TextStyle(
+                color: won ? MgColors.green : MgColors.magenta,
+                fontSize: 26,
+                fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            won
+                ? 'Tu negocio sobrevivió 12 meses y ahorraste '
+                    '${_c(_snap.savings)}. Has aprendido a ganar, gastar con '
+                    'cabeza y ahorrar. ¡Eres un/a auténtic@ gestor@!'
+                : 'Gastaste más de lo que ingresabas de forma sostenida. '
+                    'No pasa nada: los mejores emprendedores aprenden de los '
+                    'errores. ¡Inténtalo de nuevo!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 15,
+                height: 1.5),
+          ),
+          const SizedBox(height: 28),
+          _btn('🔄 Jugar de nuevo', MgColors.cyan, () {
+            _nameCtrl.clear();
+            setState(() => _avatarPos = _avatarHome);
+            _engine.restart();
+          }),
+          const SizedBox(height: 10),
+          _btn('Salir', Colors.white24, outlined: true,
+              () => Navigator.pop(context)),
+        ],
+      ),
+    );
+  }
+
+  // ── Componentes reutilizables ────────────────────────────────────────────────
+  Widget _hud() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.3),
+        border: Border(
+            bottom: BorderSide(color: MgColors.magenta.withValues(alpha: 0.35))),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white70, size: 20),
+            onPressed: () => Navigator.pop(context),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+          ),
+          Expanded(
+            child: Wrap(
+              spacing: 5,
+              runSpacing: 3,
+              alignment: WrapAlignment.center,
+              children: [
+                _chip('${_snap.avatarEmoji} ${_snap.avatarName}', MgColors.magenta),
+                _chip(_c(_snap.coins), MgColors.coin),
+                _chip('🐷 ${_c(_snap.savings)}', MgColors.yellow),
+                _chip('⭐ ${_snap.reputation}', MgColors.cyan),
+                _chip('📅 ${_snap.month}/12', MgColors.green),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.menu_book, color: Colors.white70, size: 20),
+            onPressed: _openNotebook,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mentorBanner() {
+    if (_snap.mentorFlash == null) return const SizedBox.shrink();
+    return GestureDetector(
+      onTap: _engine.clearMentorFlash,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: MgColors.yellow.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: MgColors.yellow.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Text('🧑‍🏫', style: TextStyle(fontSize: 26)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(_snap.mentorFlash!,
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 12, height: 1.35)),
+            ),
+            const Icon(Icons.close, color: Colors.white38, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _zoneScaffold({
+    required String key,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required List<Widget> children,
+  }) {
+    return Column(
+      key: ValueKey(key),
+      children: [
+        _hud(),
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15)),
+              const SizedBox(height: 4),
+              Text(subtitle,
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 12,
+                      height: 1.35)),
+            ],
+          ),
+        ),
+        _mentorBanner(),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: children),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: _btn('🗺️ Volver al mapa', Colors.white24, outlined: true,
+              _returnMap),
+        ),
+      ],
+    );
+  }
+
+  Widget _scene(String left, String right, String action) {
+    return Container(
+      width: double.infinity,
+      height: 150,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [MgColors.bgSoft, Color(0xFF0F1626)],
+        ),
+        border: Border.all(color: MgColors.cyan.withValues(alpha: 0.25)),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 16,
+            child: Container(height: 2, color: Colors.white10),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _sceneActor(left),
+              AnimatedBuilder(
+                animation: _coinCtrl,
+                builder: (_, __) => Transform.scale(
+                  scale: 1 + _coinCtrl.value * 0.4,
+                  child: Opacity(
+                    opacity: 0.6 + _coinCtrl.value * 0.4,
+                    child: Text(action, style: const TextStyle(fontSize: 28)),
+                  ),
+                ),
+              ),
+              _sceneActor(right),
+            ],
+          ),
+          _coinFloat(),
+        ],
+      ),
+    );
+  }
+
+  Widget _sceneActor(String emoji) {
+    return AnimatedBuilder(
+      animation: _idleCtrl,
+      builder: (_, __) => Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Transform.translate(
+          offset: Offset(0, -3 + _idleCtrl.value * 6),
+          child: Text(emoji, style: const TextStyle(fontSize: 48)),
+        ),
+      ),
+    );
+  }
+
+  Widget _coinFloat() {
+    return AnimatedBuilder(
+      animation: _coinCtrl,
+      builder: (_, __) {
+        if (_coinCtrl.value == 0 || _coinCtrl.isDismissed) {
+          return const SizedBox.shrink();
+        }
+        return Positioned(
+          top: 16 - _coinCtrl.value * 16,
+          left: 0,
+          right: 0,
+          child: Opacity(
+            opacity: (1 - _coinCtrl.value).clamp(0.0, 1.0),
+            child: Center(
+              child: Text(_coinText,
+                  style: const TextStyle(
+                      color: MgColors.coin,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      shadows: [Shadow(color: Colors.black54, blurRadius: 6)])),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _statStrip(List<Widget> items) {
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          Expanded(child: items[i]),
+          if (i < items.length - 1) const SizedBox(width: 8),
+        ],
+      ],
+    );
+  }
+
+  Widget _stat(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(label,
+              style: const TextStyle(color: Colors.white60, fontSize: 10)),
+          const SizedBox(height: 4),
+          FittedBox(
+            child: Text(value,
+                style: TextStyle(
+                    color: color, fontWeight: FontWeight.w800, fontSize: 14)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sumRow(String label, double amount, Color color, {bool bold = false}) {
+    final sign = amount > 0 ? '+' : '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(label,
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: bold ? 16 : 13,
+                    fontWeight: bold ? FontWeight.w900 : FontWeight.w500)),
+          ),
+          Text('$sign${_c(amount)}',
+              style: TextStyle(
+                  color: color,
+                  fontSize: bold ? 18 : 14,
+                  fontWeight: FontWeight.w800)),
+        ],
+      ),
+    );
+  }
+
+  Widget _kaiNote(String text) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: MgColors.cyan.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          const Text('🧑‍🏫', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text,
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 12,
+                    height: 1.4)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tip(String text, {Color color = MgColors.cyan}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(text,
+          style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 12,
+              height: 1.4)),
+    );
+  }
+
+  Widget _roundBtn(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 18),
+      ),
+    );
+  }
+
+  Widget _btn(String label, Color color, VoidCallback? onTap,
+      {bool outlined = false}) {
+    final enabled = onTap != null;
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: !enabled
+              ? Colors.white10
+              : outlined
+                  ? Colors.transparent
+                  : color.withValues(alpha: 0.22),
+          foregroundColor: enabled ? color : Colors.white38,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: enabled ? color : Colors.white24),
+          ),
+          elevation: enabled && !outlined ? 5 : 0,
+          shadowColor: color.withValues(alpha: 0.4),
+        ),
+        child: Text(label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+      ),
+    );
+  }
+
+  // ── Tarjeta educativa (pop-up) ───────────────────────────────────────────────
+  Widget _flashcardOverlay(Flashcard card) {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black54,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(28),
+        child: Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: MgColors.bgSoft,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: MgColors.cyan.withValues(alpha: 0.6)),
+            boxShadow: [
+              BoxShadow(
+                  color: MgColors.cyan.withValues(alpha: 0.3),
+                  blurRadius: 24,
+                  spreadRadius: 2),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(card.emoji, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 10),
+              Text(card.title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: MgColors.cyan,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900)),
+              const SizedBox(height: 12),
+              Text(card.body,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 14, height: 1.45)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text('💡 ${card.example}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        height: 1.4)),
+              ),
+              const SizedBox(height: 18),
+              _btn('Entendido 👍', MgColors.green, _engine.dismissCard),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openNotebook() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: MgColors.bgSoft,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final ids = _snap.notebook;
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (ctx, scroll) => Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.white30,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('📓 Cuaderno de aprendizaje',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900)),
+              ),
+              Expanded(
+                child: ids.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Aún no has aprendido nada.\n¡Juega para descubrir '
+                          'tarjetas!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6)),
+                        ),
+                      )
+                    : ListView(
+                        controller: scroll,
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        children: ids.map((id) {
+                          final card = kFlashcards[id]!;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                  color: MgColors.cyan.withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(card.emoji,
+                                        style: const TextStyle(fontSize: 24)),
+                                    const SizedBox(width: 8),
+                                    Text(card.title,
+                                        style: const TextStyle(
+                                            color: MgColors.cyan,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 15)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(card.body,
+                                    style: TextStyle(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.85),
+                                        fontSize: 13,
+                                        height: 1.4)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
