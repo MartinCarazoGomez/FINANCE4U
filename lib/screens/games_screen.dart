@@ -6,6 +6,7 @@ import '../games/credit_score_hero.dart';
 import '../games/debt_destroyer_game.dart';
 import '../games/emergency_fund_builder.dart';
 import '../games/entrepreneur_sim.dart';
+import '../games/fintech_tycoon/fintech_tycoon_game.dart';
 import '../games/insurance_guardian.dart';
 import '../games/smart_shopper_game.dart';
 import '../games/trading_game.dart';
@@ -378,6 +379,15 @@ class GamesScreen extends StatelessWidget {
         riverPosition: RiverPosition.right,
         screen: const EmergencyFundBuilder(),
         description: 'Construye tu fondo de emergencia',
+      ),
+      RiverGame(
+        id: 'fintech_tycoon',
+        title: 'Fintech\nTycoon',
+        emoji: '🌆',
+        color: const Color(0xFFFF007F),
+        riverPosition: RiverPosition.right,
+        screen: const FintechTycoonGame(),
+        description: 'Construye tu imperio digital desde un garaje',
       ),
       RiverGame(
         id: 'entrepreneur',
