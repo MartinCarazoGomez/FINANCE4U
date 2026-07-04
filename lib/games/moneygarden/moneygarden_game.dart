@@ -950,6 +950,25 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     );
   }
 
+  Widget _chip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   Widget _mentorBanner() {
     if (_snap.mentorFlash == null) return const SizedBox.shrink();
     return GestureDetector(
