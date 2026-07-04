@@ -1,3 +1,5 @@
+import 'dart:math' show exp, pi, sqrt;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -2455,4 +2457,127 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
       },
     );
   }
+}
+
+/// Campana de Gauss para la pestaña de previsión de demanda.
+class _BellCurvePainter extends CustomPainter {
+  final double mean;
+  final double sigma;
+  final Color color;
+
+  const _BellCurvePainter({
+    required this.mean,
+    required this.sigma,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (sigma <= 0) return;
+
+    const padH = 12.0;
+    const padTop = 8.0;
+    const padBottom = 22.0;
+    final plotW = size.width - padH * 2;
+    final plotH = size.height - padTop - padBottom;
+    final baseline = size.height - padBottom;
+
+    final xMin = mean - 3 * sigma;
+    final xMax = mean + 3 * sigma;
+    final range = xMax - xMin;
+    if (range <= 0) return;
+
+    double pdf(double x) {
+      final z = (x - mean) / sigma;
+      return exp(-0.5 * z * z) / (sigma * sqrt(2 * pi));
+    }
+
+    final peak = pdf(mean);
+    if (peak <= 0) return;
+
+    double xToPx(double x) => padH + (x - xMin) / range * plotW;
+
+    // Área bajo la curva
+    final fillPath = Path();
+    fillPath.moveTo(xToPx(xMin), baseline);
+    for (var i = 0; i <= 120; i++) {
+      final t = i / 120;
+      final x = xMin + t * range;
+      final y = baseline - (pdf(x) / peak) * plotH;
+      fillPath.lineTo(xToPx(x), y);
+    }
+    fillPath.lineTo(xToPx(xMax), baseline);
+    fillPath.close();
+    canvas.drawPath(
+      fillPath,
+      Paint()
+        ..color = color.withValues(alpha: 0.22)
+        ..style = PaintingStyle.fill,
+    );
+
+    // Línea de la curva
+    final curvePath = Path();
+    for (var i = 0; i <= 120; i++) {
+      final t = i / 120;
+      final x = xMin + t * range;
+      final y = baseline - (pdf(x) / peak) * plotH;
+      if (i == 0) {
+        curvePath.moveTo(xToPx(x), y);
+      } else {
+        curvePath.lineTo(xToPx(x), y);
+      }
+    }
+    canvas.drawPath(
+      curvePath,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+
+    // Línea base
+    canvas.drawLine(
+      Offset(padH, baseline),
+      Offset(size.width - padH, baseline),
+      Paint()..color = Colors.white24,
+    );
+
+    void drawMarker(double x, {bool main = false}) {
+      final px = xToPx(x);
+      canvas.drawLine(
+        Offset(px, baseline),
+        Offset(px, baseline - (main ? plotH * 0.92 : plotH * 0.55)),
+        Paint()
+          ..color = main ? color : color.withValues(alpha: 0.45)
+          ..strokeWidth = main ? 2 : 1,
+      );
+    }
+
+    drawMarker(mean - sigma);
+    drawMarker(mean, main: true);
+    drawMarker(mean + sigma);
+
+    // Etiqueta de la media
+    final label = TextPainter(
+      text: TextSpan(
+        text: '~${mean.round()}',
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    label.paint(
+      canvas,
+      Offset(xToPx(mean) - label.width / 2, baseline + 4),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BellCurvePainter oldDelegate) =>
+      oldDelegate.mean != mean ||
+      oldDelegate.sigma != sigma ||
+      oldDelegate.color != color;
 }
