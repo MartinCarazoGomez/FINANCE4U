@@ -21,6 +21,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
   late final TextEditingController _nameCtrl;
   late final AnimationController _idleCtrl;
   late final AnimationController _coinCtrl;
+  late final AnimationController _charCtrl;
 
   late MgSnapshot _snap;
   MgZone? _walkingTo;
@@ -50,6 +51,10 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
+    _charCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    )..forward();
   }
 
   void _onUpdate(MgSnapshot snap) {
@@ -62,6 +67,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     _nameCtrl.dispose();
     _idleCtrl.dispose();
     _coinCtrl.dispose();
+    _charCtrl.dispose();
     super.dispose();
   }
 
@@ -138,109 +144,460 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     }
   }
 
-  // ── Personalización ──────────────────────────────────────────────────────────
+  // ── Personalización (pantalla de selección estilo AAA) ──────────────────────
+  void _selectCharacter(int i) {
+    if (_snap.avatarStyle == i) return;
+    HapticFeedback.mediumImpact();
+    // Si el nombre sigue siendo el de un personaje por defecto, actualízalo.
+    final isDefaultName = _nameCtrl.text.isEmpty ||
+        kAvatarOptions.any((o) => o.label == _nameCtrl.text);
+    _engine.setAvatarStyle(i);
+    if (isDefaultName) {
+      _nameCtrl.text = kAvatarOptions[i].label;
+      _engine.setAvatarName(_nameCtrl.text);
+    }
+    _charCtrl.forward(from: 0);
+  }
+
   Widget _buildPersonalize() {
-    return Container(
+    // Siempre hay un personaje en el "escenario": autoselecciona el primero.
+    if (_snap.avatarStyle < 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _snap.avatarStyle >= 0) return;
+        _engine.setAvatarStyle(0);
+        _nameCtrl.text = kAvatarOptions[0].label;
+        _engine.setAvatarName(_nameCtrl.text);
+        _charCtrl.forward(from: 0);
+      });
+    }
+    final idx = _snap.avatarStyle >= 0 ? _snap.avatarStyle : 0;
+    final opt = kAvatarOptions[idx];
+    final ready = _snap.avatarName.isNotEmpty;
+
+    return Stack(
       key: const ValueKey('personalize'),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white70),
-                onPressed: () => Navigator.pop(context),
+      fit: StackFit.expand,
+      children: [
+        // Arte del personaje a pantalla completa (estilo CoD / Hogwarts Legacy)
+        AnimatedBuilder(
+          animation: _charCtrl,
+          builder: (_, __) {
+            final t = Curves.easeOutCubic.transform(_charCtrl.value);
+            return Opacity(
+              opacity: t.clamp(0.0, 1.0),
+              child: Transform.scale(
+                scale: 1.08 - t * 0.08,
+                child: Image.asset(
+                  opt.image,
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.6),
+                  gaplessPlayback: true,
+                ),
               ),
-              const Text('🌱 MoneyGarden',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  )),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Crea tu personaje',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: MgColors.cyan,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
+            );
+          },
+        ),
+        // Degradado superior para legibilidad de la cabecera
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: [0, 0.22, 0.45],
+              colors: [Colors.black87, Colors.black26, Colors.transparent],
             ),
           ),
-          const SizedBox(height: 16),
-          Text('${_snap.avatarStyle >= 0 ? _snap.avatarEmoji : "🙂"}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 64)),
-          const SizedBox(height: 16),
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: List.generate(kAvatarOptions.length, (i) {
-                final opt = kAvatarOptions[i];
-                final selected = _snap.avatarStyle == i;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _engine.setAvatarStyle(i);
-                    if (_nameCtrl.text.isEmpty) _nameCtrl.text = opt.label;
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? MgColors.magenta.withValues(alpha: 0.25)
-                          : Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: selected ? MgColors.magenta : Colors.white24,
-                        width: selected ? 2 : 1,
+        ),
+        // Degradado inferior: la información se lee sobre el arte
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: const [0.30, 0.62, 1],
+              colors: [
+                Colors.transparent,
+                MgColors.bg.withValues(alpha: 0.88),
+                MgColors.bg,
+              ],
+            ),
+          ),
+        ),
+        // Contenido
+        LayoutBuilder(
+          builder: (context, cons) => SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: cons.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Cabecera
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.white70),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'ELIGE TU PERSONAJE',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 4,
+                                shadows: [
+                                  Shadow(color: Colors.black87, blurRadius: 8),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
                       ),
                     ),
-                    child: Center(
-                      child: Text(opt.emoji, style: const TextStyle(fontSize: 34)),
+                    const Spacer(),
+                    // Placa de información del personaje
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: AnimatedBuilder(
+                        animation: _charCtrl,
+                        builder: (_, child) {
+                          final t =
+                              Curves.easeOut.transform(_charCtrl.value);
+                          return Opacity(
+                            opacity: t,
+                            child: Transform.translate(
+                              offset: Offset(0, (1 - t) * 24),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (_snap.avatarName.isEmpty
+                                      ? opt.label
+                                      : _snap.avatarName)
+                                  .toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 34,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 3,
+                                height: 1,
+                                shadows: [
+                                  Shadow(
+                                      color: Colors.black,
+                                      blurRadius: 14,
+                                      offset: Offset(0, 2)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: opt.color.withValues(alpha: 0.8)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: opt.color.withValues(alpha: 0.35),
+                                    blurRadius: 12,
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                opt.title.toUpperCase(),
+                                style: TextStyle(
+                                  color: opt.color,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 3,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              opt.bio,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 13,
+                                height: 1.4,
+                                fontStyle: FontStyle.italic,
+                                shadows: const [
+                                  Shadow(color: Colors.black87, blurRadius: 8),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _statBars(opt),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // Plantel de personajes
+                    SizedBox(
+                      height: 86,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: kAvatarOptions.length,
+                        itemBuilder: (_, i) => _rosterCard(i),
+                      ),
+                    ),
+                    // Nombre + confirmar
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _nameCtrl,
+                            onChanged: _engine.setAvatarName,
+                            textAlign: TextAlign.center,
+                            maxLength: 14,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
+                            ),
+                            decoration: InputDecoration(
+                              counterText: '',
+                              isDense: true,
+                              hintText: 'NOMBRE DE TU LEYENDA',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                letterSpacing: 2,
+                                fontSize: 12,
+                              ),
+                              filled: true,
+                              fillColor: Colors.black.withValues(alpha: 0.45),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(
+                                    color: opt.color.withValues(alpha: 0.4)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide:
+                                    BorderSide(color: opt.color, width: 2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _confirmButton(opt, ready),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _statBars(AvatarOption opt) {
+    Widget bar(String label, int value) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 74,
+              child: Text(label,
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                  )),
+            ),
+            Expanded(
+              child: Row(
+                children: List.generate(5, (i) {
+                  final filled = i < value;
+                  return Expanded(
+                    child: TweenAnimationBuilder<double>(
+                      key: ValueKey('$label-$value-$i'),
+                      tween: Tween(begin: 0, end: 1),
+                      duration: Duration(milliseconds: 200 + i * 90),
+                      curve: Curves.easeOut,
+                      builder: (_, t, __) => Container(
+                        height: 7,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          color: filled
+                              ? opt.color.withValues(alpha: 0.25 + t * 0.75)
+                              : Colors.white.withValues(alpha: 0.08),
+                          boxShadow: filled && t > 0.8
+                              ? [
+                                  BoxShadow(
+                                    color: opt.color.withValues(alpha: 0.4),
+                                    blurRadius: 5,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        children: [
+          bar('VISIÓN', opt.vision),
+          bar('CARISMA', opt.carisma),
+          bar('AUDACIA', opt.audacia),
+        ],
+      ),
+    );
+  }
+
+  Widget _rosterCard(int i) {
+    final opt = kAvatarOptions[i];
+    final selected = _snap.avatarStyle == i;
+    return GestureDetector(
+      onTap: () => _selectCharacter(i),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        width: 62,
+        margin: EdgeInsets.symmetric(
+          horizontal: 5,
+          vertical: selected ? 3 : 10,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? opt.color : Colors.white24,
+            width: selected ? 2 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: opt.color.withValues(alpha: 0.55),
+                    blurRadius: 14,
+                  ),
+                ]
+              : null,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Retrato encuadrado a la cara
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 220),
+                opacity: selected ? 1 : 0.5,
+                child: Image.asset(
+                  opt.image,
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.85),
+                ),
+              ),
+              // Nombre sobre franja inferior
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  color: Colors.black.withValues(alpha: 0.55),
+                  child: Text(
+                    opt.label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: selected ? opt.color : Colors.white70,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _nameCtrl,
-            onChanged: _engine.setAvatarName,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: InputDecoration(
-              hintText: 'Nombre de tu personaje',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.08),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: MgColors.cyan.withValues(alpha: 0.5)),
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: MgColors.cyan, width: 2),
-              ),
-            ),
+            ],
           ),
-          const SizedBox(height: 16),
-          _btn(
-            'Continuar',
-            MgColors.green,
-            (_snap.avatarStyle >= 0 && _snap.avatarName.isNotEmpty)
+        ),
+      ),
+    );
+  }
+
+  Widget _confirmButton(AvatarOption opt, bool ready) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: ready
+              ? LinearGradient(
+                  colors: [opt.color, Color.lerp(opt.color, MgColors.green, 0.6)!],
+                )
+              : null,
+          color: ready ? null : Colors.white10,
+          boxShadow: ready
+              ? [
+                  BoxShadow(
+                    color: opt.color.withValues(alpha: 0.5),
+                    blurRadius: 18,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: ready
                 ? () {
+                    HapticFeedback.heavyImpact();
                     FocusScope.of(context).unfocus();
                     _engine.finishPersonalize();
                   }
                 : null,
+            child: Center(
+              child: Text(
+                ready ? '⚔  COMENZAR AVENTURA' : 'ESCRIBE TU NOMBRE',
+                style: TextStyle(
+                  color: ready ? const Color(0xFF10251A) : Colors.white38,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -896,9 +1253,9 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
           ),
           const SizedBox(height: 28),
           _btn('🔄 Jugar de nuevo', MgColors.cyan, () {
-            _nameCtrl.clear();
             setState(() => _avatarPos = _avatarHome);
             _engine.restart();
+            _charCtrl.forward(from: 0);
           }),
           const SizedBox(height: 10),
           _btn('Salir', Colors.white24, outlined: true,

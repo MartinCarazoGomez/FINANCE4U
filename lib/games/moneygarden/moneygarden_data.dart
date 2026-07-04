@@ -130,22 +130,96 @@ class MentorSays {
       'vendrán menos clientes. Intenta vender más el mes que viene.';
 }
 
-/// Opciones de avatar para personalización.
+/// Opciones de avatar para personalización (estilo selección de personaje AAA).
+/// Los stats son puramente cosméticos: dan personalidad, no cambian la partida.
 class AvatarOption {
   final String emoji;
   final String label;
-  const AvatarOption(this.emoji, this.label);
+  final String title;
+  final String bio;
+  final Color color;
+  final String image;
+  final int vision; // 1-5
+  final int carisma; // 1-5
+  final int audacia; // 1-5
+  const AvatarOption(
+    this.emoji,
+    this.label, {
+    required this.title,
+    required this.bio,
+    required this.color,
+    required this.image,
+    required this.vision,
+    required this.carisma,
+    required this.audacia,
+  });
 }
 
 const kAvatarOptions = <AvatarOption>[
-  AvatarOption('🧑', 'Álex'),
-  AvatarOption('👩', 'Lucía'),
-  AvatarOption('👨', 'Marco'),
-  AvatarOption('🧑‍🦱', 'Sam'),
-  AvatarOption('👧', 'Nora'),
-  AvatarOption('👦', 'Leo'),
-  AvatarOption('🧑‍🦰', 'Robin'),
-  AvatarOption('🧕', 'Aya'),
+  AvatarOption('🧑', 'Álex',
+      title: 'El Equilibrado',
+      bio: 'Ni un euro de más, ni una oportunidad de menos. Siempre en calma.',
+      color: Color(0xFF35D6ED),
+      image: 'assets/moneygarden/mg_char_alex.jpg',
+      vision: 4,
+      carisma: 3,
+      audacia: 3),
+  AvatarOption('👩', 'Lucía',
+      title: 'La Estratega',
+      bio: 'Planea cada mes como una partida de ajedrez. Nada la sorprende.',
+      color: Color(0xFFFF6FB5),
+      image: 'assets/moneygarden/mg_char_lucia.jpg',
+      vision: 5,
+      carisma: 3,
+      audacia: 2),
+  AvatarOption('👨', 'Marco',
+      title: 'El Negociador',
+      bio: 'Consigue el mejor precio hasta en el mercadillo. Pura labia.',
+      color: Color(0xFFFFD34E),
+      image: 'assets/moneygarden/mg_char_marco.jpg',
+      vision: 3,
+      carisma: 5,
+      audacia: 3),
+  AvatarOption('🧑‍🦱', 'Sam',
+      title: 'El Creativo',
+      bio: 'Ve negocios donde otros ven problemas. Ideas infinitas.',
+      color: Color(0xFF9B7BFF),
+      image: 'assets/moneygarden/mg_char_sam.jpg',
+      vision: 4,
+      carisma: 4,
+      audacia: 3),
+  AvatarOption('👧', 'Nora',
+      title: 'La Visionaria',
+      bio: 'Apunta lejos y ahorra hoy. Su hucha es legendaria.',
+      color: Color(0xFF3DDC84),
+      image: 'assets/moneygarden/mg_char_nora.jpg',
+      vision: 5,
+      carisma: 2,
+      audacia: 3),
+  AvatarOption('👦', 'Leo',
+      title: 'El Audaz',
+      bio: 'Sin miedo al riesgo. A veces gana mucho... y a veces aprende mucho.',
+      color: Color(0xFFFF8A5C),
+      image: 'assets/moneygarden/mg_char_leo.jpg',
+      vision: 2,
+      carisma: 3,
+      audacia: 5),
+  AvatarOption('🧑‍🦰', 'Robin',
+      title: 'El Analista',
+      bio: 'Los números le hablan. Nunca paga de más una factura.',
+      color: Color(0xFF5CC8FF),
+      image: 'assets/moneygarden/mg_char_robin.jpg',
+      vision: 4,
+      carisma: 2,
+      audacia: 4),
+  AvatarOption('🧕', 'Aya',
+      title: 'La Constante',
+      bio: 'Paso a paso, mes a mes. La disciplina es su superpoder.',
+      color: Color(0xFFFFC531),
+      image: 'assets/moneygarden/mg_char_aya.jpg',
+      vision: 3,
+      carisma: 4,
+      audacia: 4),
 ];
 
 /// Paleta MoneyGarden (vaporwave suave, apto para 10-18 años).

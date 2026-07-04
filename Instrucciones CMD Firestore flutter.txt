@@ -1,4 +1,8 @@
 cd "C:\Users\marti\OneDrive\Documentos\01ICAI\00 Practicas\APPTRACKER HORAS TRABAJADAS"
+
+firebase logout
+firebase login
+
 npm install
 npm run build
 firebase use internshiphourstracker
