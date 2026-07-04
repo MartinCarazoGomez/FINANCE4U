@@ -99,6 +99,7 @@ class MgSnapshot {
   final double forecastMean;
   final double forecastSigma;
   final int juniorBias;
+  final bool priceLocked;
 
   // Tarjeta educativa pendiente y cuaderno
   final Flashcard? pendingCard;
@@ -147,6 +148,7 @@ class MgSnapshot {
     required this.forecastMean,
     required this.forecastSigma,
     required this.juniorBias,
+    required this.priceLocked,
     required this.pendingCard,
     required this.notebook,
     required this.mentorFlash,
@@ -165,10 +167,22 @@ class MgSnapshot {
 
   /// Previsión que muestra el analista según su nivel.
   /// El júnior trabaja con menos datos: media desplazada y más incertidumbre.
-  double get forecastMeanShown =>
-      analystLevel >= 2 ? forecastMean : forecastMean + juniorBias;
-  double get forecastSigmaShown =>
-      analystLevel >= 2 ? forecastSigma : forecastSigma * 1.6;
+  double forecastMeanShownAt(int priceAdjust) =>
+      forecastMeanAtPrice(priceAdjust) +
+      (analystLevel >= 2 ? 0 : juniorBias.toDouble());
+
+  double forecastSigmaShownAt(int priceAdjust) =>
+      forecastSigmaAtPrice(priceAdjust) * (analystLevel >= 2 ? 1 : 1.6);
+
+  /// Demanda prevista al precio planificado (factor 0.15 por paso de ajuste).
+  double forecastMeanAtPrice(int priceAdjust) =>
+      forecastMean * MoneyGardenEngine.priceDemandFactor(priceAdjust);
+
+  double forecastSigmaAtPrice(int priceAdjust) =>
+      forecastSigma * MoneyGardenEngine.priceDemandFactor(priceAdjust);
+
+  double get forecastMeanShown => forecastMeanShownAt(0);
+  double get forecastSigmaShown => forecastSigmaShownAt(0);
 
   bool get avatarStyleReady => avatarStyle >= 0;
   String get avatarEmoji =>
@@ -181,6 +195,10 @@ class MoneyGardenEngine {
   static const double startCoins = 100;
   static const int totalMonths = 12;
   static const double victorySavings = 200;
+
+  /// Multiplicador de demanda según ajuste de precio (−2..+2).
+  static double priceDemandFactor(int priceAdjust) =>
+      1 - priceAdjust * 0.15;
 
   final void Function(MgSnapshot) onChanged;
   final Random _rng = Random();
@@ -238,6 +256,7 @@ class MoneyGardenEngine {
   int _juniorBias = 0;
   double _demandBaseRolled = 0;
   bool _visitedOffice = false;
+  bool _priceLocked = false;
 
   double get _taxRate => _month >= 3 ? 0.10 : 0.0;
   double get _unitPrice => (_basePrice + _priceAdjust).clamp(1, 999).toDouble();
@@ -297,6 +316,7 @@ class MoneyGardenEngine {
         forecastMean: _demandMean(_reputation, _month + 1),
         forecastSigma: _demandSigma(_month + 1, _nextVolatile),
         juniorBias: _juniorBias,
+        priceLocked: _priceLocked,
         pendingCard: _pendingCard,
         notebook: List.unmodifiable(_notebook),
         mentorFlash: _mentorFlash,
@@ -339,6 +359,7 @@ class MoneyGardenEngine {
   // ── Ciclo mensual ────────────────────────────────────────────────────────────
   void _startMonth() {
     _priceAdjust = 0;
+    _priceLocked = false;
     _soldThisMonth = 0;
     _monthRevenue = 0;
     _monthGoodsCost = 0;
@@ -367,13 +388,13 @@ class MoneyGardenEngine {
   }
 
   void _applyPriceToDemand() {
-    // Recalcula la cola en función del precio sobre la demanda ya sorteada,
-    // respetando las unidades vendidas.
-    final factor = 1 - (_priceAdjust * 0.15);
+    // Recalcula la cola según el precio sobre la demanda sorteada.
+    // Solo permitido antes de la primera venta (ver setPriceAdjust).
+    final factor = priceDemandFactor(_priceAdjust);
     final adjusted =
         (_demandBaseRolled * factor).round().clamp(_minSales + 1, 40);
-    _customersRemaining = (adjusted - _soldThisMonth).clamp(0, adjusted);
     _customersTotal = adjusted;
+    _customersRemaining = (adjusted - _soldThisMonth).clamp(0, adjusted);
   }
 
   void _rollEvent() {
@@ -483,6 +504,7 @@ class MoneyGardenEngine {
 
   // ── Vender ───────────────────────────────────────────────────────────────────
   void setPriceAdjust(int value) {
+    if (_priceLocked) return;
     _priceAdjust = value.clamp(-2, 2);
     _applyPriceToDemand();
     _notify();
@@ -496,6 +518,7 @@ class MoneyGardenEngine {
     _coins += _unitPrice;
     _monthRevenue += _unitPrice;
     if (_soldThisMonth == 1) {
+      _priceLocked = true;
       _mentorFlash = MentorSays.firstSell;
     }
     _notify();
@@ -648,6 +671,7 @@ class MoneyGardenEngine {
     _reputation = 10;
     _savings = 0;
     _priceAdjust = 0;
+    _priceLocked = false;
     _consecutiveImpagos = 0;
     _loanOutstanding = 0;
     _loanMonthsLeft = 0;

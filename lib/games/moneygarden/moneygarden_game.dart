@@ -29,6 +29,8 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
   MgZone? _walkingTo;
   String _coinText = '';
   int _officeTab = 0;
+  int _forecastPrice = 0;
+  int _lastForecastMonth = 1;
 
   // Posiciones relativas de las zonas sobre la ilustración del mapa (0..1),
   // alineadas con los cuatro edificios de la imagen.
@@ -75,6 +77,10 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
 
   void _onUpdate(MgSnapshot snap) {
     if (!mounted) return;
+    if (snap.month != _lastForecastMonth) {
+      _lastForecastMonth = snap.month;
+      _forecastPrice = 0;
+    }
     setState(() => _snap = snap);
   }
 
@@ -1119,32 +1125,61 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     );
   }
 
-  Widget _priceSelector() {
+  Widget _priceSelector({bool forecast = false}) {
+    final adjust = forecast ? _forecastPrice : _snap.priceAdjust;
+    final locked = !forecast && _snap.priceLocked;
+    final basePrice = 10.0;
+    final price = basePrice + adjust;
+    void change(int delta) {
+      if (locked) return;
+      setState(() {
+        if (forecast) {
+          _forecastPrice = (adjust + delta).clamp(-2, 2);
+        } else {
+          _engine.setPriceAdjust(adjust + delta);
+        }
+      });
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Precio de venta',
-              style: TextStyle(color: Colors.white70, fontSize: 12)),
-          const Spacer(),
-          _roundBtn(Icons.remove, () {
-            _engine.setPriceAdjust(_snap.priceAdjust - 1);
-          }),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(_c(_snap.unitPrice),
-                style: const TextStyle(
-                    color: MgColors.coin,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15)),
+          Row(
+            children: [
+              Text(
+                forecast ? 'Precio planificado' : 'Precio de venta',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const Spacer(),
+              _roundBtn(Icons.remove, locked ? null : () => change(-1)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(_c(price),
+                    style: const TextStyle(
+                        color: MgColors.coin,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15)),
+              ),
+              _roundBtn(Icons.add, locked ? null : () => change(1)),
+            ],
           ),
-          _roundBtn(Icons.add, () {
-            _engine.setPriceAdjust(_snap.priceAdjust + 1);
-          }),
+          if (locked) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Precio bloqueado tras la primera venta del mes',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.45),
+                fontSize: 10,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1472,12 +1507,13 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
         ],
       );
     }
-    final mean = _snap.forecastMeanShown;
-    final sigma = _snap.forecastSigmaShown;
+    final mean = _snap.forecastMeanShownAt(_forecastPrice);
+    final sigma = _snap.forecastSigmaShownAt(_forecastPrice);
     final lo = (mean - sigma).round();
     final hi = (mean + sigma).round();
+    final plannedPrice = 10 + _forecastPrice;
     return Column(
-      key: ValueKey('forecast-${_snap.month}-${_snap.analystLevel}'),
+      key: ValueKey('forecast-${_snap.month}-${_snap.analystLevel}-$_forecastPrice'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -1503,8 +1539,10 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
               color: MgColors.yellow),
         ],
         const SizedBox(height: 10),
+        _priceSelector(forecast: true),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 150,
+          height: 170,
           width: double.infinity,
           child: CustomPaint(
             painter: _BellCurvePainter(
@@ -1516,8 +1554,8 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
         ),
         const SizedBox(height: 10),
         _tip(
-          '📈 Lo más probable: ~${mean.round()} clientes. Unas 2 de cada 3 '
-          'veces caerá entre $lo y $hi. Compra stock con cabeza.',
+          '📈 Con precio de ${_c(plannedPrice)}: lo más probable ~${mean.round()} '
+          'clientes. Unas 2 de cada 3 veces caerá entre $lo y $hi.',
           color: MgColors.violet,
         ),
       ],
@@ -2260,17 +2298,18 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     );
   }
 
-  Widget _roundBtn(IconData icon, VoidCallback onTap) {
+  Widget _roundBtn(IconData icon, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withValues(alpha: onTap == null ? 0.04 : 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: Colors.white, size: 18),
+        child: Icon(icon,
+            color: onTap == null ? Colors.white38 : Colors.white, size: 18),
       ),
     );
   }
@@ -2475,9 +2514,9 @@ class _BellCurvePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (sigma <= 0) return;
 
-    const padH = 12.0;
+    const padH = 16.0;
     const padTop = 8.0;
-    const padBottom = 22.0;
+    const padBottom = 34.0;
     final plotW = size.width - padH * 2;
     final plotH = size.height - padTop - padBottom;
     final baseline = size.height - padBottom;
@@ -2535,7 +2574,7 @@ class _BellCurvePainter extends CustomPainter {
         ..strokeWidth = 2,
     );
 
-    // Línea base
+    // Eje X
     canvas.drawLine(
       Offset(padH, baseline),
       Offset(size.width - padH, baseline),
@@ -2557,21 +2596,62 @@ class _BellCurvePainter extends CustomPainter {
     drawMarker(mean, main: true);
     drawMarker(mean + sigma);
 
-    // Etiqueta de la media
-    final label = TextPainter(
-      text: TextSpan(
-        text: '~${mean.round()}',
+    // Etiquetas del eje X (clientes)
+    void drawXLabel(double x, String text, {bool highlight = false}) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+            color: highlight ? color : Colors.white54,
+            fontSize: highlight ? 11 : 10,
+            fontWeight: highlight ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      var left = xToPx(x) - tp.width / 2;
+      left = left.clamp(padH, size.width - padH - tp.width);
+      tp.paint(canvas, Offset(left, baseline + 6));
+    }
+
+    final tickValues = <double>{
+      xMin,
+      mean - 2 * sigma,
+      mean - sigma,
+      mean,
+      mean + sigma,
+      mean + 2 * sigma,
+      xMax,
+    }.where((v) => v >= xMin - 0.01 && v <= xMax + 0.01).toList()
+      ..sort();
+
+    for (final x in tickValues) {
+      final isMean = (x - mean).abs() < 0.01;
+      canvas.drawLine(
+        Offset(xToPx(x), baseline),
+        Offset(xToPx(x), baseline + 4),
+        Paint()..color = isMean ? color : Colors.white38,
+      );
+      drawXLabel(x, x.round().toString(), highlight: isMean);
+    }
+
+    // Título del eje
+    const axisTitle = 'Clientes';
+    final axisTp = TextPainter(
+      text: const TextSpan(
+        text: axisTitle,
         style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
+          color: Colors.white38,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    label.paint(
+    axisTp.paint(
       canvas,
-      Offset(xToPx(mean) - label.width / 2, baseline + 4),
+      Offset(size.width - padH - axisTp.width, baseline + 20),
     );
   }
 
