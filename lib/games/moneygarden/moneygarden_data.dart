@@ -280,6 +280,14 @@ const kAvatarOptions = <AvatarOption>[
       audacia: 4),
 ];
 
+/// Arte del juego: mapa del pueblo, escenas de zona y retrato del mentor.
+const kMapImage = 'assets/moneygarden/mg_map_bg.jpg';
+const kCoachKaiImage = 'assets/moneygarden/mg_coach_kai.jpg';
+const kSceneProvider = 'assets/moneygarden/mg_scene_provider.jpg';
+const kSceneShop = 'assets/moneygarden/mg_scene_shop.jpg';
+const kSceneBills = 'assets/moneygarden/mg_scene_bills.jpg';
+const kScenePiggy = 'assets/moneygarden/mg_scene_piggy.jpg';
+
 /// Paleta MoneyGarden (vaporwave suave, apto para 10-18 años).
 class MgColors {
   static const bg = Color(0xFF141B2E);

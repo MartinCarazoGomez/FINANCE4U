@@ -27,14 +27,25 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
   MgZone? _walkingTo;
   String _coinText = '';
 
-  // Posiciones relativas de las zonas en el mapa (0..1).
+  // Posiciones relativas de las zonas sobre la ilustración del mapa (0..1),
+  // alineadas con los cuatro edificios de la imagen.
   static const _zonePos = <MgZone, Offset>{
-    MgZone.provider: Offset(0.22, 0.30),
-    MgZone.shop: Offset(0.74, 0.34),
-    MgZone.bills: Offset(0.30, 0.70),
-    MgZone.piggybank: Offset(0.76, 0.72),
+    MgZone.provider: Offset(0.20, 0.28),
+    MgZone.shop: Offset(0.79, 0.26),
+    MgZone.bills: Offset(0.21, 0.72),
+    MgZone.piggybank: Offset(0.79, 0.70),
   };
-  static const _avatarHome = Offset(0.5, 0.52);
+  static const _avatarHome = Offset(0.5, 0.55);
+
+  static const _zoneColor = <MgZone, Color>{
+    MgZone.provider: MgColors.cyan,
+    MgZone.shop: MgColors.green,
+    MgZone.bills: MgColors.magenta,
+    MgZone.piggybank: MgColors.yellow,
+  };
+
+  AvatarOption get _opt =>
+      kAvatarOptions[_snap.avatarStyle >= 0 ? _snap.avatarStyle : 0];
   Offset _avatarPos = _avatarHome;
 
   @override
@@ -629,9 +640,31 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
           const Spacer(),
           AnimatedBuilder(
             animation: _idleCtrl,
-            builder: (_, __) => Transform.translate(
+            builder: (_, child) => Transform.translate(
               offset: Offset(0, -4 + _idleCtrl.value * 8),
-              child: const Text('🧑‍🏫', style: TextStyle(fontSize: 84)),
+              child: child,
+            ),
+            child: Container(
+              width: 136,
+              height: 136,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: MgColors.yellow, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: MgColors.yellow.withValues(alpha: 0.45),
+                    blurRadius: 26,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  kCoachKaiImage,
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.75),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -687,7 +720,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     );
   }
 
-  // ── Mapa navegable ───────────────────────────────────────────────────────────
+  // ── Mapa navegable (ilustración con waypoints) ───────────────────────────────
   Widget _buildMap() {
     return Column(
       key: const ValueKey('map'),
@@ -695,57 +728,89 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
         _hud(),
         _mentorBanner(),
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, box) {
-              final w = box.maxWidth;
-              final h = box.maxHeight;
-              return Stack(
-                children: [
-                  Positioned.fill(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFF1B2A22), Color(0xFF141B2E)],
-                        ),
-                      ),
-                    ),
-                  ),
-                  _mapZone(MgZone.provider, '🏭', 'Proveedor', w, h,
-                      done: _snap.boughtThisMonth),
-                  _mapZone(MgZone.shop, '🏪', 'Tienda', w, h,
-                      badge: _snap.minSalesMet
-                          ? null
-                          : '${_snap.soldThisMonth}/${_snap.minSales}'),
-                  _mapZone(MgZone.bills, '📬', 'Facturas', w, h,
-                      done: _snap.billsPaidThisMonth,
-                      locked: !_snap.minSalesMet && !_snap.outOfDemand),
-                  if (_snap.month >= 2)
-                    _mapZone(MgZone.piggybank, '🐷', 'Hucha', w, h),
-                  // Avatar
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeInOut,
-                    left: w * _avatarPos.dx - 26,
-                    top: h * _avatarPos.dy - 26,
-                    child: AnimatedBuilder(
-                      animation: _idleCtrl,
-                      builder: (_, __) => Transform.translate(
-                        offset: Offset(0, _walkingTo != null ? 0 : -2 + _idleCtrl.value * 4),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF10182B), MgColors.bg],
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: AspectRatio(
+                  // La ilustración es 3:2; recortamos un poco los laterales
+                  // para que el mapa llene más pantalla sin perder edificios.
+                  aspectRatio: 1.30,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: LayoutBuilder(
+                      builder: (context, box) {
+                        final w = box.maxWidth;
+                        final h = box.maxHeight;
+                        return Stack(
                           children: [
-                            Text(_snap.avatarEmoji,
-                                style: const TextStyle(fontSize: 44)),
+                            Positioned.fill(
+                              child: Image.asset(kMapImage, fit: BoxFit.cover),
+                            ),
+                            // Viñeta sutil para integrar los marcadores
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    radius: 1.1,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.35),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _mapZone(MgZone.provider, Icons.warehouse,
+                                'Proveedor', w, h,
+                                done: _snap.boughtThisMonth),
+                            _mapZone(MgZone.shop, Icons.storefront, 'Tienda',
+                                w, h,
+                                badge: _snap.minSalesMet
+                                    ? null
+                                    : '${_snap.soldThisMonth}/${_snap.minSales}'),
+                            _mapZone(MgZone.bills, Icons.markunread_mailbox,
+                                'Facturas', w, h,
+                                done: _snap.billsPaidThisMonth,
+                                locked:
+                                    !_snap.minSalesMet && !_snap.outOfDemand),
+                            if (_snap.month >= 2)
+                              _mapZone(
+                                  MgZone.piggybank, Icons.savings, 'Hucha', w, h),
+                            // Ficha del jugador
+                            AnimatedPositioned(
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeInOut,
+                              left: w * _avatarPos.dx - 24,
+                              top: h * _avatarPos.dy - 24,
+                              child: AnimatedBuilder(
+                                animation: _idleCtrl,
+                                builder: (_, child) => Transform.translate(
+                                  offset: Offset(
+                                      0,
+                                      _walkingTo != null
+                                          ? 0
+                                          : -2 + _idleCtrl.value * 4),
+                                  child: child,
+                                ),
+                                child: _faceToken(48),
+                              ),
+                            ),
                           ],
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
-                ],
-              );
-            },
+                ),
+              ),
+            ),
           ),
         ),
         Padding(
@@ -766,77 +831,154 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     );
   }
 
-  Widget _mapZone(MgZone zone, String emoji, String label, double w, double h,
+  Widget _mapZone(MgZone zone, IconData icon, String label, double w, double h,
       {bool done = false, bool locked = false, String? badge}) {
     final pos = _zonePos[zone]!;
+    final color = _zoneColor[zone]!;
     return Positioned(
-      left: w * pos.dx - 44,
-      top: h * pos.dy - 44,
+      left: w * pos.dx - 42,
+      top: h * pos.dy - 46,
       child: GestureDetector(
         onTap: locked ? null : () => _walkTo(zone),
         child: Opacity(
-          opacity: locked ? 0.45 : 1,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 74,
-                height: 74,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: done
-                        ? MgColors.green
-                        : MgColors.cyan.withValues(alpha: 0.5),
-                    width: done ? 2.5 : 1.5,
+          opacity: locked ? 0.55 : 1,
+          child: SizedBox(
+            width: 84,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Waypoint pulsante sobre el edificio
+                AnimatedBuilder(
+                  animation: _idleCtrl,
+                  builder: (_, child) => Transform.scale(
+                    scale: locked ? 1 : 1 + _idleCtrl.value * 0.08,
+                    child: child,
+                  ),
+                  child: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.55),
+                      border: Border.all(
+                        color: done ? MgColors.green : color,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (done ? MgColors.green : color)
+                              .withValues(alpha: locked ? 0.15 : 0.55),
+                          blurRadius: 14,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Icon(
+                            locked ? Icons.lock : (done ? Icons.check : icon),
+                            color: done
+                                ? MgColors.green
+                                : (locked ? Colors.white60 : color),
+                            size: 22,
+                          ),
+                        ),
+                        if (badge != null)
+                          Positioned(
+                            right: -2,
+                            bottom: -2,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: MgColors.magenta,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(badge,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    Center(child: Text(emoji, style: const TextStyle(fontSize: 38))),
-                    if (done)
-                      const Positioned(
-                        right: 4,
-                        top: 4,
-                        child: Icon(Icons.check_circle,
-                            color: MgColors.green, size: 18),
-                      ),
-                    if (locked)
-                      const Positioned(
-                        right: 4,
-                        top: 4,
-                        child: Icon(Icons.lock, color: Colors.white54, size: 16),
-                      ),
-                    if (badge != null)
-                      Positioned(
-                        right: 2,
-                        bottom: 2,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: MgColors.magenta,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(badge,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800)),
-                        ),
-                      ),
-                  ],
+                const SizedBox(height: 4),
+                // Etiqueta estilo waypoint
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(9),
+                    border:
+                        Border.all(color: color.withValues(alpha: 0.5)),
+                  ),
+                  child: Text(label,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4)),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600)),
-            ],
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Cara circular de Coach Kai para banners y notas.
+  Widget _kaiFace(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+            color: MgColors.yellow.withValues(alpha: 0.8), width: 2),
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          kCoachKaiImage,
+          fit: BoxFit.cover,
+          alignment: const Alignment(0, -0.75),
+        ),
+      ),
+    );
+  }
+
+  /// Ficha circular con la cara del personaje del jugador.
+  Widget _faceToken(double size) {
+    final opt = _opt;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: opt.color, width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: opt.color.withValues(alpha: 0.55),
+            blurRadius: 12,
+            spreadRadius: 1,
+          ),
+          const BoxShadow(
+            color: Colors.black54,
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          opt.image,
+          fit: BoxFit.cover,
+          alignment: const Alignment(0, -0.85),
         ),
       ),
     );
@@ -852,7 +994,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
           'Compra camisetas a ${_c(_snap.unitCost)} cada una. Es tu gasto variable.',
       color: MgColors.cyan,
       children: [
-        _scene('🏭', _snap.avatarEmoji, '📦'),
+        _sceneBanner(kSceneProvider, MgColors.cyan),
         const SizedBox(height: 12),
         _statStrip([
           _stat('👕 Stock', '${_snap.inventory}', MgColors.cyan),
@@ -926,8 +1068,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
           'Atiende a los clientes. Vendes a ${_c(_snap.unitPrice)} cada camiseta.',
       color: MgColors.green,
       children: [
-        _scene(_snap.avatarEmoji,
-            _snap.customersRemaining > 0 ? '🧑' : '🙌', '👕'),
+        _sceneBanner(kSceneShop, MgColors.green),
         const SizedBox(height: 12),
         _statStrip([
           _stat('👕 Stock', '${_snap.inventory}', MgColors.cyan),
@@ -1013,7 +1154,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
       subtitle: 'El cobrador ha llegado. Estos gastos hay que pagarlos.',
       color: MgColors.magenta,
       children: [
-        _scene(_snap.avatarEmoji, '🧾', '💵'),
+        _sceneBanner(kSceneBills, MgColors.magenta),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -1090,7 +1231,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
       subtitle: 'Guarda parte de tu beneficio. Te protege en meses malos.',
       color: MgColors.yellow,
       children: [
-        _scene(_snap.avatarEmoji, '🐷', '🪙'),
+        _sceneBanner(kScenePiggy, MgColors.yellow),
         const SizedBox(height: 12),
         _statStrip([
           _stat('🪙 Caja', _c(_snap.coins), MgColors.coin),
@@ -1288,7 +1429,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
               runSpacing: 3,
               alignment: WrapAlignment.center,
               children: [
-                _chip('${_snap.avatarEmoji} ${_snap.avatarName}', MgColors.magenta),
+                _avatarChip(),
                 _chip(_c(_snap.coins), MgColors.coin),
                 _chip('🐷 ${_c(_snap.savings)}', MgColors.yellow),
                 _chip('⭐ ${_snap.reputation}', MgColors.cyan),
@@ -1301,6 +1442,42 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
             onPressed: _openNotebook,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Chip del HUD con la cara real del personaje y su nombre.
+  Widget _avatarChip() {
+    final opt = _opt;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: opt.color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: opt.color.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipOval(
+            child: Image.asset(
+              opt.image,
+              width: 15,
+              height: 15,
+              fit: BoxFit.cover,
+              alignment: const Alignment(0, -0.85),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _snap.avatarName,
+            style: TextStyle(
+              color: opt.color,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -1341,7 +1518,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
         ),
         child: Row(
           children: [
-            const Text('🧑‍🏫', style: TextStyle(fontSize: 26)),
+            _kaiFace(38),
             const SizedBox(width: 10),
             Expanded(
               child: Text(_snap.mentorFlash!,
@@ -1408,59 +1585,53 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
     );
   }
 
-  Widget _scene(String left, String right, String action) {
+  /// Banner de escena: ilustración del interior de la zona con la ficha
+  /// del jugador y el pop de monedas superpuestos.
+  Widget _sceneBanner(String image, Color color) {
     return Container(
       width: double.infinity,
       height: 150,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [MgColors.bgSoft, Color(0xFF0F1626)],
-        ),
-        border: Border.all(color: MgColors.cyan.withValues(alpha: 0.25)),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 16,
-            child: Container(height: 2, color: Colors.white10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.18),
+            blurRadius: 14,
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _sceneActor(left),
-              AnimatedBuilder(
-                animation: _coinCtrl,
-                builder: (_, __) => Transform.scale(
-                  scale: 1 + _coinCtrl.value * 0.4,
-                  child: Opacity(
-                    opacity: 0.6 + _coinCtrl.value * 0.4,
-                    child: Text(action, style: const TextStyle(fontSize: 28)),
-                  ),
-                ),
-              ),
-              _sceneActor(right),
-            ],
-          ),
-          _coinFloat(),
         ],
       ),
-    );
-  }
-
-  Widget _sceneActor(String emoji) {
-    return AnimatedBuilder(
-      animation: _idleCtrl,
-      builder: (_, __) => Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Transform.translate(
-          offset: Offset(0, -3 + _idleCtrl.value * 6),
-          child: Text(emoji, style: const TextStyle(fontSize: 48)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(image, fit: BoxFit.cover),
+            // Degradado inferior para dar profundidad
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.55, 1],
+                  colors: [Colors.transparent, Colors.black54],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 10,
+              bottom: 10,
+              child: AnimatedBuilder(
+                animation: _idleCtrl,
+                builder: (_, child) => Transform.translate(
+                  offset: Offset(0, -2 + _idleCtrl.value * 4),
+                  child: child,
+                ),
+                child: _faceToken(44),
+              ),
+            ),
+            _coinFloat(),
+          ],
         ),
       ),
     );
@@ -1560,7 +1731,7 @@ class _MoneyGardenGameState extends State<MoneyGardenGame>
       ),
       child: Row(
         children: [
-          const Text('🧑‍🏫', style: TextStyle(fontSize: 24)),
+          _kaiFace(34),
           const SizedBox(width: 10),
           Expanded(
             child: Text(text,
