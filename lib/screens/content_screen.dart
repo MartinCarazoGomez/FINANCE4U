@@ -5997,6 +5997,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
   int? _selected;
   late List<bool?> _results;
   int _pointsDisplay = 0;
+  bool _earnedPointThisAnswer = false;
   final Set<int> _newlyCorrectThisRound = {};
   late AnimationController _pointsCtrl;
   late Animation<double> _pointsPulse;
@@ -6096,12 +6097,15 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
     final isCorrect = tileIndex == widget.correctIndices[_qi];
     final globalIdx = _questionIndexAt(_qi);
 
+    final earnsPoint = isCorrect &&
+        !widget.priorCorrectIndices.contains(globalIdx) &&
+        !_newlyCorrectThisRound.contains(globalIdx);
+
     setState(() {
       _selected = tileIndex;
       _results[_qi] = isCorrect;
-      if (isCorrect &&
-          !widget.priorCorrectIndices.contains(globalIdx) &&
-          !_newlyCorrectThisRound.contains(globalIdx)) {
+      _earnedPointThisAnswer = earnsPoint;
+      if (earnsPoint) {
         _newlyCorrectThisRound.add(globalIdx);
         _pointsDisplay = widget.basePoints + _newlyCorrectThisRound.length;
       }
@@ -6155,6 +6159,7 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
     setState(() {
       _qi = nextQ;
       _selected = null;
+      _earnedPointThisAnswer = false;
     });
 
     _slideCtrl.forward();
@@ -6499,71 +6504,85 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
     );
   }
 
-  Widget _buildFeedbackBadge({
+  String _feedbackMessage(bool isCorrect) {
+    if (!isCorrect) {
+      return _motivationalMessages[
+          _questionIndexAt(_qi) % _motivationalMessages.length];
+    }
+    if (_earnedPointThisAnswer) return '+1 punto 🎊';
+    return '¡Correcto! Sigue así 💪';
+  }
+
+  Widget _buildFeedbackOverlay({
     required bool compact,
     required bool isCorrect,
+    required bool show,
   }) {
-    final wrongMsg = _motivationalMessages[
-        _questionIndexAt(_qi) % _motivationalMessages.length];
-    return AnimatedBuilder(
-      animation: _feedbackCtrl,
-      builder: (_, __) => _feedbackCtrl.value > 0
-          ? Padding(
-              padding: EdgeInsets.only(bottom: compact ? 4 : 8),
-              child: FadeTransition(
-                opacity: _feedbackFade,
-                child: ScaleTransition(
-                  scale: _feedbackScale,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 14 : 20,
-                      vertical: compact ? 8 : 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isCorrect
-                          ? Colors.green.shade400
-                          : Colors.orange.shade400,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isCorrect ? Colors.green : Colors.orange)
-                              .withOpacity(0.4),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isCorrect
-                              ? Icons.celebration_rounded
-                              : Icons.favorite_rounded,
+    if (!show) return const SizedBox.shrink();
+
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _feedbackCtrl,
+        builder: (_, __) {
+          if (_feedbackCtrl.value <= 0) return const SizedBox.shrink();
+          return Center(
+            child: FadeTransition(
+              opacity: _feedbackFade,
+              child: ScaleTransition(
+                scale: _feedbackScale,
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: compact ? 280 : 340,
+                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 18 : 24,
+                    vertical: compact ? 14 : 18,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isCorrect
+                        ? Colors.green.shade500
+                        : Colors.orange.shade500,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: Colors.white.withOpacity(0.35)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isCorrect ? Colors.green : Colors.orange)
+                            .withOpacity(0.55),
+                        blurRadius: 24,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCorrect
+                            ? Icons.celebration_rounded
+                            : Icons.favorite_rounded,
+                        color: Colors.white,
+                        size: compact ? 28 : 34,
+                      ),
+                      SizedBox(height: compact ? 8 : 10),
+                      Text(
+                        _feedbackMessage(isCorrect),
+                        style: TextStyle(
                           color: Colors.white,
-                          size: compact ? 18 : 22,
+                          fontWeight: FontWeight.w900,
+                          fontSize: compact ? 16 : 18,
+                          height: 1.25,
                         ),
-                        SizedBox(width: compact ? 6 : 8),
-                        Flexible(
-                          child: Text(
-                            isCorrect
-                                ? '+1 punto 🎊'
-                                : wrongMsg,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: compact ? 13 : 15,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               ),
-            )
-          : SizedBox(height: compact ? 28 : 44),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -6701,9 +6720,10 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                   padding: gridPadding,
                 );
 
-                final feedback = _buildFeedbackBadge(
+                final feedbackOverlay = _buildFeedbackOverlay(
                   compact: compact,
                   isCorrect: isCorrect,
+                  show: isAnswered,
                 );
 
                 final pointsBar = _buildPointsBar(
@@ -6712,54 +6732,56 @@ class _KahootQuizScreenState extends State<_KahootQuizScreen>
                 );
 
                 if (wideLandscape) {
-                  return Column(
+                  return Stack(
                     children: [
-                      header,
-                      pointsBar,
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              flex: 11,
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: _buildQuestionCard(
-                                      context: context,
-                                      compact: compact,
-                                      qFontSize: qFontSize,
-                                      padding: questionPadding,
-                                    ),
+                      Column(
+                        children: [
+                          header,
+                          pointsBar,
+                          Expanded(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  flex: 11,
+                                  child: _buildQuestionCard(
+                                    context: context,
+                                    compact: compact,
+                                    qFontSize: qFontSize,
+                                    padding: questionPadding,
                                   ),
-                                  feedback,
-                                ],
-                              ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(flex: 13, child: answerGrid),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(flex: 13, child: answerGrid),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                      feedbackOverlay,
                     ],
                   );
                 }
 
-                return Column(
+                return Stack(
                   children: [
-                    header,
-                    pointsBar,
-                    Expanded(
-                      flex: questionFlex,
-                      child: _buildQuestionCard(
-                        context: context,
-                        compact: compact,
-                        qFontSize: qFontSize,
-                        padding: questionPadding,
-                      ),
+                    Column(
+                      children: [
+                        header,
+                        pointsBar,
+                        Expanded(
+                          flex: questionFlex,
+                          child: _buildQuestionCard(
+                            context: context,
+                            compact: compact,
+                            qFontSize: qFontSize,
+                            padding: questionPadding,
+                          ),
+                        ),
+                        Expanded(flex: tilesFlex, child: answerGrid),
+                      ],
                     ),
-                    feedback,
-                    Expanded(flex: tilesFlex, child: answerGrid),
+                    feedbackOverlay,
                   ],
                 );
               },
