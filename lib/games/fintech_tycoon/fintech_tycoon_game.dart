@@ -4,7 +4,10 @@ import 'package:flutter/services.dart';
 import '../../utils/currency_helper.dart';
 import 'fintech_tycoon_engine.dart';
 
-/// Fintech Tycoon: Mi Imperio Digital — Fase 1 (motor + onboarding + clicks MVP).
+/// Fintech Tycoon: Mi Imperio Digital
+///
+/// Juego tipo tycoon con avatar: compra camisetas a proveedores, véndelas a
+/// clientes y gestiona gastos variables y fijos, todo con acciones visibles.
 class FintechTycoonGame extends StatefulWidget {
   final VoidCallback? onCompleted;
 
@@ -22,109 +25,103 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
   static const _green = Color(0xFF00FF66);
   static const _yellow = Color(0xFFFFFF00);
 
+  static const _tutorialCards = [
+    {
+      'emoji': '🎮',
+      'title': 'Bienvenido/a, futuro/a magnate',
+      'text':
+          'Eres un/a joven emprendedor/a. Empiezas en tu garaje con 500 € y una '
+              'idea: crear tu propia marca de camisetas.',
+    },
+    {
+      'emoji': '🎯',
+      'title': 'Tu objetivo',
+      'text':
+          'Haz crecer tu negocio mes a mes. Compra barato, vende más caro y no '
+              'dejes que los gastos te hundan. ¡Cuanto más beneficio, más grande '
+              'será tu imperio!',
+    },
+    {
+      'emoji': '🛒',
+      'title': 'Cómo ganar dinero',
+      'text':
+          '1) Compra camisetas a tu proveedor.\n'
+              '2) Ábrete al público y véndelas más caras a tus clientes.\n'
+              'La diferencia es tu beneficio 💸',
+    },
+    {
+      'emoji': '📉',
+      'title': 'Cuidado con los gastos',
+      'text':
+          'GASTOS VARIABLES: lo que pagas por cada camiseta (compra + envío). '
+              'Suben cuanto más vendes.\n\n'
+              'GASTOS FIJOS: el alquiler del local, que pagas cada mes vendas lo '
+              'que vendas.',
+    },
+    {
+      'emoji': '⭐',
+      'title': 'Gana fama',
+      'text':
+          'Si atiendes bien a tus clientes, tu reputación sube y cada mes '
+              'vendrá más gente a comprarte. ¿List@ para empezar?',
+    },
+  ];
+
   late final FintechTycoonEngine _engine;
   late final TextEditingController _nameCtrl;
-  late final AnimationController _pulseCtrl;
-  FintechTycoonSnapshot _snap = FintechTycoonSnapshot(
-    companyName: '',
-    sector: null,
-    phase: FintechPhase.onboardingName,
-    cajaActual: FintechTycoonEngine.cajaInicial,
-    ingresosPorSegundo: 0,
-    gastosFijosMensuales: 50,
-    ticksEnMes: 0,
-    mes: 1,
-    creditScore: 650,
-    reputacionMarca: 10,
-    mvpClicks: 0,
-    mvpLaunched: false,
-    overdraftAlert: false,
-    monthJustClosed: false,
-  );
+  late final AnimationController _idleCtrl;
+  late final AnimationController _actionCtrl;
+  late final AnimationController _floatCtrl;
+
+  String _floatText = '';
+  Color _floatColor = _green;
+
+  late BizSnapshot _snap;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController();
-    _pulseCtrl = AnimationController(
+    _engine = FintechTycoonEngine(onChanged: _onUpdate);
+    _snap = _engine.snapshot;
+
+    _idleCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
-    _engine = FintechTycoonEngine(onChanged: _onEngineUpdate);
+    _actionCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _floatCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
   }
 
-  void _onEngineUpdate(FintechTycoonSnapshot snap) {
+  void _onUpdate(BizSnapshot snap) {
     if (!mounted) return;
     setState(() => _snap = snap);
-    if (snap.overdraftAlert) _showOverdraftDialog();
-    if (snap.monthJustClosed && !snap.overdraftAlert) _showMonthDialog();
   }
 
   @override
   void dispose() {
-    _engine.dispose();
     _nameCtrl.dispose();
-    _pulseCtrl.dispose();
+    _idleCtrl.dispose();
+    _actionCtrl.dispose();
+    _floatCtrl.dispose();
     super.dispose();
   }
 
   String _money(double eur) => context.money(eur);
 
-  void _showOverdraftDialog() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_snap.overdraftAlert) return;
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1440),
-          title: const Text('⚠️ Descubierto bancario',
-              style: TextStyle(color: _yellow)),
-          content: Text(
-            'Tus gastos fijos del mes superaron la caja. '
-            'En la Fase 2 se abrirá el menú de Financiación.',
-            style: TextStyle(color: Colors.white.withOpacity(0.9)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _engine.acknowledgeOverdraft();
-              },
-              child: const Text('Entendido', style: TextStyle(color: _cyan)),
-            ),
-          ],
-        ),
-      );
+  void _showFloat(String text, Color color) {
+    setState(() {
+      _floatText = text;
+      _floatColor = color;
     });
-  }
-
-  void _showMonthDialog() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_snap.monthJustClosed) return;
-      showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1440),
-          title: Text('📅 Fin del mes ${_snap.mes - 1}',
-              style: const TextStyle(color: _cyan)),
-          content: Text(
-            'Se han pagado ${_money(_snap.gastosFijosMensuales)} en gastos fijos. '
-            'Caja actual: ${_money(_snap.cajaActual)}',
-            style: TextStyle(color: Colors.white.withOpacity(0.9)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _engine.acknowledgeMonthClose();
-              },
-              child: const Text('Continuar', style: TextStyle(color: _green)),
-            ),
-          ],
-        ),
-      );
-    });
+    _floatCtrl.forward(from: 0);
+    _actionCtrl.forward(from: 0);
   }
 
   @override
@@ -133,20 +130,25 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
       backgroundColor: _bg,
       body: SafeArea(
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 350),
           child: switch (_snap.phase) {
-            FintechPhase.onboardingName => _buildNameOnboarding(),
-            FintechPhase.onboardingSector => _buildSectorOnboarding(),
-            FintechPhase.clickLoop || FintechPhase.running => _buildGameplay(),
+            GamePhase.tutorial => _buildTutorial(),
+            GamePhase.naming => _buildNaming(),
+            GamePhase.buying => _buildBuying(),
+            GamePhase.selling => _buildSelling(),
+            GamePhase.monthSummary => _buildSummary(),
           },
         ),
       ),
     );
   }
 
-  Widget _buildNameOnboarding() {
+  // ── Onboarding ──────────────────────────────────────────────────────────────
+  Widget _buildTutorial() {
+    final card = _tutorialCards[_snap.tutorialStep];
+    final isLast = _snap.tutorialStep == _tutorialCards.length - 1;
     return Container(
-      key: const ValueKey('name'),
+      key: ValueKey('tut-${_snap.tutorialStep}'),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -165,44 +167,98 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
             ),
           ),
           const Spacer(),
-          const Text('🌆', style: TextStyle(fontSize: 56)),
-          const SizedBox(height: 16),
-          const Text(
-            'Fintech Tycoon',
-            style: TextStyle(
-              color: _magenta,
-              fontSize: 30,
+          Text(card['emoji']!, style: const TextStyle(fontSize: 72)),
+          const SizedBox(height: 24),
+          Text(
+            card['title']!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: _cyan,
+              fontSize: 24,
               fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
             ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            card['text']!,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_tutorialCards.length, (i) {
+              final active = i == _snap.tutorialStep;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: active ? 22 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: active ? _magenta : Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 20),
+          _neonButton(
+            label: isLast ? '¡Empezar! 🚀' : 'Siguiente',
+            color: _magenta,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _engine.nextTutorial();
+            },
           ),
           const SizedBox(height: 8),
-          Text(
-            'Mi Imperio Digital',
-            style: TextStyle(
-              color: _cyan.withOpacity(0.9),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNaming() {
+    return Container(
+      key: const ValueKey('naming'),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white70),
+              onPressed: () => Navigator.pop(context),
             ),
           ),
-          const SizedBox(height: 32),
+          const Spacer(),
+          const Text('🏷️', style: TextStyle(fontSize: 60)),
+          const SizedBox(height: 16),
+          const Text(
+            '¿Cómo se llama tu marca?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 24),
           TextField(
             controller: _nameCtrl,
             onChanged: _engine.setCompanyName,
-            style: const TextStyle(color: Colors.white, fontSize: 18),
             textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 18),
             decoration: InputDecoration(
-              hintText: 'Nombre de tu empresa',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+              hintText: 'Ej: Urban Threads',
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.08),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: _magenta),
-              ),
+              fillColor: Colors.white.withValues(alpha: 0.08),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: _magenta.withOpacity(0.6)),
+                borderSide: BorderSide(color: _magenta.withValues(alpha: 0.6)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -212,12 +268,13 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
           ),
           const SizedBox(height: 24),
           _neonButton(
-            label: 'Empezar aventura',
-            color: _magenta,
+            label: 'Abrir mi negocio',
+            color: _green,
             onTap: _snap.companyName.isEmpty
                 ? null
                 : () {
-                    HapticFeedback.lightImpact();
+                    HapticFeedback.mediumImpact();
+                    FocusScope.of(context).unfocus();
                     _engine.confirmCompanyName();
                   },
           ),
@@ -227,182 +284,84 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
     );
   }
 
-  Widget _buildSectorOnboarding() {
-    return Container(
-      key: const ValueKey('sector'),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            '${_snap.companyName} — elige tu sector',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView(
-              children: FintechSector.values.map((sector) {
-                final p = FintechTycoonEngine.sectorProfiles[sector]!;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _sectorCard(sector, p),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectorCard(FintechSector sector, SectorProfile profile) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          _engine.selectSector(sector);
-        },
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _cyan.withOpacity(0.5)),
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.06),
-                _magenta.withOpacity(0.12),
-              ],
-            ),
-          ),
-          child: Row(
-            children: [
-              Text(profile.emoji, style: const TextStyle(fontSize: 36)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      profile.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      profile.description,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: _cyan),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGameplay() {
-    final profile = _snap.sector != null
-        ? FintechTycoonEngine.sectorProfiles[_snap.sector!]!
-        : null;
-
+  // ── Fase COMPRAR ─────────────────────────────────────────────────────────────
+  Widget _buildBuying() {
+    final canBuy = _snap.cash >= _snap.unitCost;
     return Column(
-      key: const ValueKey('game'),
+      key: const ValueKey('buying'),
       children: [
-        _buildHeader(),
+        _header(),
+        _phaseBanner(
+          '🛒 Mes ${_snap.month}: abastece tu stock',
+          'Compra camisetas a tu proveedor. Cada una te cuesta '
+              '${_money(_snap.unitCost)} (gasto variable).',
+          _cyan,
+        ),
         Expanded(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _garageView(profile?.emoji ?? '🏢'),
+                _scene(
+                  left: '🧑‍💼',
+                  right: '🏭',
+                  rightLabel: 'Proveedor',
+                  action: '📦',
+                ),
                 const SizedBox(height: 16),
-                if (!_snap.mvpLaunched) ...[
-                  Text(
-                    'Lanzamiento del MVP',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: _snap.mvpProgress,
-                      minHeight: 12,
-                      backgroundColor: Colors.white12,
-                      valueColor: const AlwaysStoppedAnimation(_green),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${_snap.mvpClicks} / ${FintechTycoonEngine.mvpClickTarget} clics',
-                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
-                  ),
-                  const SizedBox(height: 20),
-                  _neonButton(
-                    label: '💻 Hacer clic para trabajar (+1€)',
-                    color: _cyan,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      _engine.onWorkClick();
-                    },
-                  ),
-                ] else ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _green.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: _green.withOpacity(0.5)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          '🚀 ¡Lanzamiento exitoso!',
-                          style: TextStyle(
-                            color: _green,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Ingresos pasivos: ${_money(_snap.ingresosPorSegundo)}/s',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'La simulación avanza cada segundo. Al mes 60s se pagan gastos fijos.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.65),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                _statsRow(),
+                _infoStrip([
+                  _infoChip('👕 Stock', '${_snap.inventory}', _cyan),
+                  _infoChip('🏷️ Compra', _money(_snap.unitCost), _yellow),
+                  _infoChip('💰 Venta', _money(_snap.unitPrice), _green),
+                ]),
+                const SizedBox(height: 20),
+                _neonButton(
+                  label: canBuy
+                      ? '📦 Comprar 1 camiseta (−${_money(_snap.unitCost)})'
+                      : 'Sin caja suficiente',
+                  color: _cyan,
+                  onTap: canBuy
+                      ? () {
+                          if (_engine.buyOne()) {
+                            _showFloat('+1 👕', _cyan);
+                            HapticFeedback.selectionClick();
+                          }
+                        }
+                      : null,
+                ),
+                const SizedBox(height: 10),
+                _neonButton(
+                  label: '📦 Comprar 5 de golpe',
+                  color: _magenta,
+                  outlined: true,
+                  onTap: _snap.cash >= _snap.unitCost
+                      ? () {
+                          final n = _engine.buyBatch(5);
+                          if (n > 0) {
+                            _showFloat('+$n 👕', _cyan);
+                            HapticFeedback.mediumImpact();
+                          }
+                        }
+                      : null,
+                ),
+                const SizedBox(height: 24),
+                _neonButton(
+                  label: _snap.inventory > 0
+                      ? '🚪 Abrir la tienda y vender ▶'
+                      : 'Compra stock para abrir',
+                  color: _green,
+                  onTap: _snap.inventory > 0
+                      ? () {
+                          HapticFeedback.mediumImpact();
+                          _engine.openStore();
+                        }
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                _tipBox(
+                  'Consejo: te esperan ${_snap.customersRemaining} clientes este '
+                  'mes. Compra suficiente stock para no quedarte corto.',
+                ),
               ],
             ),
           ),
@@ -411,12 +370,224 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
     );
   }
 
-  Widget _buildHeader() {
+  // ── Fase VENDER ──────────────────────────────────────────────────────────────
+  Widget _buildSelling() {
+    return Column(
+      key: const ValueKey('selling'),
+      children: [
+        _header(),
+        _phaseBanner(
+          '🛍️ ¡Tienda abierta!',
+          'Atiende a cada cliente. Ganas ${_money(_snap.unitPrice)} pero pagas '
+              '${_money(_snap.packagingCost)} de envío por venta (variable).',
+          _green,
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _scene(
+                  left: '🧑‍💼',
+                  right: _snap.customersRemaining > 0 ? '🧑' : '🙌',
+                  rightLabel: _snap.customersRemaining > 0
+                      ? 'Cliente'
+                      : '¡Todos atendidos!',
+                  action: '👕',
+                ),
+                const SizedBox(height: 16),
+                _infoStrip([
+                  _infoChip('👕 Stock', '${_snap.inventory}', _cyan),
+                  _infoChip('🧑 En cola', '${_snap.customersRemaining}', _yellow),
+                  _infoChip('✅ Vendidas', '${_snap.customersServed}', _green),
+                ]),
+                const SizedBox(height: 8),
+                _sellProgress(),
+                const SizedBox(height: 20),
+                if (_snap.canServe)
+                  _neonButton(
+                    label:
+                        '💸 Vender camiseta (+${_money(_snap.profitPerUnit)} beneficio)',
+                    color: _green,
+                    onTap: () {
+                      if (_engine.serveCustomer()) {
+                        _showFloat('+${_money(_snap.profitPerUnit)}', _green);
+                        HapticFeedback.lightImpact();
+                      }
+                    },
+                  )
+                else if (_snap.outOfStock)
+                  Column(
+                    children: [
+                      _tipBox(
+                        '¡Te has quedado sin stock y aún hay '
+                        '${_snap.customersRemaining} clientes esperando! '
+                        'Compra más o cierra el mes.',
+                        color: _yellow,
+                      ),
+                      const SizedBox(height: 12),
+                      _neonButton(
+                        label: '📦 Comprar más stock',
+                        color: _cyan,
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          _engine.backToBuying();
+                        },
+                      ),
+                    ],
+                  )
+                else
+                  _tipBox(
+                    '🎉 ¡Has atendido a todos los clientes del mes!',
+                    color: _green,
+                  ),
+                const SizedBox(height: 16),
+                _neonButton(
+                  label: '📅 Cerrar el mes ▶',
+                  color: _magenta,
+                  outlined: true,
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    _engine.closeMonth();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Resumen del mes ──────────────────────────────────────────────────────────
+  Widget _buildSummary() {
+    final profit = _snap.lastProfit;
+    final positive = profit >= 0;
+    return Container(
+      key: const ValueKey('summary'),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          Text(
+            'Resultados del mes ${_snap.month}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: (positive ? _green : _magenta).withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    _sumRow('🛍️ Ingresos por ventas', _snap.monthRevenue, _green),
+                    const Divider(color: Colors.white12, height: 24),
+                    _sumRow('📦 Coste camisetas (variable)',
+                        -_snap.monthGoodsCost, _yellow),
+                    _sumRow('🚚 Envíos (variable)', -_snap.monthPackaging,
+                        _yellow),
+                    _sumRow('🏠 Alquiler (fijo)', -_snap.rent, _magenta),
+                    const Divider(color: Colors.white12, height: 24),
+                    _sumRow(
+                      positive ? '✅ Beneficio' : '❌ Pérdidas',
+                      profit,
+                      positive ? _green : _magenta,
+                      bold: true,
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: _cyan.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            _snap.lastRepChange >= 0
+                                ? '⭐ Reputación +${_snap.lastRepChange}'
+                                : '⭐ Reputación ${_snap.lastRepChange}',
+                            style: const TextStyle(
+                              color: _cyan,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _summaryFeedback(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _infoStrip([
+            _infoChip('💰 Caja', _money(_snap.cash), _green),
+            _infoChip('⭐ Fama', '${_snap.reputation}', _cyan),
+          ]),
+          const SizedBox(height: 16),
+          _neonButton(
+            label: '▶ Empezar mes ${_snap.month + 1}',
+            color: _green,
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              _engine.nextMonth();
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  String _summaryFeedback() {
+    final rate = _snap.customersTotal > 0
+        ? _snap.customersServed / _snap.customersTotal
+        : 0.0;
+    if (_snap.lastProfit < 0) {
+      return 'Este mes has perdido dinero. Intenta vender más o controlar gastos.';
+    }
+    if (rate >= 0.9) {
+      return '¡Genial! Atendiste a casi todos. Tu fama sube y vendrán más clientes.';
+    }
+    if (_snap.lastCustomersLost > 0) {
+      return 'Se quedaron ${_snap.lastCustomersLost} clientes sin comprar. '
+          'Compra más stock el próximo mes.';
+    }
+    return 'Buen trabajo. Sigue creciendo poco a poco.';
+  }
+
+  // ── Componentes visuales ─────────────────────────────────────────────────────
+  Widget _header() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.35),
-        border: Border(bottom: BorderSide(color: _magenta.withOpacity(0.4))),
+        color: Colors.black.withValues(alpha: 0.35),
+        border: Border(
+          bottom: BorderSide(color: _magenta.withValues(alpha: 0.4)),
+        ),
       ),
       child: Row(
         children: [
@@ -428,14 +599,14 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
           ),
           Expanded(
             child: Wrap(
-              spacing: 8,
+              spacing: 6,
               runSpacing: 4,
               alignment: WrapAlignment.center,
               children: [
                 _headerChip('🏢 ${_snap.companyName}', _magenta),
-                _headerChip('💰 ${_money(_snap.cajaActual)}', _green),
-                _headerChip('📊 ${_snap.creditScore}', _cyan),
-                _headerChip('📅 Mes ${_snap.mes}', _yellow),
+                _headerChip('💰 ${_money(_snap.cash)}', _green),
+                _headerChip('⭐ ${_snap.reputation}', _cyan),
+                _headerChip('📅 Mes ${_snap.month}', _yellow),
               ],
             ),
           ),
@@ -448,9 +619,9 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
         label,
@@ -463,51 +634,114 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
     );
   }
 
-  Widget _garageView(String sectorEmoji) {
-    return AnimatedBuilder(
-      animation: _pulseCtrl,
-      builder: (_, __) {
-        return Container(
-          width: double.infinity,
-          height: 180,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _cyan.withOpacity(0.35 + _pulseCtrl.value * 0.15)),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A1238), Color(0xFF0A0820)],
+  Widget _phaseBanner(String title, String subtitle, Color color) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 15,
             ),
           ),
-          child: Stack(
-            alignment: Alignment.center,
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Escena con avatar a la izquierda y proveedor/cliente a la derecha.
+  Widget _scene({
+    required String left,
+    required String right,
+    required String rightLabel,
+    required String action,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 170,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1E1548), Color(0xFF0A0820)],
+        ),
+        border: Border.all(color: _cyan.withValues(alpha: 0.3)),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 18,
+            child: Container(height: 2, color: Colors.white10),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Positioned(
-                bottom: 24,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Text('🖥️', style: TextStyle(fontSize: 28)),
-                    SizedBox(width: 24),
-                    Text('🪑', style: TextStyle(fontSize: 28)),
-                    SizedBox(width: 24),
-                    Text('💡', style: TextStyle(fontSize: 22)),
-                  ],
+              _avatar(left, 'Tú'),
+              AnimatedBuilder(
+                animation: _actionCtrl,
+                builder: (_, __) => Transform.scale(
+                  scale: 1 + _actionCtrl.value * 0.5,
+                  child: Opacity(
+                    opacity: 0.5 + _actionCtrl.value * 0.5,
+                    child: Text(action, style: const TextStyle(fontSize: 30)),
+                  ),
                 ),
               ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(sectorEmoji, style: const TextStyle(fontSize: 40)),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Garaje inicial — ${_snap.companyName}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              _avatar(right, rightLabel),
+            ],
+          ),
+          _floatingFeedback(),
+        ],
+      ),
+    );
+  }
+
+  Widget _avatar(String emoji, String label) {
+    return AnimatedBuilder(
+      animation: _idleCtrl,
+      builder: (_, __) {
+        final dy = -3 + _idleCtrl.value * 6;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Transform.translate(
+                offset: Offset(0, dy),
+                child: Text(emoji, style: const TextStyle(fontSize: 52)),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -516,51 +750,135 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
     );
   }
 
-  Widget _statsRow() {
+  Widget _floatingFeedback() {
+    return AnimatedBuilder(
+      animation: _floatCtrl,
+      builder: (_, __) {
+        if (_floatCtrl.value == 0 || _floatCtrl.isDismissed) {
+          return const SizedBox.shrink();
+        }
+        return Positioned(
+          top: 20 - _floatCtrl.value * 20,
+          left: 0,
+          right: 0,
+          child: Opacity(
+            opacity: (1 - _floatCtrl.value).clamp(0.0, 1.0),
+            child: Center(
+              child: Text(
+                _floatText,
+                style: TextStyle(
+                  color: _floatColor,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  shadows: const [
+                    Shadow(color: Colors.black54, blurRadius: 6),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _infoStrip(List<Widget> chips) {
     return Row(
       children: [
-        Expanded(
-          child: _statTile(
-            'Ingresos/s',
-            _money(_snap.ingresosPorSegundo),
-            _green,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _statTile(
-            'Gastos fijos/mes',
-            _money(_snap.gastosFijosMensuales),
-            _yellow,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _statTile(
-            'Reputación',
-            '${_snap.reputacionMarca}',
-            _magenta,
-          ),
-        ),
+        for (var i = 0; i < chips.length; i++) ...[
+          Expanded(child: chips[i]),
+          if (i < chips.length - 1) const SizedBox(width: 8),
+        ],
       ],
     );
   }
 
-  Widget _statTile(String label, String value, Color color) {
+  Widget _infoChip(String label, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Column(
         children: [
-          Text(label, style: TextStyle(color: Colors.white60, fontSize: 10)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 10),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 13),
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sellProgress() {
+    final total = _snap.customersTotal;
+    final value = total > 0 ? _snap.customersServed / total : 0.0;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: LinearProgressIndicator(
+        value: value,
+        minHeight: 10,
+        backgroundColor: Colors.white12,
+        valueColor: const AlwaysStoppedAnimation(_green),
+      ),
+    );
+  }
+
+  Widget _tipBox(String text, {Color color = _cyan}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.85),
+          fontSize: 12,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
+  Widget _sumRow(String label, double amount, Color color, {bool bold = false}) {
+    final sign = amount > 0 ? '+' : '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: bold ? 16 : 13,
+                fontWeight: bold ? FontWeight.w900 : FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            '$sign${_money(amount)}',
+            style: TextStyle(
+              color: color,
+              fontSize: bold ? 18 : 14,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -571,6 +889,7 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
     required String label,
     required Color color,
     VoidCallback? onTap,
+    bool outlined = false,
   }) {
     final enabled = onTap != null;
     return SizedBox(
@@ -578,19 +897,24 @@ class _FintechTycoonGameState extends State<FintechTycoonGame>
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: enabled ? color.withOpacity(0.25) : Colors.white10,
+          backgroundColor: !enabled
+              ? Colors.white10
+              : outlined
+                  ? Colors.transparent
+                  : color.withValues(alpha: 0.22),
           foregroundColor: enabled ? color : Colors.white38,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: enabled ? color : Colors.white24),
           ),
-          elevation: enabled ? 6 : 0,
-          shadowColor: color.withOpacity(0.5),
+          elevation: enabled && !outlined ? 6 : 0,
+          shadowColor: color.withValues(alpha: 0.5),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
         ),
       ),
     );
