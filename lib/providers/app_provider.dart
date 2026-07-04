@@ -229,7 +229,9 @@ class AppProvider extends ChangeNotifier {
     final games = data['unlockedGames'];
     if (games is List && games.isNotEmpty) {
       final remote = games.whereType<String>().toSet();
-      _unlockedGames = {..._unlockedGames, ...remote}.toList();
+      _unlockedGames = {..._starterGames, ..._unlockedGames, ...remote}.toList();
+    } else {
+      _unlockedGames = {..._starterGames, ..._unlockedGames}.toList();
     }
 
     notifyListeners();

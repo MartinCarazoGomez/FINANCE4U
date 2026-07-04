@@ -24,14 +24,14 @@ class GamesScreen extends StatelessWidget {
     final double riverWidth = size.width;
     const double circleSize = 64;
 
-    // Por ahora el "camino" muestra solo el primer step: Maestro del Presupuesto.
-    const Offset firstStep = Offset(0.435546875, 0.252760736196319);
-    final RiverGame pathGame =
-        games.firstWhere((g) => g.id == 'budget_master');
-    final Offset pathPos = Offset(
-      riverWidth * firstStep.dx - circleSize / 2,
-      riverHeight * firstStep.dy - circleSize / 2,
-    );
+    // Nodos visibles en el camino del río (juegos de inicio).
+    const pathSteps = <String, Offset>{
+      'budget_master': Offset(0.435546875, 0.252760736196319),
+      'fintech_tycoon': Offset(0.52, 0.38),
+    };
+    final pathGames = games
+        .where((g) => pathSteps.containsKey(g.id))
+        .toList();
 
     return Scaffold(
       body: Consumer<AppProvider>(
@@ -86,18 +86,25 @@ class GamesScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Único nodo del camino: Maestro del Presupuesto
-              Positioned(
-                left: pathPos.dx,
-                top: pathPos.dy,
-                child: _buildGameNode(
-                  context,
-                  pathGame,
-                  appProvider,
-                  circleSize,
-                  appProvider.isGameUnlocked(pathGame.id),
-                ),
-              ),
+              // Nodos del camino (juegos desbloqueados al inicio + nuevos)
+              ...pathGames.map((pathGame) {
+                final step = pathSteps[pathGame.id]!;
+                final pathPos = Offset(
+                  riverWidth * step.dx - circleSize / 2,
+                  riverHeight * step.dy - circleSize / 2,
+                );
+                return Positioned(
+                  left: pathPos.dx,
+                  top: pathPos.dy,
+                  child: _buildGameNode(
+                    context,
+                    pathGame,
+                    appProvider,
+                    circleSize,
+                    appProvider.isGameUnlocked(pathGame.id),
+                  ),
+                );
+              }),
             ],
           );
         },
