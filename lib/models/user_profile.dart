@@ -12,6 +12,14 @@ class UserProfile {
   final bool isGuest;
   final String authProvider;
   final bool onboardingCompleted;
+  /// Franja de edad declarada: '10-13', '14-17', '18-21', '22-25' o '26+'.
+  final String? ageRange;
+  /// Intereses declarados (claves: ahorro, presupuesto, inversion, deuda,
+  /// emprendimiento, fiscalidad).
+  final List<String> interests;
+  /// Nivel de partida según la prueba de nivel: 1 Básico · 2 Intermedio · 3 Avanzado.
+  final int placementLevel;
+  final bool personalizationCompleted;
 
   const UserProfile({
     required this.uid,
@@ -25,6 +33,10 @@ class UserProfile {
     this.isGuest = false,
     this.authProvider = 'guest',
     this.onboardingCompleted = false,
+    this.ageRange,
+    this.interests = const [],
+    this.placementLevel = 1,
+    this.personalizationCompleted = false,
   });
 
   UserProfile copyWith({
@@ -39,6 +51,10 @@ class UserProfile {
     bool? isGuest,
     String? authProvider,
     bool? onboardingCompleted,
+    String? ageRange,
+    List<String>? interests,
+    int? placementLevel,
+    bool? personalizationCompleted,
     bool clearPhotoUrl = false,
     bool clearPhotoBase64 = false,
     bool clearGroup = false,
@@ -56,6 +72,11 @@ class UserProfile {
       isGuest: isGuest ?? this.isGuest,
       authProvider: authProvider ?? this.authProvider,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      ageRange: ageRange ?? this.ageRange,
+      interests: interests ?? this.interests,
+      placementLevel: placementLevel ?? this.placementLevel,
+      personalizationCompleted:
+          personalizationCompleted ?? this.personalizationCompleted,
     );
   }
 
@@ -72,6 +93,14 @@ class UserProfile {
       isGuest: data['isGuest'] as bool? ?? false,
       authProvider: data['authProvider'] as String? ?? 'guest',
       onboardingCompleted: data['onboardingCompleted'] as bool? ?? false,
+      ageRange: data['ageRange'] as String?,
+      interests: (data['interests'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      placementLevel: (data['placementLevel'] as num?)?.toInt() ?? 1,
+      personalizationCompleted:
+          data['personalizationCompleted'] as bool? ?? false,
     );
   }
 
@@ -87,6 +116,10 @@ class UserProfile {
       'isGuest': isGuest,
       'authProvider': authProvider,
       'onboardingCompleted': onboardingCompleted,
+      if (ageRange != null) 'ageRange': ageRange,
+      'interests': interests,
+      'placementLevel': placementLevel,
+      'personalizationCompleted': personalizationCompleted,
     };
   }
 }

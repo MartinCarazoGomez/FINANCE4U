@@ -9,6 +9,7 @@ import 'community_screen.dart';
 import 'content_screen.dart';
 import 'games_screen.dart';
 import 'news_screen.dart';
+import 'personalization_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -43,7 +44,15 @@ class _MainNavigationState extends State<MainNavigation> {
     if (uid == null) return;
 
     final show = await TutorialService.shouldShowTutorial(userId: uid);
-    if (!mounted || !show || _tutorialShowing) return;
+    if (!mounted) return;
+
+    if (!show) {
+      // Sin tutorial pendiente (p. ej. usuarios existentes): comprobar si
+      // falta el flujo de personalización.
+      await _maybeShowPersonalization();
+      return;
+    }
+    if (_tutorialShowing) return;
 
     _tutorialShowing = true;
     _tutorialPending = true;
@@ -66,6 +75,24 @@ class _MainNavigationState extends State<MainNavigation> {
       _tutorialPending = false;
       _selectedIndex = 0;
     });
+
+    await _maybeShowPersonalization();
+  }
+
+  /// Muestra el flujo de personalización (edad → prueba de nivel → intereses)
+  /// una única vez, justo después del tutorial.
+  Future<void> _maybeShowPersonalization() async {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    final profile = auth.profile;
+    if (profile == null || profile.personalizationCompleted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PersonalizationScreen(),
+        fullscreenDialog: true,
+      ),
+    );
   }
 
   @override

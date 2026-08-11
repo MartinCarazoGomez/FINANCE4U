@@ -19,6 +19,16 @@ import '../data/pill_quiz_extras.dart';
 
 const int _kQuestionsPerPill = kQuestionsPerPill;
 
+/// Mapeo de interés declarado en la personalización → título del tema.
+const Map<String, String> kInterestToTopicTitle = {
+  'ahorro': 'Ahorros',
+  'presupuesto': 'Presupuesto',
+  'inversion': 'Inversiones',
+  'deuda': 'Deudas y Crédito',
+  'emprendimiento': 'Emprendimiento',
+  'fiscalidad': 'Impuestos',
+};
+
 List<PillQuiz> _quizzesForPill(EduPill pill) {
   final extras = pillQuizExtras[pill.title] ?? const <PillQuizData>[];
   final theoretical = <PillQuiz>[
@@ -452,6 +462,14 @@ class ContentScreen extends StatelessWidget {
               child: Consumer<AppProvider>(
                 builder: (context, appProvider, _) {
                   final completed = appProvider.completedLessons;
+                  final authProfile = context.watch<AuthProvider>().profile;
+                  // Nivel de partida de la prueba de nivel de personalización:
+                  // desbloquea directamente hasta ese nivel.
+                  final placementLevel = authProfile?.placementLevel ?? 1;
+                  final interestTitles = (authProfile?.interests ?? const [])
+                      .map((i) => kInterestToTopicTitle[i])
+                      .whereType<String>()
+                      .toSet();
 
                   // A level is "done enough" to unlock the next when at least
                   // half its topics have all their pills completed.
@@ -473,7 +491,19 @@ class ContentScreen extends StatelessWidget {
 
                   for (int lvl = 1; lvl <= maxLevel; lvl++) {
                     final lvlTopics = topics.where((t) => t.level == lvl).toList();
-                    final levelUnlocked = lvl == 1 || isLevelHalfDone(lvl - 1);
+                    // Los temas de interés declarados van primero dentro de
+                    // cada nivel (orden estable para el resto).
+                    if (interestTitles.isNotEmpty) {
+                      lvlTopics.sort((a, b) {
+                        final aFav = interestTitles.contains(a.title) ? 0 : 1;
+                        final bFav = interestTitles.contains(b.title) ? 0 : 1;
+                        if (aFav != bFav) return aFav - bFav;
+                        return topics.indexOf(a).compareTo(topics.indexOf(b));
+                      });
+                    }
+                    final levelUnlocked = lvl <= placementLevel ||
+                        lvl == 1 ||
+                        isLevelHalfDone(lvl - 1);
                     final levelDone = isLevelFullyDone(lvl);
 
                     // Level banner

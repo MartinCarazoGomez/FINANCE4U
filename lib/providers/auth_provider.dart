@@ -37,6 +37,10 @@ class AuthProvider extends ChangeNotifier {
   bool get isSignedIn => _firebaseUser != null;
   bool get isGuest => _profile?.isGuest ?? _firebaseUser?.isAnonymous ?? true;
   bool get onboardingCompleted => _profile?.onboardingCompleted ?? false;
+  bool get personalizationCompleted =>
+      _profile?.personalizationCompleted ?? false;
+  List<String> get interests => _profile?.interests ?? const [];
+  int get placementLevel => _profile?.placementLevel ?? 1;
   String? get groupId => _profile?.groupId;
   String? get photoUrl => _profile?.photoUrl;
   String? get photoBase64 => _profile?.photoBase64;
@@ -256,6 +260,32 @@ class AuthProvider extends ChangeNotifier {
       });
 
       await _loadProfile(user.uid);
+    });
+  }
+
+  /// Guarda el resultado del flujo de personalización (edad, prueba de nivel
+  /// e intereses) tras el tutorial.
+  Future<void> completePersonalization({
+    required String ageRange,
+    required List<String> interests,
+    required int placementLevel,
+  }) async {
+    final user = _firebaseUser;
+    if (user == null) return;
+
+    await _runBusy(() async {
+      await FirestoreHelper.updateUser(user.uid, {
+        'ageRange': ageRange,
+        'interests': interests,
+        'placementLevel': placementLevel,
+        'personalizationCompleted': true,
+      });
+      _profile = _profile?.copyWith(
+        ageRange: ageRange,
+        interests: interests,
+        placementLevel: placementLevel,
+        personalizationCompleted: true,
+      );
     });
   }
 

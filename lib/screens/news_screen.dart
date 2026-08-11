@@ -9,7 +9,7 @@ const List<NewsArticle> kNewsArticles = [
     title: 'Fed (29 jul): tipos en 3,50%–3,75% con votación 9–3',
     summary:
         'La última reunión de la Fed mantuvo tipos, pero con 3 votos a favor de subir 25 pb por inflación persistente.',
-    content: '''Corte al 10 de agosto de 2026: la última reunión de la Fed (29 de julio) dejó un mensaje claro.
+    content: '''29 de julio de 2026: la última reunión de la Fed dejó un mensaje claro.
 
 Decisión
 • Tipo oficial sin cambios: 3,50%–3,75%
@@ -27,15 +27,15 @@ Impacto práctico
 • El IPC de agosto será clave para la reunión de septiembre
 
 Conclusión: pausa no es giro dovish. Es “esperar y ver” con sesgo antiinflación.''',
-    category: 'Política Monetaria',
-    time: 'hoy',
+    category: 'Política monetaria',
+    time: '29 jul',
     imageUrl: '🏦',
   ),
   NewsArticle(
     title: 'El hedge fund de Aschenbrenner entra en crisis de liquidez',
     summary:
         'Situational Awareness sufrió pérdidas muy fuertes en posiciones de IA, activó ventas aceleradas de cartera y reabrió el debate sobre apalancamiento.',
-    content: '''Corte al 10 de agosto de 2026: la noticia relevante no es el evento social, sino la situación de su hedge fund.
+    content: '''Última semana de julio de 2026: la situación de su hedge fund sacude al sector.
 
 Qué pasó
 • Su fondo (Situational Awareness) registró pérdidas severas en pocas semanas
@@ -47,18 +47,18 @@ Por qué importa al mercado
 • El desapalancamiento forzado puede contagiar precios en otros valores del sector
 • Sube la volatilidad y la sensibilidad a rumores de flujo y financiación
 
-Lección para retail
+Lección para inversores minoristas
 • “Convicción” no sustituye gestión de riesgo
 • Evita concentrar cartera en un solo tema (aunque esté de moda)
 • Mira liquidez, deuda y tamaño de posición antes que titulares
 
 Conclusión: el caso Aschenbrenner es, sobre todo, una lección de riesgo de concentración y apalancamiento.''',
-    category: 'Tecnología',
-    time: 'hoy',
+    category: 'Fondos',
+    time: '30 jul',
     imageUrl: '🤖',
   ),
   NewsArticle(
-    title: '10 ago: petróleo tenso por Ormuz, Brent en zona \$84–86',
+    title: 'Petróleo tenso por Ormuz, Brent en zona \$84–86',
     summary:
         'El bloqueo prolongado mantiene presión sobre energía e inflación global; bolsas mixtas y primas de riesgo elevadas.',
     content: '''Lunes 10 de agosto de 2026. El mercado energético sigue bajo presión:
@@ -77,15 +77,15 @@ Para tus finanzas
 • Revisa gastos variables (combustible, ocio y compras impulsivas)
 • Prioriza fondo de emergencia
 • Evita cambiar una cartera de largo plazo por un solo titular diario''',
-    category: 'Commodities',
-    time: 'hoy',
+    category: 'Materias primas',
+    time: '10 ago',
     imageUrl: '🛢️',
   ),
   NewsArticle(
     title: 'Mercado pendiente del IPC de EE.UU. del 12 de agosto',
     summary:
         'El dato de inflación de julio puede inclinar la balanza de la Fed hacia mantener o endurecer en septiembre.',
-    content: '''Esta semana el dato clave es el IPC de EE.UU. (12 de agosto):
+    content: '''Semana del 10 de agosto de 2026. El dato clave es el IPC de EE.UU. (12 de agosto):
 
 Qué mira el mercado
 • Inflación general: si cede o se estanca
@@ -99,15 +99,15 @@ Escenarios
 Regla útil
 • Un dato no hace tendencia
 • Mira 3–6 meses de dirección, no una sola lectura''',
-    category: 'Política Monetaria',
-    time: 'hoy',
+    category: 'Política monetaria',
+    time: '10 ago',
     imageUrl: '📊',
   ),
   NewsArticle(
-    title: 'Empleo débil en EE.UU. enfría parte del discurso hawkish',
+    title: 'Empleo débil en EE.UU. enfría parte del discurso agresivo',
     summary:
-        'Nóminas más flojas y revisiones a la baja reducen apuestas de subida inmediata, aunque inflación sigue por encima del objetivo.',
-    content: '''Tras el último informe laboral de EE.UU.:
+        'Nóminas más flojas y revisiones a la baja reducen apuestas de subida inmediata, aunque la inflación sigue por encima del objetivo.',
+    content: '''8 de agosto de 2026. Tras el último informe laboral de EE.UU.:
 
 Señales
 • Creación de empleo por debajo de expectativas
@@ -123,16 +123,16 @@ Para familias
 • Crédito aún caro
 • Más valor en liquidez y colchón de seguridad''',
     category: 'Economía',
-    time: '2 días',
+    time: '8 ago',
     imageUrl: '👷',
   ),
   NewsArticle(
     title: 'Wall Street en máximos recientes, pero con volatilidad alta',
     summary:
         'S&P 500 cerca de récords y sesiones mixtas por el cruce entre empleo débil, petróleo caro y dudas sobre tipos.',
-    content: '''Foto de mercado al 10 de agosto:
+    content: '''9 de agosto de 2026. Foto de mercado:
 
-Drivers
+Motores de la sesión
 • Menos presión de tipos por empleo flojo
 • Más nervios por energía y geopolítica
 • Rotación rápida entre sectores
@@ -146,14 +146,14 @@ Conclusión
 • Récord de índice no equivale a “todo barato”
 • Mantener diversificación sigue siendo clave''',
     category: 'Mercados',
-    time: '1 día',
+    time: '9 ago',
     imageUrl: '📈',
   ),
   NewsArticle(
     title: 'Semiconductores e IA mantienen liderazgo en 2026',
     summary:
         'La demanda de centros de datos y memoria sigue fuerte, aunque el riesgo de correcciones por valoración continúa elevado.',
-    content: '''Tema estructural de 2026:
+    content: '''Agosto de 2026. Tema estructural del año:
 
 Fortalezas
 • Inversión masiva en capacidad de cómputo
@@ -168,14 +168,14 @@ Riesgos
 Regla práctica
 • Exposición sí, concentración extrema no''',
     category: 'Tecnología',
-    time: '3 días',
+    time: '7 ago',
     imageUrl: '💻',
   ),
   NewsArticle(
     title: 'Europa: inflación energética y BCE en modo prudente',
     summary:
         'La eurozona combina crecimiento débil con energía cara; el BCE mantiene enfoque reunión a reunión.',
-    content: '''En la eurozona, el equilibrio sigue delicado:
+    content: '''Agosto de 2026. En la eurozona, el equilibrio sigue delicado:
 
 Panorama
 • Energía todavía tensionada
@@ -183,44 +183,44 @@ Panorama
 • Crédito más caro que en ciclos anteriores
 
 Impacto al bolsillo
-• Hipotecas variables sensibles al Euribor
+• Hipotecas variables sensibles al Euríbor
 • Mejor remuneración en depósitos frente a años previos
 • Empresas más selectivas al invertir
 
 Qué hacer
 • Revisa deuda, liquidez y gasto fijo antes de asumir más riesgo''',
-    category: 'Política Monetaria',
-    time: '3 días',
+    category: 'Política monetaria',
+    time: '7 ago',
     imageUrl: '🇪🇺',
   ),
   NewsArticle(
-    title: 'Renovables ganan peso estratégico tras meses de shock',
+    title: 'Renovables ganan peso estratégico tras meses de crisis',
     summary:
-        'La seguridad energética acelera planes en solar, eólica y almacenamiento en Europa y EE.UU.',
-    content: '''La transición energética sigue siendo eje inversor de largo plazo:
+        'La seguridad energética acelera planes en solar, eólica y almacenamiento en Europa y EE. UU.',
+    content: '''Agosto de 2026. La transición energética sigue siendo eje inversor de largo plazo:
 
 Catalizadores
 • Riesgo geopolítico en combustibles fósiles
-• Nuevas licitaciones y capex en redes y baterías
+• Nuevas licitaciones e inversión en redes y baterías
 • Mayor foco en independencia energética
 
 Para inversor minorista
 • Mejor visión de 5–10 años que de semanas
 • Diversificar vía fondos/ETF puede reducir riesgo específico
-• Evitar entrar solo por FOMO''',
+• Evitar entrar solo por miedo a perdérselo''',
     category: 'Energía',
-    time: '4 días',
+    time: '6 ago',
     imageUrl: '🌱',
   ),
   NewsArticle(
     title: 'Oro y bonos vuelven a usarse como cobertura',
     summary:
         'Con inflación incierta y geopolítica activa, crece la demanda de activos defensivos en carteras mixtas.',
-    content: '''En agosto de 2026, los activos refugio vuelven al radar:
+    content: '''Agosto de 2026. Los activos refugio vuelven al radar:
 
 Qué se ve
 • Oro más demandado en días de tensión
-• Bonos con movimientos bruscos por expectativas de Fed
+• Bonos con movimientos bruscos por expectativas de la Fed
 • Dólar oscilando según macro y riesgo global
 
 Uso inteligente
@@ -228,7 +228,7 @@ Uso inteligente
 • Mantener diversificación por clases de activo
 • Evitar decisiones emocionales de corto plazo''',
     category: 'Mercados',
-    time: '5 días',
+    time: '5 ago',
     imageUrl: '🥇',
   ),
 ];
@@ -274,7 +274,7 @@ class NewsScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 56),
                   child: Text(
-                    '10 de agosto de 2026 · Ormuz, Fed e inflación',
+                    '11 de agosto de 2026 · Ormuz, Fed e inflación',
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
