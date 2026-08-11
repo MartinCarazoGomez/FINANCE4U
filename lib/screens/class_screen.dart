@@ -67,6 +67,50 @@ class _ClassScreenState extends State<ClassScreen> {
     });
   }
 
+  Future<void> _leaveClass() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Salir de la clase'),
+        content: const Text(
+          '¿Seguro que quieres salir? Dejarás de ver el ranking y el chat.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Salir'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    try {
+      await context.read<AuthProvider>().leaveGroup();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Has salido de la clase'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> _sendMessage() async {
     final auth = context.read<AuthProvider>();
     final groupId = auth.groupId;
@@ -421,6 +465,20 @@ class _ClassScreenState extends State<ClassScreen> {
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, i) => _rankTile(data.ranking[i], i),
                   ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _leaveClass,
+              icon: const Icon(Icons.exit_to_app),
+              label: const Text('Salir de la clase'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red[700],
+                side: BorderSide(color: Colors.red.shade300),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
           ),
         ],
       ),

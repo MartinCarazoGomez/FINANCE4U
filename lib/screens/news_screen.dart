@@ -6,58 +6,6 @@ import '../utils/currency_helper.dart';
 
 const List<NewsArticle> kNewsArticles = [
   NewsArticle(
-    title: 'Fed (29 jul): tipos en 3,50%–3,75% con votación 9–3',
-    summary:
-        'La última reunión de la Fed mantuvo tipos, pero con 3 votos a favor de subir 25 pb por inflación persistente.',
-    content: '''29 de julio de 2026: la última reunión de la Fed dejó un mensaje claro.
-
-Decisión
-• Tipo oficial sin cambios: 3,50%–3,75%
-• Votación: 9–3
-• Tres miembros prefirieron subir +0,25%
-
-Qué significa
-• La Fed no recorta: sigue priorizando volver al 2% de inflación
-• El comité está más dividido que en meses anteriores
-• Mercados de bonos y bolsa reaccionan con más volatilidad por menor guía futura
-
-Impacto práctico
-• Hipotecas variables y crédito al consumo siguen tensionados
-• Las tecnológicas respiran si no hay subida inmediata, pero el riesgo no desaparece
-• El IPC de agosto será clave para la reunión de septiembre
-
-Conclusión: pausa no es giro dovish. Es “esperar y ver” con sesgo antiinflación.''',
-    category: 'Política monetaria',
-    time: '29 jul',
-    imageUrl: '🏦',
-  ),
-  NewsArticle(
-    title: 'El hedge fund de Aschenbrenner entra en crisis de liquidez',
-    summary:
-        'Situational Awareness sufrió pérdidas muy fuertes en posiciones de IA, activó ventas aceleradas de cartera y reabrió el debate sobre apalancamiento.',
-    content: '''Última semana de julio de 2026: la situación de su hedge fund sacude al sector.
-
-Qué pasó
-• Su fondo (Situational Awareness) registró pérdidas severas en pocas semanas
-• La caída en activos ligados a infraestructura IA y posiciones concentradas tensionó márgenes
-• Se aceleraron ventas de parte de la cartera para ganar liquidez
-
-Por qué importa al mercado
-• Recordatorio de que incluso tesis potentes pueden romperse con apalancamiento alto
-• El desapalancamiento forzado puede contagiar precios en otros valores del sector
-• Sube la volatilidad y la sensibilidad a rumores de flujo y financiación
-
-Lección para inversores minoristas
-• “Convicción” no sustituye gestión de riesgo
-• Evita concentrar cartera en un solo tema (aunque esté de moda)
-• Mira liquidez, deuda y tamaño de posición antes que titulares
-
-Conclusión: el caso Aschenbrenner es, sobre todo, una lección de riesgo de concentración y apalancamiento.''',
-    category: 'Fondos',
-    time: '30 jul',
-    imageUrl: '🤖',
-  ),
-  NewsArticle(
     title: 'Petróleo tenso por Ormuz, Brent en zona \$84–86',
     summary:
         'El bloqueo prolongado mantiene presión sobre energía e inflación global; bolsas mixtas y primas de riesgo elevadas.',
@@ -104,29 +52,6 @@ Regla útil
     imageUrl: '📊',
   ),
   NewsArticle(
-    title: 'Empleo débil en EE.UU. enfría parte del discurso agresivo',
-    summary:
-        'Nóminas más flojas y revisiones a la baja reducen apuestas de subida inmediata, aunque la inflación sigue por encima del objetivo.',
-    content: '''8 de agosto de 2026. Tras el último informe laboral de EE.UU.:
-
-Señales
-• Creación de empleo por debajo de expectativas
-• Revisiones a la baja en meses previos
-• Menor convicción de subida en septiembre
-
-Dilema macro
-• Inflación aún elevada
-• Mercado laboral perdiendo fuerza
-• Fed dividida entre enfriar precios y no dañar actividad
-
-Para familias
-• Crédito aún caro
-• Más valor en liquidez y colchón de seguridad''',
-    category: 'Economía',
-    time: '8 ago',
-    imageUrl: '👷',
-  ),
-  NewsArticle(
     title: 'Wall Street en máximos recientes, pero con volatilidad alta',
     summary:
         'S&P 500 cerca de récords y sesiones mixtas por el cruce entre empleo débil, petróleo caro y dudas sobre tipos.',
@@ -148,6 +73,29 @@ Conclusión
     category: 'Mercados',
     time: '9 ago',
     imageUrl: '📈',
+  ),
+  NewsArticle(
+    title: 'Empleo débil en EE.UU. enfría parte del discurso agresivo',
+    summary:
+        'Nóminas más flojas y revisiones a la baja reducen apuestas de subida inmediata, aunque la inflación sigue por encima del objetivo.',
+    content: '''8 de agosto de 2026. Tras el último informe laboral de EE.UU.:
+
+Señales
+• Creación de empleo por debajo de expectativas
+• Revisiones a la baja en meses previos
+• Menor convicción de subida en septiembre
+
+Dilema macro
+• Inflación aún elevada
+• Mercado laboral perdiendo fuerza
+• Fed dividida entre enfriar precios y no dañar actividad
+
+Para familias
+• Crédito aún caro
+• Más valor en liquidez y colchón de seguridad''',
+    category: 'Economía',
+    time: '8 ago',
+    imageUrl: '👷',
   ),
   NewsArticle(
     title: 'Semiconductores e IA mantienen liderazgo en 2026',
@@ -230,6 +178,58 @@ Uso inteligente
     category: 'Mercados',
     time: '5 ago',
     imageUrl: '🥇',
+  ),
+  NewsArticle(
+    title: 'El hedge fund de Aschenbrenner entra en crisis de liquidez',
+    summary:
+        'Situational Awareness sufrió pérdidas muy fuertes en posiciones de IA, activó ventas aceleradas de cartera y reabrió el debate sobre apalancamiento.',
+    content: '''Última semana de julio de 2026: la situación de su hedge fund sacude al sector.
+
+Qué pasó
+• Su fondo (Situational Awareness) registró pérdidas severas en pocas semanas
+• La caída en activos ligados a infraestructura IA y posiciones concentradas tensionó márgenes
+• Se aceleraron ventas de parte de la cartera para ganar liquidez
+
+Por qué importa al mercado
+• Recordatorio de que incluso tesis potentes pueden romperse con apalancamiento alto
+• El desapalancamiento forzado puede contagiar precios en otros valores del sector
+• Sube la volatilidad y la sensibilidad a rumores de flujo y financiación
+
+Lección para inversores minoristas
+• “Convicción” no sustituye gestión de riesgo
+• Evita concentrar cartera en un solo tema (aunque esté de moda)
+• Mira liquidez, deuda y tamaño de posición antes que titulares
+
+Conclusión: el caso Aschenbrenner es, sobre todo, una lección de riesgo de concentración y apalancamiento.''',
+    category: 'Fondos',
+    time: '30 jul',
+    imageUrl: '🤖',
+  ),
+  NewsArticle(
+    title: 'Fed (29 jul): tipos en 3,50%–3,75% con votación 9–3',
+    summary:
+        'La última reunión de la Fed mantuvo tipos, pero con 3 votos a favor de subir 25 pb por inflación persistente.',
+    content: '''29 de julio de 2026: la última reunión de la Fed dejó un mensaje claro.
+
+Decisión
+• Tipo oficial sin cambios: 3,50%–3,75%
+• Votación: 9–3
+• Tres miembros prefirieron subir +0,25%
+
+Qué significa
+• La Fed no recorta: sigue priorizando volver al 2% de inflación
+• El comité está más dividido que en meses anteriores
+• Mercados de bonos y bolsa reaccionan con más volatilidad por menor guía futura
+
+Impacto práctico
+• Hipotecas variables y crédito al consumo siguen tensionados
+• Las tecnológicas respiran si no hay subida inmediata, pero el riesgo no desaparece
+• El IPC de agosto será clave para la reunión de septiembre
+
+Conclusión: pausa no es giro dovish. Es “esperar y ver” con sesgo antiinflación.''',
+    category: 'Política monetaria',
+    time: '29 jul',
+    imageUrl: '🏦',
   ),
 ];
 
@@ -320,10 +320,7 @@ class NewsArticle {
     required this.imageUrl,
   });
 
-  String get timeLabel {
-    if (time == 'hoy' || time == 'ayer') return time[0].toUpperCase() + time.substring(1);
-    return 'Hace $time';
-  }
+  String get timeLabel => time;
 }
 
 class _NewsCard extends StatelessWidget {
