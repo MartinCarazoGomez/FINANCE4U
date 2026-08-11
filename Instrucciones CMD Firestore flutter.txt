@@ -19,3 +19,4 @@ flutter clean
 flutter run -d Windows
 flutter build
 firebase deploy
+

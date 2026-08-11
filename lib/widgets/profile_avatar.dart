@@ -3,6 +3,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+/// True solo si [url] es http(s) con host (evita "No host specified in URI").
+bool isValidNetworkPhotoUrl(String? url) {
+  if (url == null || url.isEmpty) return false;
+  final uri = Uri.tryParse(url);
+  return uri != null &&
+      (uri.scheme == 'http' || uri.scheme == 'https') &&
+      uri.host.isNotEmpty;
+}
+
 /// Avatar de perfil: foto local, base64 (Firestore) o URL (Google).
 class ProfileAvatar extends StatelessWidget {
   final double radius;
@@ -31,7 +40,7 @@ class ProfileAvatar extends StatelessWidget {
         return null;
       }
     }
-    if (photoUrl != null && photoUrl!.isNotEmpty) {
+    if (isValidNetworkPhotoUrl(photoUrl)) {
       return NetworkImage(photoUrl!);
     }
     return null;

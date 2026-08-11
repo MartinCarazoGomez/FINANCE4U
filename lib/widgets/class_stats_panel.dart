@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/class_rank_entry.dart';
 import '../utils/achievements_service.dart';
+import 'profile_avatar.dart';
 
 /// Creative stats dashboard for the class tab.
 class ClassStatsPanel extends StatelessWidget {
@@ -293,10 +294,12 @@ class ClassStatsPanel extends StatelessWidget {
           CircleAvatar(
             radius: highlight ? 22 : 18,
             backgroundColor: color.withValues(alpha: 0.25),
-            backgroundImage:
-                entry.photoUrl != null ? NetworkImage(entry.photoUrl!) : null,
-            child: entry.photoUrl == null
-                ? Text(
+            backgroundImage: isValidNetworkPhotoUrl(entry.photoUrl)
+                ? NetworkImage(entry.photoUrl!)
+                : null,
+            child: isValidNetworkPhotoUrl(entry.photoUrl)
+                ? null
+                : Text(
                     entry.username.isNotEmpty
                         ? entry.username[0].toUpperCase()
                         : '?',
@@ -305,8 +308,7 @@ class ClassStatsPanel extends StatelessWidget {
                       color: _green,
                       fontSize: highlight ? 16 : 14,
                     ),
-                  )
-                : null,
+                  ),
           ),
           const SizedBox(height: 4),
           Text(

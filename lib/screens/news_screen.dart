@@ -4,264 +4,239 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../utils/currency_helper.dart';
 
+const List<NewsArticle> kNewsArticles = [
+  NewsArticle(
+    title: 'Fed (29 jul): tipos en 3,50%–3,75% con votación 9–3',
+    summary:
+        'La última reunión de la Fed mantuvo tipos, pero con 3 votos a favor de subir 25 pb por inflación persistente.',
+    content: '''Corte al 10 de agosto de 2026: la última reunión de la Fed (29 de julio) dejó un mensaje claro.
+
+Decisión
+• Tipo oficial sin cambios: 3,50%–3,75%
+• Votación: 9–3
+• Tres miembros prefirieron subir +0,25%
+
+Qué significa
+• La Fed no recorta: sigue priorizando volver al 2% de inflación
+• El comité está más dividido que en meses anteriores
+• Mercados de bonos y bolsa reaccionan con más volatilidad por menor guía futura
+
+Impacto práctico
+• Hipotecas variables y crédito al consumo siguen tensionados
+• Las tecnológicas respiran si no hay subida inmediata, pero el riesgo no desaparece
+• El IPC de agosto será clave para la reunión de septiembre
+
+Conclusión: pausa no es giro dovish. Es “esperar y ver” con sesgo antiinflación.''',
+    category: 'Política Monetaria',
+    time: 'hoy',
+    imageUrl: '🏦',
+  ),
+  NewsArticle(
+    title: 'El hedge fund de Aschenbrenner entra en crisis de liquidez',
+    summary:
+        'Situational Awareness sufrió pérdidas muy fuertes en posiciones de IA, activó ventas aceleradas de cartera y reabrió el debate sobre apalancamiento.',
+    content: '''Corte al 10 de agosto de 2026: la noticia relevante no es el evento social, sino la situación de su hedge fund.
+
+Qué pasó
+• Su fondo (Situational Awareness) registró pérdidas severas en pocas semanas
+• La caída en activos ligados a infraestructura IA y posiciones concentradas tensionó márgenes
+• Se aceleraron ventas de parte de la cartera para ganar liquidez
+
+Por qué importa al mercado
+• Recordatorio de que incluso tesis potentes pueden romperse con apalancamiento alto
+• El desapalancamiento forzado puede contagiar precios en otros valores del sector
+• Sube la volatilidad y la sensibilidad a rumores de flujo y financiación
+
+Lección para retail
+• “Convicción” no sustituye gestión de riesgo
+• Evita concentrar cartera en un solo tema (aunque esté de moda)
+• Mira liquidez, deuda y tamaño de posición antes que titulares
+
+Conclusión: el caso Aschenbrenner es, sobre todo, una lección de riesgo de concentración y apalancamiento.''',
+    category: 'Tecnología',
+    time: 'hoy',
+    imageUrl: '🤖',
+  ),
+  NewsArticle(
+    title: '10 ago: petróleo tenso por Ormuz, Brent en zona \$84–86',
+    summary:
+        'El bloqueo prolongado mantiene presión sobre energía e inflación global; bolsas mixtas y primas de riesgo elevadas.',
+    content: '''Lunes 10 de agosto de 2026. El mercado energético sigue bajo presión:
+
+Precios
+• Brent: entorno \$84–86
+• WTI: alrededor de \$80
+• Alta sensibilidad a cada avance o bloqueo diplomático
+
+Efectos en cadena
+• Transporte y logística más caros
+• Presión en inflación de bienes básicos
+• Mayor incertidumbre sobre el ritmo de recortes/subidas de tipos
+
+Para tus finanzas
+• Revisa gastos variables (combustible, ocio y compras impulsivas)
+• Prioriza fondo de emergencia
+• Evita cambiar una cartera de largo plazo por un solo titular diario''',
+    category: 'Commodities',
+    time: 'hoy',
+    imageUrl: '🛢️',
+  ),
+  NewsArticle(
+    title: 'Mercado pendiente del IPC de EE.UU. del 12 de agosto',
+    summary:
+        'El dato de inflación de julio puede inclinar la balanza de la Fed hacia mantener o endurecer en septiembre.',
+    content: '''Esta semana el dato clave es el IPC de EE.UU. (12 de agosto):
+
+Qué mira el mercado
+• Inflación general: si cede o se estanca
+• Subyacente: señal de tendencia real
+• Relación con energía: petróleo caro puede contaminar próximos meses
+
+Escenarios
+• IPC mejor de lo esperado: cae probabilidad de subida de tipos
+• IPC peor de lo esperado: sube la presión para endurecer política
+
+Regla útil
+• Un dato no hace tendencia
+• Mira 3–6 meses de dirección, no una sola lectura''',
+    category: 'Política Monetaria',
+    time: 'hoy',
+    imageUrl: '📊',
+  ),
+  NewsArticle(
+    title: 'Empleo débil en EE.UU. enfría parte del discurso hawkish',
+    summary:
+        'Nóminas más flojas y revisiones a la baja reducen apuestas de subida inmediata, aunque inflación sigue por encima del objetivo.',
+    content: '''Tras el último informe laboral de EE.UU.:
+
+Señales
+• Creación de empleo por debajo de expectativas
+• Revisiones a la baja en meses previos
+• Menor convicción de subida en septiembre
+
+Dilema macro
+• Inflación aún elevada
+• Mercado laboral perdiendo fuerza
+• Fed dividida entre enfriar precios y no dañar actividad
+
+Para familias
+• Crédito aún caro
+• Más valor en liquidez y colchón de seguridad''',
+    category: 'Economía',
+    time: '2 días',
+    imageUrl: '👷',
+  ),
+  NewsArticle(
+    title: 'Wall Street en máximos recientes, pero con volatilidad alta',
+    summary:
+        'S&P 500 cerca de récords y sesiones mixtas por el cruce entre empleo débil, petróleo caro y dudas sobre tipos.',
+    content: '''Foto de mercado al 10 de agosto:
+
+Drivers
+• Menos presión de tipos por empleo flojo
+• Más nervios por energía y geopolítica
+• Rotación rápida entre sectores
+
+Sectores
+• Tecnología: favorecida cuando caen rendimientos
+• Energía: sensible al crudo
+• Consumo: sufre si suben gasolina y financiación
+
+Conclusión
+• Récord de índice no equivale a “todo barato”
+• Mantener diversificación sigue siendo clave''',
+    category: 'Mercados',
+    time: '1 día',
+    imageUrl: '📈',
+  ),
+  NewsArticle(
+    title: 'Semiconductores e IA mantienen liderazgo en 2026',
+    summary:
+        'La demanda de centros de datos y memoria sigue fuerte, aunque el riesgo de correcciones por valoración continúa elevado.',
+    content: '''Tema estructural de 2026:
+
+Fortalezas
+• Inversión masiva en capacidad de cómputo
+• Pedidos sólidos en chips y memoria
+• Beneficios fuertes en varias líderes del sector
+
+Riesgos
+• Valoraciones exigentes
+• Dependencia de pocas mega-cap
+• Volatilidad alta ante noticias de tipos o regulación
+
+Regla práctica
+• Exposición sí, concentración extrema no''',
+    category: 'Tecnología',
+    time: '3 días',
+    imageUrl: '💻',
+  ),
+  NewsArticle(
+    title: 'Europa: inflación energética y BCE en modo prudente',
+    summary:
+        'La eurozona combina crecimiento débil con energía cara; el BCE mantiene enfoque reunión a reunión.',
+    content: '''En la eurozona, el equilibrio sigue delicado:
+
+Panorama
+• Energía todavía tensionada
+• Crecimiento moderado
+• Crédito más caro que en ciclos anteriores
+
+Impacto al bolsillo
+• Hipotecas variables sensibles al Euribor
+• Mejor remuneración en depósitos frente a años previos
+• Empresas más selectivas al invertir
+
+Qué hacer
+• Revisa deuda, liquidez y gasto fijo antes de asumir más riesgo''',
+    category: 'Política Monetaria',
+    time: '3 días',
+    imageUrl: '🇪🇺',
+  ),
+  NewsArticle(
+    title: 'Renovables ganan peso estratégico tras meses de shock',
+    summary:
+        'La seguridad energética acelera planes en solar, eólica y almacenamiento en Europa y EE.UU.',
+    content: '''La transición energética sigue siendo eje inversor de largo plazo:
+
+Catalizadores
+• Riesgo geopolítico en combustibles fósiles
+• Nuevas licitaciones y capex en redes y baterías
+• Mayor foco en independencia energética
+
+Para inversor minorista
+• Mejor visión de 5–10 años que de semanas
+• Diversificar vía fondos/ETF puede reducir riesgo específico
+• Evitar entrar solo por FOMO''',
+    category: 'Energía',
+    time: '4 días',
+    imageUrl: '🌱',
+  ),
+  NewsArticle(
+    title: 'Oro y bonos vuelven a usarse como cobertura',
+    summary:
+        'Con inflación incierta y geopolítica activa, crece la demanda de activos defensivos en carteras mixtas.',
+    content: '''En agosto de 2026, los activos refugio vuelven al radar:
+
+Qué se ve
+• Oro más demandado en días de tensión
+• Bonos con movimientos bruscos por expectativas de Fed
+• Dólar oscilando según macro y riesgo global
+
+Uso inteligente
+• Cobertura parcial, no sustituto de toda la cartera
+• Mantener diversificación por clases de activo
+• Evitar decisiones emocionales de corto plazo''',
+    category: 'Mercados',
+    time: '5 días',
+    imageUrl: '🥇',
+  ),
+];
+
 class NewsScreen extends StatelessWidget {
   const NewsScreen({super.key});
 
-  final List<NewsArticle> articles = const [
-    NewsArticle(
-      title: 'SpaceX debuta en bolsa: la mayor OPV de la historia',
-      summary:
-          'SpaceX recaudó \$75.000 millones a \$135 por acción (SPCX). En su primer día subió un 19% y superó los \$2 billones de valoración.',
-      content: '''Space Exploration Technologies Corp. completó el 12 de junio de 2026 la mayor oferta pública inicial (OPV) de la historia: 555,6 millones de acciones a \$135 cada una, recaudando unos \$75.000 millones.
-
-Las acciones cotizan en el Nasdaq bajo el ticker SPCX y también en Nasdaq Texas. El cierre del primer día fue de \$160,95 (+19%), lo que sitúa la valoración de la empresa en torno a \$2,1 billones — la sexta compañía más valiosa de EE.UU.
-
-Contexto clave para inversores:
-• Demanda récord: la OPV atrajo interés cuatro veces superior a las acciones ofertadas
-• Musk como accionista principal: su participación vale cientos de miles de millones a este precio
-• Sin beneficios aún: SpaceX genera ingresos muy inferiores a otras tech de valor similar
-• Próximas OPV de IA: OpenAI y Anthropic también han presentado documentos confidenciales
-
-Lección financiera: las OPV masivas pueden revalorizarse el primer día ("IPO pop"), pero conllevan alto riesgo. No inviertas dinero que no puedas permitirte perder.''',
-      category: 'OPVs',
-      time: '2 días',
-      imageUrl: '🚀',
-    ),
-    NewsArticle(
-      title: 'OpenAI y Anthropic preparan sus salidas a bolsa',
-      summary:
-          'Tras SpaceX, las dos grandes empresas de IA han presentado registros confidenciales. OpenAI buscaría más de \$60.000 millones.',
-      content: '''El mercado de OPVs de 2026 está dominado por la inteligencia artificial. Tras el debut de SpaceX, la atención se centra en dos nuevas candidatas:
-
-OpenAI
-• Presentó registro confidencial en junio de 2026
-• Podría buscar más de \$60.000 millones en una OPV
-• Fecha prevista: finales de 2026 o principios de 2027
-
-Anthropic
-• Registro confidencial el 1 de junio de 2026
-• Posible debut en octubre de 2026, según medios financieros
-
-Otras OPV en el radar: Discord (registro en enero), Inspire Brands (Dunkin', Arby's…) y Databricks (posiblemente 2027).
-
-Para el inversor retail:
-• Las OPV de IA suelen valorarse por expectativas de crecimiento, no por beneficios actuales
-• Los fondos indexados (ETF) no suelen incluir nuevas emisiones de inmediato
-• Diversificar sigue siendo clave: no concentres todo en un solo sector, por muy popular que sea''',
-      category: 'OPVs',
-      time: '3 días',
-      imageUrl: '🤖',
-    ),
-    NewsArticle(
-      title: '100 días de conflicto en Irán: mercados bajo presión',
-      summary:
-          'El cierre del Estrecho de Ormuz dispara el petróleo (+36-50%) y la inflación global. El Banco Mundial recorta su previsión de crecimiento al 2,5%.',
-      content: '''A mediados de junio de 2026 se cumplen 100 días de conflicto en Oriente Medio. El impacto económico es global:
-
-Energía y comercio
-• El Estrecho de Ormuz, por donde pasa ~20% del petróleo y GNL mundial, está prácticamente cerrado
-• Brent cotiza ~36% por encima del nivel previo al conflicto; WTI ~50% más caro
-• También se ven afectados fertilizantes, azufre y fosfatos
-
-Crecimiento económico
-• Banco Mundial: crecimiento global de 2,5% en 2026 (mínimo desde la pandemia)
-• OCDE: hasta \$700.000 millones de pérdida potencial si el conflicto se prolonga
-• Comercio mundial: desaceleración prevista en Q2-Q3 de 2026
-
-Mercados bursátiles
-• Caída inicial en muchas bolsas, pero el S&P 500 ha recuperado y marcado nuevos máximos
-• Los bonos del Tesoro USA subieron de rendimiento por temor inflacionista
-• El oro y activos refugio han atraído capital
-
-Lección: los conflictos geopolíticos afectan precios de energía, inflación y tipos de interés — incluso cuando las bolsas parecen "mirar hacia otro lado".''',
-      category: 'Conflictos',
-      time: '1 semana',
-      imageUrl: '⚔️',
-    ),
-    NewsArticle(
-      title: 'Negociaciones de tregua impulsan las bolsas',
-      summary:
-          'Trump anunció un posible acuerdo con Irán; el S&P 500 subió 1,7% y el Brent cayó 4,2%. Teherán niega que haya un pacto cerrado.',
-      content: '''El 12 de junio de 2026 las bolsas reaccionaron con fuerza a señales de una posible tregua en el conflicto con Irán:
-
-Reacción de mercados
-• S&P 500: +1,7% | Nasdaq: +2,5% | Dow Jones: +1,8%
-• Brent: -4,2% hasta \$89,21/barril
-• Los inversores apuestan a que el conflicto no escalará más
-
-Estado de las negociaciones
-• La Casa Blanca habla de un "gran acuerdo" para terminar la guerra
-• Medios iraníes mencionan un borrador: suspensión de sanciones al petróleo iraní y reapertura del Ormuz a cambio de 60 días de negociación
-• El Ministerio de Exteriores de Irán niega que haya un acuerdo inminente
-
-Energía USA
-• EE.UU. lideró las exportaciones de crudo en mayo (~10,5 M bbl/día)
-• Rusia y Arabia Saudita exportaron menos por sanciones y el conflicto
-
-Para el inversor: las noticias de paz o guerra mueven el petróleo en horas. Evita decisiones impulsivas basadas en un solo titular.''',
-      category: 'Conflictos',
-      time: '2 días',
-      imageUrl: '🕊️',
-    ),
-    NewsArticle(
-      title: 'El BCE sube tipos por primera vez en 3 años',
-      summary:
-          'Subida de 25 pb: el depósito pasa al 2,25%. La inflación en la eurozona alcanza el 3,2%, empujada por la energía (+10,9%).',
-      content: '''El 11 de junio de 2026 el Banco Central Europeo rompió su ciclo de recortes y subió los tipos 25 puntos básicos por primera vez desde 2023:
-
-Nuevos tipos (vigentes desde el 17 de junio)
-• Facilidad de depósito: 2,25% (antes 2,00%)
-• Operaciones principales de refinanciación: 2,40%
-• Facilidad de crédito marginal: 2,65%
-
-Motivo: la guerra en Oriente Medio
-• Inflación de la eurozona: 3,2% en mayo (máximo desde 2023)
-• Inflación de energía: 10,9%
-• Inflación subyacente: 2,5% (también al alza)
-
-Previsiones revisadas a la baja
-• Crecimiento eurozona 2026: 0,8% (revisión a la baja)
-• Inflación 2026: 3,0% | 2027: 2,3% | 2028: 2,0%
-
-Christine Lagarde: "No nos comprometemos a una trayectoria concreta de tipos."
-
-Impacto práctico: hipotecas variables, préstamos empresariales y ahorro en depósitos se verán afectados. Si tienes deuda a tipo variable, conviene revisar tu presupuesto.''',
-      category: 'Política Monetaria',
-      time: '3 días',
-      imageUrl: '🏦',
-    ),
-    NewsArticle(
-      title: 'La Fed mantiene tipos pero endurece el tono',
-      summary:
-          'Reunión FOMC 16-17 de junio. Tipos en 3,50-3,75%. Inflación USA al 4,2% por el shock energético; mercado vigila subidas futuras.',
-      content: '''La Reserva Federal de EE.UU. celebra su reunión de junio (16-17) con el mercado en vilo:
-
-Situación actual
-• Tipos de referencia: 3,50% - 3,75%
-• Probabilidad de subida inmediata: baja (~2% según mercados)
-• Pero más del 60% de probabilidad de subida antes de fin de año
-
-Inflación USA (mayo 2026)
-• IPC interanual: 4,2% (subió desde 3,8% en abril)
-• Energía: +23,5% interanual; gasolina +40,5%
-• Empleo sólido: el mercado laboral sigue fuerte
-
-Escenario "pausa hawkish"
-• Sin recortes de tipos a corto plazo
-• El dólar se mantiene fuerte frente a divisas con tipos más bajos
-• El oro puede corregir si la Fed minimiza el riesgo inflacionista
-
-Diferencia clave con Europa: el BCE ya subió tipos; la Fed espera más datos. Para préstamos en dólares o inversiones globales, esta divergencia importa.''',
-      category: 'Política Monetaria',
-      time: '1 día',
-      imageUrl: '🇺🇸',
-    ),
-    NewsArticle(
-      title: 'Petróleo e inflación: el doble golpe al bolsillo',
-      summary:
-          'El Brent sigue un 36% por encima de niveles pre-guerra. Alemania e India intervienen para contener precios de energía.',
-      content: '''A pesar de las caídas recientes, el petróleo sigue muy por encima de los niveles previos al conflicto en Irán:
-
-Precios actuales (contexto junio 2026)
-• Brent: ~36% más caro que antes del conflicto
-• WTI (USA): ~50% por encima del nivel pre-guera
-• Picos intradía durante misiles, negociaciones y rumores de tregua
-
-Efecto en la inflación
-• Eurozona: energía +10,9% interanual en mayo
-• USA: gasolina +40,5% interanual
-• Alimentos y transporte suben por encadenamiento de costes
-
-Respuestas gubernamentales
-• Alemania e India han intervenido para limitar el impacto en consumidores
-• Reservas estratégicas y subsidios temporales en varios países
-
-Consejo financiero personal:
-• Revisa tu presupuesto de transporte y calefacción
-• Un fondo de emergencia de 3-6 meses es especialmente útil en periodos de inflación
-• No abandones inversiones a largo plazo por pánico, pero sí ajusta gastos variables''',
-      category: 'Commodities',
-      time: '4 días',
-      imageUrl: '🛢️',
-    ),
-    NewsArticle(
-      title: 'Semiconductores e IA: el sector que resiste',
-      summary:
-          'El índice PHLX de semiconductores sube un 82% en 2026. La carrera por infraestructura de IA impulsa Nvidia, Broadcom y el sector tech.',
-      content: '''Mientras el conflicto en Oriente Medio presiona la energía, el sector de semiconductores e IA vive un rally histórico:
-
-Rendimiento 2026 (hasta junio)
-• Índice PHLX Semiconductores: +81,8%
-• Nasdaq-100: +15,4% (pese a la volatilidad reciente)
-• La demanda de chips para centros de datos de IA no da señales de frenarse
-
-Empresas destacadas
-• Nvidia, Broadcom, AMD y TSMC entre las más beneficiadas
-• SpaceX vincula su OPV al boom de IA (centros de datos en el espacio)
-• OpenAI y Anthropic dependen de esta infraestructura para escalar
-
-Riesgos a tener en cuenta
-• Valoraciones muy elevadas: correcciones del 10-20% son posibles
-• Concentración: pocos nombres arrastran índices enteros
-• Regulación y tensiones comerciales USA-China siguen activas
-
-Regla de diversificación: si inviertes en tech/IA, equilibra con otros sectores (salud, consumo, bonos) según tu perfil de riesgo.''',
-      category: 'Tecnología',
-      time: '3 días',
-      imageUrl: '💻',
-    ),
-    NewsArticle(
-      title: 'Energías renovables: oportunidad en medio del caos',
-      summary:
-          'El shock del petróleo acelera inversiones en solar y eólica. Europa apuesta por independencia energética tras la crisis del Ormuz.',
-      content: '''El cierre del Estrecho de Ormuz ha reactivado el debate sobre independencia energética — y las renovables son protagonistas:
-
-Por qué ahora
-• Dependencia del petróleo y gas del Golfo expuesta como vulnerabilidad estratégica
-• UE y varios países aceleran licitaciones solares y eólicas
-• Almacenamiento (baterías) gana prioridad en planes de inversión
-
-Inversiones en juego
-• Solar: mayor cuota de nuevos proyectos en Europa y Asia
-• Eólica offshore: expansión en el Mar del Norte y costas atlánticas
-• Hidrógeno verde: proyectos piloto financiados con fondos públicos
-
-Empresas del sector (referencia)
-• NextEra Energy, Iberdrola, Ørsted, Enphase entre las más seguidas
-• ETFs de energía limpia (ICLN, QCLN) permiten diversificar sin elegir una sola acción
-
-Ojo: las renovables son inversión a largo plazo. No esperes ganancias rápidas como en una OPV de IA, pero pueden proteger tu cartera ante shocks de petróleo futuros.''',
-      category: 'Energía',
-      time: '5 días',
-      imageUrl: '🌱',
-    ),
-    NewsArticle(
-      title: 'Empleo sólido en EE.UU. complica la política de la Fed',
-      summary:
-          'El mercado laboral sigue fuerte pese al conflicto. Menos paro = menos presión para recortar tipos, aunque la inflación suba.',
-      content: '''Los datos de empleo en EE.UU. siguen sorprendiendo al alza en junio de 2026, complicando la ecuación para la Reserva Federal:
-
-Datos clave
-• Creación de empleos por encima de lo esperado en los últimos meses
-• Desempleo cerca del 4,1% — niveles históricamente bajos
-• Salarios con presión al alza en sectores de servicios y construcción
-
-El dilema de la Fed
-• Empleo fuerte → economía resiliente → menos motivos para recortar tipos
-• Inflación al 4,2% → presión para subir o mantener tipos altos más tiempo
-• Resultado probable: "pausa hawkish" (sin recortes, tono duro)
-
-Sectores que más contratan
-• Salud y servicios sociales
-• Ocio y hostelería
-• Construcción residencial
-
-Para tu cartera: un mercado laboral fuerte suele ser bueno para acciones a medio plazo, pero tipos altos perjudican a inmobiliario y empresas muy endeudadas.''',
-      category: 'Economía',
-      time: '1 semana',
-      imageUrl: '👷',
-    ),
-  ];
+  List<NewsArticle> get articles => kNewsArticles;
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +274,7 @@ Para tu cartera: un mercado laboral fuerte suele ser bueno para acciones a medio
                 Padding(
                   padding: const EdgeInsets.only(left: 56),
                   child: Text(
-                    'Junio 2026 · OPVs, conflictos y mercados',
+                    '10 de agosto de 2026 · Ormuz, Fed e inflación',
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
@@ -344,6 +319,11 @@ class NewsArticle {
     required this.time,
     required this.imageUrl,
   });
+
+  String get timeLabel {
+    if (time == 'hoy' || time == 'ayer') return time[0].toUpperCase() + time.substring(1);
+    return 'Hace $time';
+  }
 }
 
 class _NewsCard extends StatelessWidget {
@@ -410,7 +390,7 @@ class _NewsCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Hace ${article.time}',
+                          article.timeLabel,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -511,7 +491,7 @@ class ArticleDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Hace ${article.time}',
+              article.timeLabel,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],

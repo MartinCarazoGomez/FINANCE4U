@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../services/class_chat_service.dart';
 import '../services/class_service.dart';
 import '../widgets/class_stats_panel.dart';
+import '../widgets/profile_avatar.dart';
 
 class ClassScreen extends StatefulWidget {
   const ClassScreen({super.key});
@@ -439,17 +440,18 @@ class _ClassScreenState extends State<ClassScreen> {
       leading: CircleAvatar(
         backgroundColor:
             entry.isCurrentUser ? _accent : Colors.grey[300],
-        backgroundImage:
-            entry.photoUrl != null ? NetworkImage(entry.photoUrl!) : null,
-        child: entry.photoUrl == null
-            ? Text(
+        backgroundImage: isValidNetworkPhotoUrl(entry.photoUrl)
+            ? NetworkImage(entry.photoUrl!)
+            : null,
+        child: isValidNetworkPhotoUrl(entry.photoUrl)
+            ? null
+            : Text(
                 entry.username.isNotEmpty ? entry.username[0].toUpperCase() : '?',
                 style: TextStyle(
                   color: entry.isCurrentUser ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.bold,
                 ),
-              )
-            : null,
+              ),
       ),
       title: Text(
         entry.username + (entry.isCurrentUser ? ' (Tú)' : ''),
