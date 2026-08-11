@@ -4,6 +4,7 @@ import '../providers/app_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/tutorial_service.dart';
 import '../utils/currency_helper.dart';
+import 'personalization_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/profile_avatar.dart';
 
@@ -221,6 +222,38 @@ class SettingsScreen extends StatelessWidget {
                             .pushNamedAndRemoveUntil('/main', (_) => false);
                       }
                     });
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Sección de Personalización
+              _buildSectionHeader('Personalización'),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.tune, color: Color(0xFF2E7D32)),
+                  title: const Text('Repetir personalización'),
+                  subtitle: const Text(
+                    'Volver a elegir edad, nivel e intereses',
+                  ),
+                  trailing: const Icon(Icons.refresh, color: Color(0xFF2E7D32)),
+                  onTap: () async {
+                    if (auth.firebaseUser == null) {
+                      _showSnackBar(context, 'Inicia sesión para personalizar');
+                      return;
+                    }
+                    final saved = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const PersonalizationScreen(allowExit: true),
+                        fullscreenDialog: true,
+                      ),
+                    );
+                    if (context.mounted && saved == true) {
+                      _showSnackBar(context,
+                          'Personalización actualizada: contenido reordenado');
+                    }
                   },
                 ),
               ),

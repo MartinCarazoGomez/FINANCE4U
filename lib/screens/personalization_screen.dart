@@ -6,8 +6,12 @@ import 'content_screen.dart';
 
 /// Flujo de personalización que se muestra una única vez tras el tutorial:
 /// franja de edad → prueba de nivel → intereses → itinerario resultante.
+///
+/// Con [allowExit] (p. ej. al relanzarlo desde Ajustes) se puede cancelar sin
+/// guardar y las respuestas anteriores vienen precargadas.
 class PersonalizationScreen extends StatefulWidget {
-  const PersonalizationScreen({super.key});
+  final bool allowExit;
+  const PersonalizationScreen({super.key, this.allowExit = false});
 
   @override
   State<PersonalizationScreen> createState() => _PersonalizationScreenState();
@@ -93,6 +97,24 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
 
   bool _saving = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Al repetir el flujo desde Ajustes, precargar las respuestas anteriores
+    // (la prueba de nivel se hace siempre desde cero).
+    final profile = context.read<AuthProvider>().profile;
+    if (widget.allowExit && profile != null) {
+      if (kAgeRanges.contains(profile.ageRange)) {
+        _ageRange = profile.ageRange;
+      }
+      _interests.addAll(
+        profile.interests.where(
+          (i) => kInterestOptions.any((o) => o.key == i),
+        ),
+      );
+    }
+  }
+
   static const _green = Color(0xFF2E7D32);
   static const _greenLight = Color(0xFF4CAF50);
   static const _greenDark = Color(0xFF1B6B4B);
@@ -128,7 +150,8 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
             interests: _interests.toList(),
             placementLevel: _placementLevel,
           );
-      if (mounted) Navigator.of(context).pop();
+      // Devuelve true para distinguir "guardado" de "cancelado".
+      if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -144,7 +167,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: widget.allowExit,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FBF7),
         body: SafeArea(
@@ -213,6 +236,17 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                   ),
                 ),
                 if (i < 4) const SizedBox(width: 6),
+              ],
+              if (widget.allowExit) ...[
+                const SizedBox(width: 12),
+                InkWell(
+                  onTap: () => Navigator.of(context).pop(),
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(Icons.close, color: Colors.white, size: 22),
+                  ),
+                ),
               ],
             ],
           ),
